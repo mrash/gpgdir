@@ -1,4 +1,15 @@
 #!/usr/bin/perl -w
+#
+####################################################
+#
+# Purpose:  To encrypt/decrypt whole directories
+#
+# File: gpgdir
+#
+####################################################
+#
+# $Id$
+#
 
 use File::Find;
 use Term::ReadKey;
