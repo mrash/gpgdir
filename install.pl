@@ -43,6 +43,7 @@ print localtime() . " .. Installing gpgdir in $install_dir\n";
 &install_gpgdir();
 print localtime() . " .. Installing man page.\n";
 &install_manpage();
+print localtime() . " .. gpgdir installed!\n";
 
 exit 0;
 
@@ -51,7 +52,7 @@ sub install_gpgdir() {
         "http://www.cipherdyne.com/gpgdir" unless -e 'gpgdir';
     copy 'gpgdir', "${install_dir}/gpgdir" or die " ** Could not copy " .
         "gpgdir to $install_dir: $!";
-    chmod "${install_dir}/gpgdir", 0755 or die " ** Could not set " .
+    chmod 0755, "${install_dir}/gpgdir" or die " ** Could not set " .
         "permissions on gpgdir to 0755";
     chown 0, 0, "${install_dir}/gpgdir" or
         die " ** Could not chown 0,0,${install_dir}/gpgdir: $!";
@@ -108,11 +109,13 @@ sub install_manpage() {
     print localtime() . " .. Installing $manpage man page as: $mfile\n";
     copy $manpage, $mfile or die " ** Could not copy $manpage to " .
         "$mfile: $!";
-    chmod $mfile, 0644 or die " ** Could not set permissions on ".
+    chmod 0644, $mfile or die " ** Could not set permissions on ".
         "$mfile to 0644";
     chown 0, 0, $mfile or
         die " ** Could not chown 0,0,$mfile: $!";
     print localtime() . " .. Compressing man page: $mfile\n";
+    ### remove the old one so gzip doesn't prompt us
+    unlink "${mfile}.gz" if -e "${mfile}.gz";
     system "$gzipCmd $mfile";
     return;
 }
