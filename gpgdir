@@ -8,7 +8,7 @@
 #
 # Author: Michael B. Rash (mbr@ciphedyne.com)
 #
-# Version: 0.8
+# Version: 0.9
 #
 # License (GNU General Public License):
 #
@@ -37,7 +37,7 @@ use Cwd;
 use strict;
 
 #==================== config =======================
-my $version = '0.8';
+my $version = '0.9';
 
 ### system binaries
 my $gunzipCmd = '/bin/gunzip';

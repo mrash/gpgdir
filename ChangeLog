@@ -1,4 +1,4 @@
-gpgdir-0.9 (08//2004):
+gpgdir-0.9 (09/12/2004):
     - Added --gnupg-dir option to allow a user to specify a different
       user's .gnupg directory for encryption keys.
     - Switched to "[+]" (and related) message prefixes.
