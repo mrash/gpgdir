@@ -36,7 +36,7 @@ use Cwd;
 use strict;
 
 #==================== config =======================
-my $version = '0.1';
+my $version = '0.2';
 
 ### system binaries
 my $gunzipCmd = '/usr/bin/gunzip';
