@@ -1,0 +1,179 @@
+2001-05-23  Francis J. Lacoste  <francis.lacoste@Contre.COM>
+
+	* GnuPG.pm (run_gnupg): Use package name for the constant.
+
+2001-05-21  Francis J. Lacoste  <francis.lacoste@Contre.COM>
+
+	* GnuPG.pm (sign): Check for invalid passphrase. (Thanks 
+	to Park Hays for reporting this).
+
+	* GnuPG/Tie/Sign.pm (run_gnupg): Updates for new tie 
+	implementation.
+
+	* GnuPG/Tie/Encrypt.pm (run_gnupg): Updates for new tie 
+	implementation.
+
+	* GnuPG/Tie/Decrypt.pm (run_gnupg,postread_hook,postwrite_hook): 
+	Updates for new tie implementation.
+	(signature) Returns the signature info of the decryption.
+	
+	* GnuPG/Tie/ClearSign.pm (run_gnupg): Updates for new tie 
+	implementation.
+
+	* GnuPG/Tie.pm: Removed fork. Tie interface doesn't use another
+	process anymore.
+
+	* test.pl: Made tests to run and tracing controllable via
+	environment variables.
+
+	* GnuPG.pm (send_passphrase): Added check for USERID_HINT from
+	gnupg 1.0.5
+	(run_gnupg): Close all file descriptors except stdin, stdout,
+	stderr and status fd.
+	(decrypt,decrypt_postread,decrypt_postwrite): Factored decrypt
+	process for tie interface.
+	(VERSION): Updated version number to 0.08
+
+	* GnuPG/Tie/Sign.pm: New Sign tie mode.
+
+	* GnuPG/Tie/ClearSign.pm: New ClearSign tie mode.
+
+	* GnuPG/Tie.pm (POD): Fix untie example in documentation.
+
+2000-08-15  Francis J. Lacoste  <francis.lacoste@iNsu.COM>
+
+	* Tag: GNUPG_0_07
+
+	* GnuPG.spec: Updated for version 0.07.
+
+	* NEWS: Updated for version 0.07.
+
+	* README: Updated for version 0.07.
+
+	* GnuPG.pm (VERSION): Updated version number to 0.07.
+	(run_gnupg): Close the fh ref not its file descriptor.
+
+	* test.pl: Added tests for encryption and decryption
+	to a file reference / pipe.
+
+2000-08-07  Francis J. Lacoste  <francis.lacoste@iNsu.COM>
+
+	* Tag: GNUPG_0_06
+
+	* GnuPG.spec: Updated spec file to use new macros.
+
+	* GnuPG.pm (encrypt): Local user option wasn't working. (Thanks to
+	Chris Andrews for the fix)
+	(sign): Local user option wasn't working.
+	(version):  Version number is now 0.06
+
+2000-07-31  Francis J. Lacoste  <francis.lacoste@iNsu.COM>
+
+	* test.pl: Fixes description for decrypt_sign_test.
+
+	* GnuPG.pm: Updated copyrigh notice.
+	(check_sig): Ignore patent warnings. Thanks goes to 
+	Nuutti Kotivuori <nuutti.kotivuori@sonera.com> for spotting
+	that bug.
+	(decrypt): Fixes for gnupg 1.02 protocol changes.
+	(import_keys): Fixes for gnupg 1.02 protocol changes.
+
+	* README: Updated copyrigh notice.
+
+	* gpgmailtunl: Updated copyrigh notice.
+
+	* GnuPG/Tie.pm: Updated copyrigh notice.
+
+	* GnuPG/Tie/Decrypt.pm: Updated copyrigh notice.
+
+	* GnuPG/Tie/Encrypt.pm: Updated copyrigh notice.
+
+2000-06-21  Francis J. Lacoste  <francis.lacoste@iNsu.COM>
+
+
+	* Tag: GNUPG_0_05
+
+	* GnuPG/Tie.pm (TIEHANDLE): Removed file descriptor leaks.
+	(READLINE) Handle array context properly. 
+	(getlines) Support paragraph mode.
+	(CLOSE) Return true when process completes successfully.
+	
+	* test.pl: Added test for GnuPG::Tie paragraph mode.
+
+	* GnuPG.pm: (version) Updated to version 0.05
+	(run_gnupg) Removed file descriptor leaks. Use CORE::die
+	in case of errors.
+	(read_from_status) Make sure that we are using newlin as
+	INPUT_RECORD_SEPARATOR.
+
+1999-12-06  Francis J. Lacoste  <francis.lacoste@iNsu.COM>
+
+	* Tag: GNUPG_0_04
+
+	* NEWS:		    Added a news file.
+
+	* GnuPG/Tie.pm(new): Make sure that pipes aren't closed after an
+			    exec and that they are unbuffered. Also use
+			    CORE::Exit(0) instead of exit(0) so that the  
+			    things works under mod_perl.
+			    (version): Upgraded to version 0.04.
+
+	* GnuPG.pm (new):   Specifying gnupg_path wasn't working properly.
+			    When gpg isn't found in PATH print the content
+			    of PATH in the error message.
+			    (run_gnupg): /dev/null wasn't open for
+			    writing. Use CORE::exit(1) so that the
+			    function still works under mod_perl.
+
+1999-11-30  Francis J. Lacoste  <francis.lacoste@iNsu.COM>
+
+	* GnuPG.pm (pod):   Inserted a line before a =over line. Added 
+			    reference to documentation on tied file handle
+			    operations. 
+			    (send_cpr): Removed undefined
+			    warning when expecting an optional command and
+			    receiving an EOF.
+			    (run_gnupg): Check for valid file descriptor
+			    when using file handle reference in input and
+			    output redirection.
+			    (version): Updated to version 0.03
+
+	* test.pl:	    Added tests for tied file handle operations.
+			    Changed output format of tests.
+
+	* GnuPG/Tie/Decrypt.pm: Added encryption on a tied filehandle.
+
+	* GnuPG/Tie/Encrypt.pm: Added decryption on a tied filehandle.
+
+	* GnuPG/Tie.pm:	    Added abstract implementation for tied
+			    filehandle operations on GnuPG.
+
+1999-09-22  Francis J. Lacoste  <francis.lacoste@iNsu.COM>
+
+	* GnuPG.pm:	    Unloop single line for to support
+			    perl 5.004. (Thanks to David E. Weekly)
+
+	* gpgmailtunl:	    Insert blank line between =pod and
+			    first header. This broke pod2man.
+			    (Thanks to David E. Weekly)
+	
+1999-09-08  Francis J. Lacoste  <francis.lacoste@iNsu.COM>
+
+	* TAG:		    GNUPG_0_02
+	
+	* GnuPG.pm:	    Removed colons from tag names.
+
+	* GnuPG.pm(run_gnupg): Handled input and output from
+			    file handle correctly.
+
+	* GnuPG.pm(abort_gnupg): Aborting now correctly throws
+			    the error message.
+			
+
+	* gpgmailtunl:	    Added as sample program.
+
+1999-09-05  Francis J. Lacoste  <francis.lacoste@iNsu.COM>
+
+	* GnuPG.pm:  Release 0.01.
+
+

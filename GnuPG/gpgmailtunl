@@ -1,0 +1,264 @@
+#!/usr/bin/perl
+#
+#    gpgmailtunl - Program that sends encrypted email.
+#
+#    This file is part of GnuPG.pm.
+#
+#    Author: Francis J. Lacoste <francis.lacoste@iNsu.COM>
+#
+#    Copyright (C) 1999, 2000 iNsu Innovations Inc.
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+
+use strict;
+
+use GnuPG;
+use Getopt::Long;
+
+sub usage() {
+    die <<EOF;
+usage: gpgmailtunl [ options ] --encrypt        or
+       gpgmailtunl [ options ] --decrypt
+EOF
+  exit(64);
+}
+
+sub bounce(@) {
+    print STDERR "gpgmailtunl: ", @_, "\n";
+    exit( 64 );
+};
+
+sub read_secret($) {
+    open SECRET, shift
+      or bounce( "error opening secret file for reading: $!" );
+    my $secret = <SECRET>;
+    close SECRET;
+    chomp $secret;
+
+    return $secret;
+}
+
+sub encrypt($\%) {
+    my ( $gpg, $opts ) = @_;
+
+    my $from = $opts->{from};
+    $opts->{subject}	||= "Encrypted mail";
+    $opts->{recipient}	||= $opts->{to};
+    my $cmd = "/usr/sbin/sendmail -oi -t";
+    $cmd .= " -F\"$from\"" if $from;
+    open( SENDMAIL, "|". $cmd )
+      or bounce( "error opening pipe to sendmail: $!" );
+    select SENDMAIL; $| = 1;
+    print SENDMAIL "From: $from\n" if $from;
+    print SENDMAIL <<EOF;
+To:	    $opts->{to}
+Subject:    $opts->{subject}
+
+
+EOF
+    eval {
+	$gpg->encrypt( output => \*SENDMAIL, armor => 1,
+		       sign		=> $opts->{sign}, 
+		       passphrase	=> $opts->{passphrase},
+		       recipient	=> $opts->{recipient},
+		       "local-user"	=> $opts->{"local-user"},
+		     );
+    };
+    bounce ( $@ ) if $@;
+    close SENDMAIL
+      or bounce( "error while waiting for sendmail: $!" );
+    exit 0;
+};
+
+sub decrypt($\%) {
+    my ( $gpg, $opts ) = @_;
+
+    open( SENDMAIL, "|/usr/sbin/sendmail -oi -t" )
+      or bounce( "error opening pipe to sendmail: $!" );
+    select SENDMAIL; $| = 1;
+    eval {
+	$gpg->decrypt( output => \*SENDMAIL,
+		       passphrase => $opts->{passphrase},
+		     );
+    };
+    bounce ( $@ ) if $@;
+    close SENDMAIL
+      or bounce( "error while waiting for sendmail: $!" );
+    exit 0;
+}
+
+my %opt = ();
+
+GetOptions( \%opt, "encrypt", "decrypt", "sign", "secret-file=s",
+	    "from=s", "to=s", "subject=s", "homedir=s", "local-user=s",
+	    "recipient=s",
+	  )
+  or usage;
+
+bounce( "can't use encrypt and decrypt at the same time" )
+  if $opt{encrypt} and $opt{decrypt};
+
+if ( $opt{decrypt} ) {
+    map { bounce( "conflicting options with encrypt: $_" )
+	    if $opt{$_} } qw( to from subject sign recipient local-user );
+} elsif ( $opt{encrypt} ) {
+    bounce( "missing to option" ) unless  $opt{to};
+} else {
+    bounce( "missing encrypt or decrypt" );
+}
+
+$opt{passphrase} = read_secret( $opt{"secret-file"})
+  if $opt{"secret-file"};
+
+my $gpg = new GnuPG( homedir => $opt{homedir} );
+
+if ($opt{encrypt}) {
+    encrypt $gpg, %opt;
+} else {
+    decrypt $gpg, %opt;
+}
+
+__END__
+
+=pod
+
+=head1 NAME
+
+gpgmailtunl - Encrypts an email message into the body of another email.
+
+=head1 SYNOPSIS
+
+gpgmailtunl [options] --encrypt | --decrypt
+
+=head1 DESCRIPTION
+
+B<gpgmailtunl> is a filter program that either encrypts an email message
+using the Gnu Privacy Guard and sends it to another recipient or decrypt
+an email message and forwards unencrypted to another destination.
+
+It can be used to exchange emails across an open network betweeen two
+trusted systems.
+
+=head1 TYPICAL USAGE
+
+This program is intended to run from program like B<procmail> or
+B<sendmail> to create an email tunnel between two systems.  Of course
+this is not as secure as using B<gpg> as an end user program, it may
+be convenient in certain case.
+
+=head1 ENCRYPTION
+
+To encapsulates an email within another you pipe the message to 
+B<gpgmailtunl>.
+
+=head2 OPTIONS
+
+GetOptions( \%opt, "encrypt", "decrypt", "sign", "secret-file=s",
+	    "from=s", "to=s", "subject=s", "homedir=s", "local-user=s",
+	    "recipient=s",
+	  )
+  or usage;
+
+=over
+
+=item to
+
+This is the address to which the encrypted message will be sent. This
+is the only required fields. 
+
+=item recipient
+
+This sets the keyid that will be used to encrypt the outgoing message.
+If unset, B<gpgmailtunl> will try to find a key matching the B<to> 
+option.
+
+=item subject
+
+Sets the subject of the outgoing message. This defaults to 
+"Encrypted mail".
+
+=item from
+
+Sets the From header line of the outgoing message which will contains
+the encrypted one. B<sendmail> will provides a default one if this is
+not set.
+
+=item sign
+
+If this option is used, the outgoing message will be signed. In this
+case you should probably use to B<local-user> and B<secret-file>
+options.
+
+=item secret-file
+
+File from which the secret to unlock the private used to sign the
+message can be read.
+
+=item local-user
+
+The keyid of the user that should sign the outgoing message. The 
+default user will be used if not specified.
+
+=item homedir
+
+Sets an alternate B<gpg> home directory. (This is where the
+keyrings are stored.)
+
+=back
+
+=head1 DECRYPTION
+
+To extract an email to be forwarded to the final user you pipe
+the encrypted email to B<gpgmailtunl> using the B<decrypt> switch.
+
+Once decrypted, the encapsulated email message will be sent to the
+original destinator of the message.
+
+=head2 OPTIONS
+
+=over
+
+=item homedir
+
+Sets an alternate B<gpg> home directory. (This is where the
+keyrings are stored.)
+
+=item secret-file
+
+File from which the secret to unlock the private used to decrypt the
+message can be read.
+
+=back
+
+=head1 AUTHOR
+
+Francis J. Lacoste <francis.lacoste@iNsu.COM>
+
+=head1 COPYRIGHT
+
+Copyright (c) 1999, 2000 iNsu Innovations Inc.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+=head1 SEE ALSO
+
+gpg(1) gpgmailtunl(1) GnuPG(3)
+
+=cut
+

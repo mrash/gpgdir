@@ -1,0 +1,50 @@
+----------------------------------
+Noteworthy changes in version 0.09 (2001-06-08)
+----------------------------------
+
+	* Fix  POSIX::_SC_OPEN_MAX problem under use strict.
+
+----------------------------------
+Noteworthy changes in version 0.08 (2001-05-21)
+----------------------------------
+
+	* Updated for gnupg 1.0.5
+	* Tie implementation doesn't add an extra fork. Only one 
+	fork for the gpg process is done.
+	* Added ClearSign and Sign tie interface.
+
+----------------------------------
+Noteworthy changes in version 0.07 (2000-08-15)
+----------------------------------
+
+	* Output to a file handle reference was broken.
+
+----------------------------------
+Noteworthy changes in version 0.06 (2000-08-06)
+----------------------------------
+
+	* Local-user wasn't working. Thanks to Chris Andrews for
+	  reporting and fixing this.
+	* Compatible with gpg 1.02.
+	* Ignore warning about RSA or IDEA algorithms.
+
+Noteworthy changes in version 0.05 (2000-06-21)
+-----------------------------------
+
+	* Support for paragraph mode in tied interface. 
+	* Removed file descriptor leaks.
+	* Made CPR interface more robust.
+
+Noteworthy changes in version 0.04 (1999-12-06)
+-----------------------------------
+
+	* Small bugfixes related to running under mod_perl.
+
+
+Noteworthy changes in version 0.03 (1999-11-30)
+-----------------------------------
+
+	* New tied file handle interface for encryption and decryption. 
+
+	* Small bugfixes.
+
