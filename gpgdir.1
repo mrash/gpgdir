@@ -49,12 +49,14 @@ that is being encrypted or decrypted.
 .TP
 
 .BR \-c ", " \-\^\-compress
-Instruct gpgdir to not compress files (using gzip) when encrypting a
-directory.
+Instruct gpgdir to compress files (using gzip) when encrypting a
+directory.  This is not usually needed since
+.B gpg
+normally compresses files automatically.
 .TP
 
 .BR \-u ", " \-\^\-uncompress
-Instruct gpgdir to not uncompress files (using gunzip) when decrypting
+Instruct gpgdir to uncompress files (using gunzip) when decrypting
 a directory.
 .TP
 
