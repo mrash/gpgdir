@@ -1,0 +1,169 @@
+#!/usr/bin/perl -w
+
+use File::Find;
+use Term::ReadKey;
+use GnuPG;
+use Getopt::Long;
+use Cwd;
+use strict;
+
+#==================== config =======================
+my $gpg_homedir  = '/home/mbr/.gnupg';
+my $encrypt_user = 'A742839F';  ### mbr 2048 bit key
+#================== end config =====================
+
+my $dir;
+my @subdirs;
+my $pw;
+my $encrypt;
+my $encrypt_dir;
+my $decrypt_dir;
+my $total_encrypted = 0;
+my $total_decrypted = 0;
+my $norecurse       = 0;
+my $help;
+
+open STDERR, ">&STDOUT" || die ' ... @@@ Could not dup STDERR to STDOUT';
+
+&usage_and_exit() unless(GetOptions (
+    'encrypt=s' => \$encrypt_dir,  ### encrypt files in this directory
+    'decrypt=s' => \$decrypt_dir,  ### decrypt files in this directory
+    'norecurse' => \$norecurse,    ### don't encrypt/decrypt files in subdirectories
+    'help'      => \$help
+));
+
+if ($decrypt_dir && $encrypt_dir) {
+    die " ... @@@ You cannot encrypt and decrypt the same directory.\n";
+    &usage_and_exit();
+}
+
+unless ($decrypt_dir || $encrypt_dir) {
+    print " ... @@@ Please specify a directory to encrypt or decrypt.\n";
+    &usage_and_exit();
+}
+
+&usage_and_exit() if $help;
+
+my $gpg = new GnuPG(homedir=>$gpg_homedir);
+
+die " ... @@@ Could not create new gpg object with homedir: $gpg_homedir" unless $gpg;
+
+if ($encrypt_dir) {
+    $dir = $encrypt_dir;
+    $dir =~ s|/$||;  ### remove any trailing slash
+    $encrypt = 1;
+} elsif ($decrypt_dir) {
+    ### get the password without echoing the chars back to the screen
+    $dir = $decrypt_dir;
+    $dir =~ s|/$||;  ### remove any trailing slash
+    ReadMode 'noecho';
+    while (! $pw) {
+        print localtime() . " ... Enter a password to decrypt $dir: ";
+        $pw = ReadLine 0;
+        chomp $pw;
+    }
+    ReadMode 'normal';
+    print "\n";
+    $encrypt = 0;
+}
+
+my $initial_dir = cwd;
+
+if ($dir !~ m|^/|) {
+    $dir = $initial_dir . '/' . $dir;
+}
+
+unless ($norecurse) {
+    ### find all subdirectories of $dir
+    find(\&find_subdirs, $dir);
+    for my $subdir (@subdirs) {
+        ### perform the encrypt/decrypt operation on the directory
+        &gpg_operation($subdir);
+    }
+} else {
+    ### perform the encrypt/decrypt operation on the directory
+    &gpg_operation($dir);
+}
+
+if ($encrypt) {
+    print localtime() . " ... Total number of files encrypted: $total_encrypted\n";
+} else {
+    print localtime() . " ... Total number of files decrypted: $total_decrypted\n";
+}
+print localtime() . " ... Finished.\n";
+
+exit 0;
+#==================== end main =====================
+sub gpg_operation() {
+    my $dir = shift;
+    die " ... Directory: $dir does not exist.\n" unless -d $dir;
+
+    if ($dir =~ m|\.gnupg|) {  ### don't encrypt any .gnupg directories
+        print localtime() . " ... @@@ Skipping directory: $dir\n";
+        return;
+    }
+    chdir $dir or die " ... @@@ Could not chdir: $dir\n";
+    opendir D, '.' or die "Could not open $dir";
+    my @files = readdir D;
+    closedir D;
+
+    shift @files; shift @files;
+
+    if ($encrypt) {
+        print localtime() . " ... Encrypting files in: $dir\n";
+    } else {
+        print localtime() . " ... Decrypting files in: $dir\n";
+    }
+    FILE: for my $file (@files) {
+        if ($encrypt) {
+            ### don't encrypt files that are already encrypted, and make sure they exist
+            if ($file !~ /\.gpg$/ && ! -d $file && -e $file) {
+                if ($file =~ m|^\.|) {  ### don't encrypt hidden files
+                    print localtime() . " ... @@@ Skipping hidden file: $file\n";
+                    next FILE;
+                }
+                print localtime() . " ... Encrypting $file -> ${file}.gpg\n";
+                $gpg->encrypt(plaintext=>$file, output=>"${file}.gpg",
+                              recipient=>$encrypt_user);
+                if (-e "${file}.gpg") {
+                    $total_encrypted++;
+                    ### only delete the original file if the encrypted one exists
+                    unlink $file;
+                } else {
+                    print localtime() . " ... @@@ Could not encrypt: $file\n";
+                }
+            }
+        } else {
+            if ($file =~ /\.gpg$/ && ! -d $file && -e $file) {
+                my ($filename) = ($file =~ /^(\S+)\.gpg/);
+                print localtime() . " ... Decrypting $file -> $filename\n";
+                $gpg->decrypt(ciphertext=>$file, output=>$filename,
+                              passphrase=>$pw);
+                if (-e $filename) {
+                    $total_decrypted++;
+                    ### only delete the original encrypted file if the decrypted one exists
+                    unlink $file;
+                } else {
+                    print localtime() . " ... @@@ Could not decrypt: $file\n";
+                }
+            }
+        }
+    }
+    chdir $initial_dir or die " ... @@@ Could not chdir: $initial_dir\n";
+    return;
+}
+
+sub find_subdirs() {
+    my $file = $File::Find::name;
+    if (-d $file) {
+        push @subdirs, $file;
+    }
+    return;
+}
+
+sub usage_and_exit() {
+    print "gpgdir usage:\n";
+    print "         --encrypt <directory>\n";
+    print "         --decrypt <directory>\n";
+    exit 0;
+}
