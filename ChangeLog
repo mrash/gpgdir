@@ -1,3 +1,9 @@
+gpgdir-0.8 (05/29/2004):
+    - Added --Exclude and --Exclude-from options to allow files to be
+      excluded based on regex matches.
+    - Reworked error messages so they contain the filename associated
+      with each error.
+
 gpgdir-0.4 (04/23/2004):
     - Added --pw-file option so that a decryption password can be
       read out of a file.

@@ -8,7 +8,7 @@
 #
 # Author: Michael B. Rash (mbr@ciphedyne.com)
 #
-# Version: 0.4
+# Version: 0.8
 #
 # License (GNU General Public License):
 #
@@ -37,7 +37,7 @@ use Cwd;
 use strict;
 
 #==================== config =======================
-my $version = '0.4';
+my $version = '0.8';
 
 ### system binaries
 my $gunzipCmd = '/bin/gunzip';
@@ -259,8 +259,8 @@ sub gpg_operation() {
         next FILE unless $file =~ /\S/ && -e $file;
         if (@exclude_patterns) {
             for my $pat (@exclude_patterns) {
-                if ($file =~ /$pat/) {
-                    $errs{'exclude'}{$file} = '';
+                if ("$dir/$file" =~ m|$pat|) {
+                    $errs{'exclude'}{$file} = $pat;
                     next FILE;
                 }
             }
@@ -269,7 +269,7 @@ sub gpg_operation() {
             $errs{'link'}{$file} = '';
             next FILE;
         } elsif (-d $file) {
-            $errs{'directory'}{$file} = '';
+#            $errs{'directory'}{$file} = '';
             next FILE;
         } elsif (-s $file == 0) {
             $errs{'zero'}{$file} = '';
@@ -344,7 +344,12 @@ sub gpg_operation() {
         print " .. Errors/Warnings:\n";
         for my $problem (keys %errs) {
             for my $file (keys %{$errs{$problem}}) {
-                print " ** Error: \"$err_msgs{$problem}\": $file\n";
+                if ($problem eq 'exclude') {
+                    my $pat = $errs{$problem}{$file};
+                    print " ** Error: \"$err_msgs{$problem}: $pat\": $file\n";
+                } else {
+                    print " ** Error: \"$err_msgs{$problem}\": $file\n";
+                }
             }
         }
     }
@@ -466,16 +471,19 @@ gpgdir
 Usage: gpgdir [-e <directory>] [-d <directory>] [-c] [-u] [-n] [-p] [-v] [-h]
 
 Options:
-   -e, --encrypt <directory>  - Encrypt <directory> and all of its
-                                subdirectories.
-   -d, --decrypt <directory>  - Decrypt <directory> and all of its
-                                subdirectories.
-   -c, --compress             - Compress files when running in --encrypt mode.
-   -u, --uncompress           - Uncompress files when running in --decrypt mode.
-   -n, --no-recurse           - Don't recursively encrypt/decrypt subdirectories.
-   -p, --pw-file <file>       - Read password in from <file>.
-   -v, --version              - print version.
-   -h, --help                 - print help.
+    -e, --encrypt <directory>  - Encrypt <directory> and all of its
+                                 subdirectories.
+    -d, --decrypt <directory>  - Decrypt <directory> and all of its
+                                 subdirectories.
+    -n, --no-recurse           - Don't recursively encrypt/decrypt subdirectories.
+    --Exclude <pattern>        - Skip all filenames that match <pattern>.
+    --Exclude-from <file>      - Skip all filenames that match any pattern
+                                 contained within <file>.
+    -c, --compress             - Compress files when running in --encrypt mode.
+    -u, --uncompress           - Uncompress files when running in --decrypt mode.
+    -p, --pw-file <file>       - Read password in from <file>.
+    -v, --version              - print version.
+    -h, --help                 - print help.
 _HELP_
     exit 0;
 }

@@ -2,7 +2,7 @@ File:     gpgdir
 Author:   Michael Rash <mbr@cipherdyne.org>
 Download: http://www.cipherdyne.org/gpgdir
 License:  GNU General Public License
-Version:  0.4
+Version:  0.8
 
 gpgdir is a perl script that uses the CPAN GnuPG perl module to encrypt and
 decrypt directories using a gpg key specified in ~/.gpgdirrc.  gpgdir
@@ -25,6 +25,9 @@ Command line options:
                                 subdirectories.
    -d, --decrypt <directory>  - Decrypt <directory> and all of its
                                 subdirectories.
+   --Exclude <pattern>        - Skip all filenames that match <pattern>.
+   --Exclude-from <file>      - Skip all filenames that match any pattern
+                                contained within <file>.
    -c, --compress             - Compress files when running in --encrypt mode.
    -u, --uncompress           - Uncompress files when running in --decrypt mode.
    -n, --no-recurse           - Don't recursively encrypt/decrypt subdirectories.
