@@ -8,7 +8,7 @@
 #
 # Author: Michael B. Rash (mbr@ciphedyne.com)
 #
-# Version: 0.2
+# Version: 0.3
 #
 # License (GNU General Public License):
 #
@@ -27,6 +27,7 @@
 # $Id$
 #
 
+use lib '/usr/lib/gpgdir';
 use File::Find;
 use File::Copy;
 use Term::ReadKey;
@@ -36,7 +37,7 @@ use Cwd;
 use strict;
 
 #==================== config =======================
-my $version = '0.2';
+my $version = '0.3';
 
 ### system binaries
 my $gunzipCmd = '/usr/bin/gunzip';
@@ -61,6 +62,15 @@ my $printver        = 0;
 my $no_delete       = 0;
 my $help;
 
+my %Cmds = (
+    'gzip'   => $gzipCmd,
+    'gunzip' => $gunzipCmd,
+);
+
+### make sure we can find the system binaries
+### in the expected locations.
+&check_commands();
+
 open STDERR, ">&STDOUT" || die ' ** Could not dup STDERR to STDOUT';
 
 unless ($< == $>) {
@@ -68,15 +78,6 @@ unless ($< == $>) {
     print "    gpgdir has not been installed as a SUID binary.\n";
     die "Exiting.\n";
 }
-
-die " ** gzip is not located at: $gzipCmd.  Edit " .
-    "the gpgdir config section." unless -e $gzipCmd;
-die " ** $gzipCmd is not executable.  Use chmod to " .
-    "make it executable." unless -x $gzipCmd;
-die " ** gunzip is not located at: $gunzipCmd.  Edit " .
-    "the gpgdir config section." unless -e $gunzipCmd;
-die " ** $gunzipCmd is not executable.  Use chmod to " .
-    "make it executable." unless -x $gunzipCmd;
 
 ### get the path to the .gnupg directory in the user's home directory
 my $homedir = &get_homedir();
@@ -234,7 +235,7 @@ sub gpg_operation() {
                 if ($compress) {
                     unless ($file =~ m|\.gz$|) {
                         print " .. Compressing:  $file\n";
-                        system "$gzipCmd $file";
+                        system "$Cmds{'gzip'} $file";
                         if (-e "${file}.gz") {
                             $compressed = 1;
                             $file = "${file}.gz";
@@ -278,7 +279,7 @@ sub gpg_operation() {
                     if ($uncompress && $filename =~ /(\S+)\.gz/) {
                         my $ufile = $1;
                         print " .. Uncompressing:  $filename\n";
-                        system "$gunzipCmd $filename";
+                        system "$Cmds{'gunzip'} $filename";
                         unless (-e $ufile) {
                             $errs{'bad_gunzip'}{'ctr'}++;
                             $errs{'bad_gunzip'}{'msg'} = 'failed gunzip';
@@ -371,6 +372,40 @@ sub find_subdirs() {
     my $file = $File::Find::name;
     if (-d $file && -e $file) {
         push @subdirs, $file;
+    }
+    return;
+}
+
+### check paths to commands and attempt to correct if any are wrong.
+sub check_commands() {
+    my @path = qw(
+        /bin
+        /sbin
+        /usr/bin
+        /usr/sbin
+        /usr/local/bin
+        /usr/local/sbin
+    );
+    CMD: for my $cmd (keys %Cmds) {
+        unless (-x $Cmds{$cmd}) {
+            my $found = 0;
+            PATH: for my $dir (@path) {
+                if (-x "${dir}/${cmd}") {
+                    $Cmds{$cmd} = "${dir}/${cmd}";
+                    $found = 1;
+                    last PATH;
+                }
+            }
+            unless ($found) {
+                die "\n ** Could not find $cmd anywhere!!!  ",
+                    "Please edit the config section to include the path to ",
+                    "$cmd.\n";
+            }
+        }
+        unless (-x $Cmds{$cmd}) {
+            die "\n ** $cmd is located at ",
+                "$Cmds{$cmd} but is not executable by uid: $<\n";
+        }
     }
     return;
 }
