@@ -95,7 +95,8 @@ unless ($decrypt_dir || $encrypt_dir) {
 
 my $gpg = new GnuPG(homedir=>$gpg_homedir);
 
-die " ... @@@ Could not create new gpg object with homedir: $gpg_homedir" unless $gpg;
+die " ... @@@ Could not create new gpg object with " .
+    "homedir: $gpg_homedir" unless $gpg;
 
 if ($encrypt_dir) {
     $dir = $encrypt_dir;
@@ -135,9 +136,11 @@ unless ($norecurse) {
 }
 
 if ($encrypt) {
-    print localtime() . " ... Total number of files encrypted: $total_encrypted\n";
+    print localtime() . " ... Total number of files encrypted: " .
+        "$total_encrypted\n";
 } else {
-    print localtime() . " ... Total number of files decrypted: $total_decrypted\n";
+    print localtime() . " ... Total number of files decrypted: " .
+        "$total_decrypted\n";
 }
 print localtime() . " ... Finished.\n";
 
@@ -148,7 +151,7 @@ sub gpg_operation() {
     my @errs;
     die " ... Directory: $dir does not exist.\n" unless -d $dir;
 
-    if ($dir =~ m|\.gnupg|) {  ### don't encrypt any .gnupg directories
+    if ($dir =~ m|\.gnupg|) {  ### don't encrypt any .gnupg directories!!!
         print localtime() . " ... @@@ Skipping directory: $dir\n";
         return;
     }
@@ -176,47 +179,53 @@ sub gpg_operation() {
             ### don't encrypt files that are already
             ### encrypted, and make sure they exist
             if (! -d $file && $file =~ /\.gpg$/) {
-                push @errs, localtime() . " ... @@@ Skipping encrypted file: $file\n";
+                push @errs, localtime() . " ... @@@ Skipping " .
+                    "encrypted file: $file\n";
             } elsif (-s $file == 0) {
-                push @errs, localtime() . " ... @@@ Skipping zero byte file: $file\n";
+                push @errs, localtime() . " ... @@@ Skipping " .
+                    "zero byte file: $file\n";
             ### NOTE: encrypted files cannot be modified, so go ahead and
             ### encrypt $file over any existing $file.gpg encrypted file.
-#            } elsif (-e "${file}.gpg") {
-#                push @errs, localtime() . " ... @@@ Skipping file: $file since " .
-#                    "$file.gpg already exists.\n";
             } elsif (! -d $file) {
                 if ($file =~ m|^\.|) {  ### don't encrypt hidden files
-                    push @errs, localtime() . " ... @@@ Skipping hidden file: $file\n";
+                    push @errs, localtime() . " ... @@@ Skipping " .
+                        "hidden file: $file\n";
                     next FILE;
                 }
                 print localtime() . " ... Encrypting " .
-                    sprintf("%${longest_filename}s", $file) .  " -> ${file}.gpg\n";
+                    sprintf("%${longest_filename}s", $file) .
+                        " -> ${file}.gpg\n";
                 $gpg->encrypt(plaintext=>$file, output=>"${file}.gpg",
                               recipient=>$encrypt_user);
                 if (-e "${file}.gpg" && -s "${file}.gpg" != 0) {
                     $total_encrypted++;
-                    ### only delete the original file if the encrypted one exists
+                    ### only delete the original file if
+                    ### the encrypted one exists
                     unlink $file;
                 } else {
-                    push @errs, localtime() . " ... @@@ Could not encrypt: $file\n";
+                    push @errs, localtime() . " ... @@@ Could not " .
+                        "encrypt: $file\n";
                 }
             }
         } else {
             my ($filename) = ($file =~ /^(\S+)\.gpg/);
             if ($file !~ /\.gpg$/) {
                 if (! -d $file) {
-                    push @errs, localtime() . " ... @@@ Skipping decrypted file: $file\n";
+                    push @errs, localtime() . " ... @@@ Skipping " .
+                        "decrypted file: $file\n";
                 }
             } elsif (-e $filename) {
                 push @errs, localtime() . " ... @@@ Skipping file: $file since " .
                     "the decrypted file: $filename already exists.\n";
             } elsif (-s $file == 0) {
-                push @errs, localtime() . " ... @@@ Skipping zero byte file: $file\n";
+                push @errs, localtime() . " ... @@@ Skipping zero byte " .
+                    "file: $file\n";
             } elsif (! -d $file) {
                 ### don't decrypt a file on top of a normal file of
                 ### the same name
                 print localtime() . " ... Decrypting " .
-                    sprintf("%${longest_filename}s", $file) .  " -> $filename\n";
+                    sprintf("%${longest_filename}s", $file) .
+                        " -> $filename\n";
                 $gpg->decrypt(ciphertext=>$file, output=>$filename,
                               passphrase=>$pw);
                 if (-e $filename && -s $filename != 0) {
@@ -225,7 +234,8 @@ sub gpg_operation() {
                     ### file if the decrypted one exists
                     unlink $file;
                 } else {
-                    push @errs, localtime() . " ... @@@ Could not decrypt: $file\n";
+                    push @errs, localtime() . " ... @@@ Could not " .
+                        "decrypt: $file\n";
                 }
             }
         }
@@ -243,7 +253,8 @@ sub gpg_operation() {
 
 sub get_homedir() {
     my $uid = $<;
-    open P, "< /etc/passwd" or die " ... @@@ Could not open /etc/passwd.  Exiting.\n";
+    open P, "< /etc/passwd" or die " ... @@@ Could not open /etc/passwd.  " .
+        "Exiting.\n";
     my @lines = <P>;
     close P;
     my $homedir = '';
@@ -257,7 +268,8 @@ sub get_homedir() {
     }
     die " ... @@@ Could not extract homedir from /etc/passwd for " .
         "uid: $uid.  Exiting.\n" unless $homedir;
-    die " ... @@@ homedir: $homedir does not exist.  Exiting.\n" unless -d $homedir;
+    die " ... @@@ homedir: $homedir does not exist.  " .
+        "Exiting.\n" unless -d $homedir;
     return $homedir;
 }
 
@@ -301,7 +313,7 @@ sub get_key() {
 
 sub find_subdirs() {
     my $file = $File::Find::name;
-    if (-d $file) {
+    if (-d $file && -e $file) {
         push @subdirs, $file;
     }
     return;
@@ -309,7 +321,8 @@ sub find_subdirs() {
 
 sub usage_and_exit() {
     print "gpgdir usage:\n";
-    print "         --encrypt <directory>\n";
-    print "         --decrypt <directory>\n";
+    print "   --encrypt <directory>\n";
+    print "   --decrypt <directory>\n";
+    print "   --norecurse         - Don't encrypt/decrypt subdirectories\n";
     exit 0;
 }
