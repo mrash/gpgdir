@@ -48,7 +48,7 @@ exit 0;
 
 sub install_gpgdir() {
     die " ** gpgdir does not exist.  Download gpgdir from " .
-        "http://www.cipherdyne.com/gpgdir" unless -e $gpgdir;
+        "http://www.cipherdyne.com/gpgdir" unless -e 'gpgdir';
     copy 'gpgdir', "${install_dir}/gpgdir" or die " ** Could not copy " .
         "gpgdir to $install_dir: $!";
     chmod "${install_dir}/gpgdir", 0755 or die " ** Could not set " .
@@ -105,7 +105,7 @@ sub install_manpage() {
     }
     mkdir $mpath, 0755 unless -d $mpath;
     my $mfile = "${mpath}/${manpage}";
-    print localtime() . " .. Installing $manpage man page as: $mfile\n");
+    print localtime() . " .. Installing $manpage man page as: $mfile\n";
     copy $manpage, $mfile or die " ** Could not copy $manpage to " .
         "$mfile: $!";
     chmod $mfile, 0644 or die " ** Could not set permissions on ".
