@@ -1,5 +1,12 @@
+gpgdir-0.4 (04/23/2004):
+    - Added --pw-file option so that a decryption password can be
+      read out of a file.
+    - Better directory validation (filesystem -e and -d checks).
+    - Added INSTALL file.
+    - Updated man page and README file.
+
 gpgdir-0.3 (09/27/2003):
-    -Bundled perl modules GnuPG and TermReadKey with gpgdir.
-    -Modified install.pl and gpgdir to install and use GnuPG and
-     TermReadKey modules from the /usr/lib/gpgdir directory.
-    -Added check_commands() subroutine from psad.
+    - Bundled perl modules GnuPG and TermReadKey with gpgdir.
+    - Modified install.pl and gpgdir to install and use GnuPG and
+      TermReadKey modules from the /usr/lib/gpgdir directory.
+    - Added check_commands() subroutine from psad.
