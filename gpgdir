@@ -1,12 +1,28 @@
 #!/usr/bin/perl -w
 #
-####################################################
-#
-# Purpose:  To encrypt/decrypt whole directories
+###########################################################################
 #
 # File: gpgdir
 #
-####################################################
+# Purpose:  To encrypt/decrypt whole directories
+#
+# Author: Michael B. Rash <mbr@ciphedyne.com>
+#
+# Version: 0.1
+#
+# License (GNU Public License):
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
+#    USA
+#
+###########################################################################
 #
 # $Id$
 #
@@ -19,10 +35,13 @@ use Cwd;
 use strict;
 
 #==================== config =======================
-my $gpg_homedir  = '/home/mbr/.gnupg';
-my $encrypt_user = 'A742839F';  ### mbr 2048 bit key
+#my $gpg_homedir  = '/home/mbr/.gnupg';
+#my $encrypt_user = 'A742839F';  ### mbr 2048 bit key
 #================== end config =====================
 
+### establish some defaults
+my $encrypt_user;
+my $gpg_homedir;
 my $dir;
 my @subdirs;
 my $pw;
@@ -35,6 +54,25 @@ my $norecurse       = 0;
 my $help;
 
 open STDERR, ">&STDOUT" || die ' ... @@@ Could not dup STDERR to STDOUT';
+
+unless ($< == $>) {
+    print " ... @@@ Real and effective uid must be the same.  Make sure\n";
+    print "         gpgdir has not been installed as a SUID binary.\n";
+    die "Exiting.\n";
+}
+
+### get the path to the .gnupg directory in the user's home directory
+my $homedir = &get_homedir();
+if (-d "${homedir}/.gnupg") {
+    $gpg_homedir = "${homedir}/.gnupg";
+} else {
+    print " ... @@@ GPG directory: ${homedir}/.gnupg does not exist.  Please\n";
+    print "         create it by executing: \"gpg --gen-key\".  Exiting.\n";
+    exit 1;
+}
+
+### get the key identifier from ~/.gnupg
+$encrypt_user = &get_key();
 
 &usage_and_exit() unless(GetOptions (
     'encrypt=s' => \$encrypt_dir,  ### encrypt files in this directory
@@ -193,13 +231,71 @@ sub gpg_operation() {
         }
     }
     if (@errs) {
-        print localtime() . " ... Errors:\n";
+        print localtime() . " ... Errors/Warnings:\n";
         ### print any errors
         for my $err (@errs) {
             print $err;
         }
     }
     chdir $initial_dir or die " ... @@@ Could not chdir: $initial_dir\n";
+    return;
+}
+
+sub get_homedir() {
+    my $uid = $<;
+    open P, "< /etc/passwd" or die " ... @@@ Could not open /etc/passwd.  Exiting.\n";
+    my @lines = <P>;
+    close P;
+    my $homedir = '';
+    for my $line (@lines) {
+        ### mbr:x:222:222:Michael Rash:/home/mbr:/bin/bash
+        chomp $line;
+        if ($line =~ /^(?:.*:){2}$uid:(?:.*:){2}(\S+):/) {
+            $homedir = $1;
+            last;
+        }
+    }
+    die " ... @@@ Could not extract homedir from /etc/passwd for " .
+        "uid: $uid.  Exiting.\n" unless $homedir;
+    die " ... @@@ homedir: $homedir does not exist.  Exiting.\n" unless -d $homedir;
+    return $homedir;
+}
+
+sub get_key() {
+    if (-e "${homedir}/.gpgdirrc") {
+        open F, "< ${homedir}/.gpgdirrc" or die " ... Could not open " .
+            "${homedir}/.gpgdirrc.  Exiting.\n";
+        my @lines = <F>;
+        close F;
+        my $key = '';
+        for my $line (@lines) {
+            chomp $line;
+            if ($line =~ /^use_key\s+(.*)$/) {
+                $key = $1;
+                last;
+            }
+        }
+        if ($key && $key =~ /\S/) {
+            return $key;
+        } else {
+            print " ... @@@ Please edit ${homedir}/.gpgdirrc to include " .
+                "your gpg key identifier.  Exiting.\n";
+            exit 1;
+        }
+    } else {
+        print " ... Creating gpgdir rc file: ${homedir}/.gpgdirrc\n";
+        open F, "> ${homedir}/.gpgdirrc" or die " ... Could not open " .
+            "${homedir}/.gpgdirrc.  Exiting.\n";
+        print F "# Config file for gpgdir.\n";
+        print F "# Set the key to use to encrypt files with\n";
+        print F "# \"use_key <key>\", e.g. \"use_key A742839F\".\n";
+        print F "# See \"gpg --list-keys\" for a list of keys.\n";
+        print F "\n";
+        close F;
+        print " ... @@@ Please edit ${homedir}/.gpgdirrc to include " .
+            "your gpg key identifier.  Exiting.\n";
+        exit 1;
+    }
     return;
 }
 
