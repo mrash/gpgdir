@@ -5,7 +5,7 @@
 .SH NAME
 .B gpgdir
 .SH SYNOPSIS
-.B gpgdir [-e <directory>] [-d <directory>] --no-recurse --no-compress
+.B gpgdir [-e <directory>] [-d <directory>] [-n] [-c] [-u] [-v] [-h]
 .SH DESCRIPTION
 .B gpgdir
 is a perl script that uses the CPAN GnuPG perl module to encrypt and decrypt
@@ -30,13 +30,28 @@ Encrypt the directory specified on the command line.
 Decrypt the directory specified on the command line.
 .TP
 
-.BR \-\^\-no-recurse
+.BR \-n ", " \-\^\-no-recurse
 Instruct gpgdir to not recurse through any subdirectories of the directory
 that is being encrypted or decrypted.
 .TP
 
-.BR \-\^\-no-compress
-Instruct gpgdir to not compress files 
+.BR \-c ", " \-\^\-compress
+Instruct gpgdir to not compress files (using gzip) when encrypting a
+directory.
+.TP
+
+.BR \-u ", " \-\^\-uncompress
+Instruct gpgdir to not uncompress files (using gunzip) when decrypting
+a directory.
+.TP
+
+.BR \-v ", " \-\^\-version
+Print version number and exit.
+.TP
+
+.BR \-h ", " \-\^\-help
+Print usage information and exit.
+.TP
 
 .SH FILES
 .B ~/.gpgdirrc
@@ -59,25 +74,25 @@ To decrypt a directory:
 
 To encrypt a directory and no subdirectories:
 
-.B $ gpgdir -e ~/testdir --no-recurse
+.B $ gpgdir -e /home/user/testdir --no-recurse
 
 .SH DEPENDENCIES
 .B gpgdir
-requires that both gpg (http://www.gnupg.org) and the GnuPG perl module
+requires that both gpg (http://www.gnupg.org) and the GnuPG CPAN perl module
 are installed.
 
 .SH "SEE ALSO"
 .BR gpg (1),
 
 .SH AUTHOR
-Michael B. Rash <mbr@cipherdyne.com>
+Michael B. Rash <mbr@cipherdyne.org>
 
 .SH BUGS
-Send bug reports to mbr@cipherdyne.com. Suggestions and/or comments are
+Send bug reports to mbr@cipherdyne.org. Suggestions and/or comments are
 always welcome as well.
 
 .SH DISTRIBUTION
 .B gpgdir
 is distributed under the GNU General Public License (GPL), and the latest
 version may be downloaded from
-.B http://www.cipherdyne.com
+.B http://www.cipherdyne.org
