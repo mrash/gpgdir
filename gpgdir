@@ -8,7 +8,7 @@
 #
 # Author: Michael B. Rash (mbr@ciphedyne.com)
 #
-# Version: 0.9
+# Version: 0.9.2
 #
 # License (GNU General Public License):
 #
@@ -36,40 +36,33 @@ use Getopt::Long;
 use Cwd;
 use strict;
 
-#==================== config =======================
-my $version = '0.9';
-
-### system binaries
-my $gunzipCmd = '/bin/gunzip';
-my $gzipCmd   = '/bin/gzip';
-#================== end config =====================
+### gpgdir version
+my $version = '0.9.2';
 
 ### establish some defaults
 my $encrypt_user;
 my $gpg_homedir;
 my $dir;
 my @subdirs;
-my $pw;
-my $encrypt;
-my $encrypt_dir;
-my $decrypt_dir;
+my $pw              = '';
+my $encrypt_dir     = '';
+my $decrypt_dir     = '';
+my $homedir         = '';
 my $exclude_pat     = '';
 my $exclude_file    = '';
 my $total_encrypted = 0;
 my $total_decrypted = 0;
 my $norecurse       = 0;
-my $compress        = 0;
-my $uncompress      = 0;
 my $printver        = 0;
 my $no_delete       = 0;
+my $no_fs_times     = 0;
+my $test_and_exit   = 0;
+my $skip_test_mode  = 0;
+my $verbose         = 0;
+my $help            = 0;
+my $encrypt         = 0;
 my $pw_file         = '';
 my @exclude_patterns = ();
-my $help;
-
-my %Cmds = (
-    'gzip'   => $gzipCmd,
-    'gunzip' => $gunzipCmd,
-);
 
 my %err_msgs = (
     'exclude'        => 'file matched exclude pattern',
@@ -78,18 +71,10 @@ my %err_msgs = (
     'zero'           => 'zero byte file',
     'hidden'         => 'hidden file',
     'encrypted'      => 'previously encrypted',
-    'bad_compress'   => 'failed compress',
     'bad_encrypt'    => 'failed encrypt',
     'decrypted'      => 'previously decrypted',
-    'bad_decompress' => 'failed decompress',
     'bad_decrypt'    => 'failed decrypt'
 );
-
-### make sure we can find the system binaries
-### in the expected locations.
-&check_commands();
-
-open STDERR, ">&STDOUT" || die '[*] Could not dup STDERR to STDOUT';
 
 unless ($< == $>) {
     die "[*] Real and effective uid must be the same.  Make sure\n",
@@ -97,37 +82,41 @@ unless ($< == $>) {
         "Exiting.\n";
 }
 
-### get the path to the .gnupg directory in the user's home directory
-my $homedir = &get_homedir();
-
-### get the key identifier from ~/.gnupg
-$encrypt_user = &get_key();
-
 ### make Getopts case sensitive
 Getopt::Long::Configure('no_ignore_case');
 
 &usage_and_exit() unless(GetOptions (
-    'encrypt=s'      => \$encrypt_dir,  # Encrypt files in this directory.
-    'decrypt=s'      => \$decrypt_dir,  # Decrypt files in this directory.
-    'gnupg-dir=s'    => \$gpg_homedir,  # Path to /path/to/.gnupg directory.
-    'Exclude=s'      => \$exclude_pat,  # Exclude a pattern from encrypt/decrypt
-                                        # cycle.
-    'Exclude-from=s' => \$exclude_file, # Exclude patterns in <file> from 
-                                        # encrypt decrypt cycle.
-    'compress'       => \$compress,     # Compress files (encrypt phase).
-    'uncompress'     => \$uncompress,   # Compress files (decrypt phase).
-    'no-recurse'     => \$norecurse,    # Don't encrypt/decrypt files in
-                                        # subdirectories.
-    'no-delete'      => \$no_delete,    # Don't delete files once they have
-                                        # been encrypted.
-    'pw-file=s'      => \$pw_file,      # Read password out of this file.
-    'version'        => \$printver,     # Print version
-    'help'           => \$help          # Print help
+    'encrypt=s'      => \$encrypt_dir,    # Encrypt files in this directory.
+    'decrypt=s'      => \$decrypt_dir,    # Decrypt files in this directory.
+    'gnupg-dir=s'    => \$gpg_homedir,    # Path to /path/to/.gnupg directory.
+    'pw-file=s'      => \$pw_file,        # Read password out of this file.
+    'Exclude=s'      => \$exclude_pat,    # Exclude a pattern from encrypt/decrypt
+                                          # cycle.
+    'Exclude-from=s' => \$exclude_file,   # Exclude patterns in <file> from 
+                                          # encrypt decrypt cycle.
+    'test-mode'      => \$test_and_exit,  # Run encrypt -> decrypt test only and
+                                          # exit.
+    'skip-test'      => \$skip_test_mode, # Skip encrypt -> decrypt test.
+    'no-recurse'     => \$norecurse,      # Don't encrypt/decrypt files in
+                                          # subdirectories.
+    'no-delete'      => \$no_delete,      # Don't delete files once they have
+                                          # been encrypted.
+    'user-homedir=s' => \$homedir,        # Path to home directory.
+    'no-preserve-times' => \$no_fs_times, # Don't preserve mtimes or atimes.
+    'verbose'        => \$verbose,        # Verbose mode.
+    'Version'        => \$printver,       # Print version
+    'help'           => \$help            # Print help
 ));
 &usage_and_exit() if $help;
 
 print "[+] gpgdir version: $version by Michael Rash " .
     "<mbr\@cipherdyne.org>\n" and exit 0 if $printver;
+
+### get the path to the user's home directory
+$homedir = &get_homedir() unless $homedir;
+
+### get the key identifier from ~/.gnupg
+$encrypt_user = &get_key();
 
 if ($gpg_homedir) {  ### it was specified on the command line with --gnupg-dir
     unless ($gpg_homedir =~ /\.gnupg$/) {
@@ -149,21 +138,12 @@ if ($decrypt_dir && $encrypt_dir) {
     &usage_and_exit();
 }
 
-unless ($decrypt_dir || $encrypt_dir) {
-    print "[*] Please specify a directory to encrypt or decrypt.\n";
+unless ($decrypt_dir || $encrypt_dir || $test_and_exit) {
+    print "[*] Please specify -e <dir>, -d <dir>, or --test-mode\n";
     &usage_and_exit();
 }
 
-if ($encrypt_dir && $uncompress) {
-    print "[*] The --uncompress option is only compatible with --decrypt.\n";
-    &usage_and_exit();
-}
-
-if ($decrypt_dir && $compress) {
-    print "[*] The --compress option is only compatible with --encrypt.\n";
-    &usage_and_exit();
-}
-
+### exlude file pattern
 push @exclude_patterns, $exclude_pat if $exclude_pat;
 
 if ($exclude_file) {
@@ -177,33 +157,20 @@ if ($exclude_file) {
     }
 }
 
-my $gpg = new GnuPG(homedir=>$gpg_homedir);
-
-die "[*] Could not create new gpg object with ",
-    "homedir: $gpg_homedir" unless $gpg;
-
 if ($encrypt_dir) {
     $dir = $encrypt_dir;
     $encrypt = 1;
 } elsif ($decrypt_dir) {
-    ### get the password without echoing the chars back to the screen
     $dir = $decrypt_dir;
-    if ($pw_file) {
-        open PW, "< $pw_file" or die "[*] Could not open $pw_file: $!";
-        $pw = <PW>;
-        close PW;
-        chomp $pw;
-    } else {
-        ReadMode 'noecho';
-        while (! $pw) {
-            print "[+] Enter password to decrypt directory $dir: ";
-            $pw = ReadLine 0;
-            chomp $pw;
-        }
-        ReadMode 'normal';
-        print "\n";
-    }
     $encrypt = 0;
+}
+
+&get_password unless $encrypt and $skip_test_mode;
+
+### run a test to make sure gpgdir and encrypt and decrypt a file
+unless ($skip_test_mode) {
+    my $rv = &test_mode();
+    exit $rv if $test_and_exit;
 }
 
 die "[*] Directory does not exist: $dir" unless -e $dir;
@@ -215,6 +182,11 @@ $dir =~ s|/$||;  ### remove any trailing slash
 if ($dir !~ m|^/|) {
     $dir = $initial_dir . '/' . $dir;
 }
+
+my $gpg = new GnuPG(homedir=>$gpg_homedir);
+
+die "[*] Could not create new gpg object with ",
+    "homedir: $gpg_homedir" unless $gpg;
 
 unless ($norecurse) {
     ### find all subdirectories of $dir
@@ -287,29 +259,24 @@ sub gpg_operation() {
             next FILE;
         }
         if ($encrypt) {
-            ### NOTE: encrypted files cannot be modified, so go ahead and
-            ### encrypt $file over any existing $file.gpg encrypted file.
             if ($file =~ /\.gpg$/) {
                 $errs{'encrypted'}{$file} = '';
             } else {
-                my $compressed = 0;
-                if ($compress) {
-                    unless ($file =~ m|\.gz$|) {
-                        print "[+] Compressing:  $file\n";
-                        system "$Cmds{'gzip'} $file";
-                        if (-e "${file}.gz") {
-                            $compressed = 1;
-                            $file = "${file}.gz";
-                        } else {
-                            $errs{'bad_compress'}{$file} = '';
-                            next FILE;
-                        }
-                    }
+                my $atime = '';
+                my $mtime = '';
+                unless ($no_fs_times) {
+                    ($atime, $mtime) = (stat($file))[8,9];
+                    die unless $atime and $mtime;
                 }
                 print "[+] Encrypting:  $file\n" .
                 $gpg->encrypt(plaintext=>$file, output=>"${file}.gpg",
                               recipient=>$encrypt_user);
                 if (-e "${file}.gpg" && -s "${file}.gpg" != 0) {
+                    ### set the atime and mtime to be the same as the
+                    ### original file.
+                    unless ($no_fs_times) {
+                        utime $atime, $mtime, "${file}.gpg";
+                    }
                     $total_encrypted++;
                     ### only delete the original file if
                     ### the encrypted one exists
@@ -324,24 +291,27 @@ sub gpg_operation() {
             if (-e $filename) {
                 $errs{'decrypted'}{$file} = '';
             } else {
+                my $atime = '';
+                my $mtime = '';
+                unless ($no_fs_times) {
+                    ($atime, $mtime) = (stat($file))[8,9];
+                    die unless $atime and $mtime;
+                }
                 ### don't decrypt a file on top of a normal file of
                 ### the same name
                 print "[+] Decrypting:  $file\n";
                 $gpg->decrypt(ciphertext=>$file, output=>$filename,
                               passphrase=>$pw);
                 if (-e $filename && -s $filename != 0) {
+                    ### set the atime and mtime to be the same as the
+                    ### original file.
+                    unless ($no_fs_times) {
+                        utime $atime, $mtime, $filename;
+                    }
                     ### only delete the original encrypted
                     ### file if the decrypted one exists
                     unlink $file;
                     $total_decrypted++;
-                    if ($uncompress && $filename =~ /(\S+)\.gz/) {
-                        my $ufile = $1;
-                        print "[+] Uncompressing:  $filename\n";
-                        system "$Cmds{'gunzip'} $filename";
-                        unless (-e $ufile) {
-                            $errs{'bad_gunzip'}{$file} = '';
-                        }
-                    }
                 } else {
                     $errs{'bad_decrypt'}{$file} = '';
                 }
@@ -368,23 +338,25 @@ sub gpg_operation() {
 
 sub get_homedir() {
     my $uid = $<;
-    open P, "< /etc/passwd" or die "[*] Could not open /etc/passwd.  ",
-        "Exiting.\n";
-    my @lines = <P>;
-    close P;
     my $homedir = '';
-    for my $line (@lines) {
-        ### mbr:x:222:222:Michael Rash:/home/mbr:/bin/bash
-        chomp $line;
-        if ($line =~ /^(?:.*:){2}$uid:(?:.*:){2}(\S+):/) {
-            $homedir = $1;
-            last;
+    if (-e '/etc/passwd') {
+        open P, '< /etc/passwd' or
+            die "[*] Could not open /etc/passwd. Exiting.\n";
+        my @lines = <P>;
+        close P;
+        for my $line (@lines) {
+            ### mbr:x:222:222:Michael Rash:/home/mbr:/bin/bash
+            chomp $line;
+            if ($line =~ /^(?:.*:){2}$uid:(?:.*:){2}(\S+):/) {
+                $homedir = $1;
+                last;
+            }
         }
+    } else {
+        $homedir = $ENV{'HOME'} if defined $ENV{'HOME'};
     }
-    die "[*] Could not extract homedir from /etc/passwd for ",
-        "uid: $uid.  Exiting.\n" unless $homedir;
-    die "[*] homedir: $homedir does not exist.  ",
-        "Exiting.\n" unless -d $homedir;
+    die "[*] Could not determine home directory. Use the -u <homedir> option."
+        unless $homedir;
     return $homedir;
 }
 
@@ -435,38 +407,86 @@ sub find_subdirs() {
     return;
 }
 
-### check paths to commands and attempt to correct if any are wrong.
-sub check_commands() {
-    my @path = qw(
-        /bin
-        /sbin
-        /usr/bin
-        /usr/sbin
-        /usr/local/bin
-        /usr/local/sbin
-    );
-    CMD: for my $cmd (keys %Cmds) {
-        unless (-x $Cmds{$cmd}) {
-            my $found = 0;
-            PATH: for my $dir (@path) {
-                if (-x "${dir}/${cmd}") {
-                    $Cmds{$cmd} = "${dir}/${cmd}";
-                    $found = 1;
-                    last PATH;
-                }
-            }
-            unless ($found) {
-                die "[*] Could not find $cmd anywhere!!!  ",
-                    "Please edit the config section to include the path to ",
-                    "$cmd.\n";
-            }
+sub get_password() {
+    if ($pw_file) {
+        open PW, "< $pw_file" or die "[*] Could not open $pw_file: $!";
+        $pw = <PW>;
+        close PW;
+        chomp $pw;
+    } else {
+        my $msg = '[+] Enter decryption password: ';
+        if ($test_and_exit) {
+            $msg = '[+] test_mode(): Enter decryption password: ';
+        } elsif ($encrypt) {
+            $msg = '[+] Enter decryption password (for initial test): ';
         }
-        unless (-x $Cmds{$cmd}) {
-            die "[*] $cmd is located at ",
-                "$Cmds{$cmd} but is not executable by uid: $<\n";
+        ### get the password without echoing the chars back to the screen
+        ReadMode 'noecho';
+        while (! $pw) {
+            print $msg;
+            $pw = ReadLine 0;
+            chomp $pw;
         }
+        ReadMode 'normal';
+        print "\n\n";
     }
     return;
+}
+
+sub test_mode() {
+    my $test_file = '/tmp/.gpgdir_test';
+    print "[+] test_mode(): Encrypt/Decrypt test of $test_file\n"
+        if $test_and_exit or $verbose;
+
+    if (-e $test_file) {
+        unlink $test_file or
+            die "[*] test_mode(): Could not remove $test_file: $!";
+    }
+    open G, "> $test_file" or
+        die "[*] test_mode(): Could not create $test_file: $!";
+    print G "gpgdir test\n";
+    close G;
+
+    if (-e $test_file) {
+        print "[+] test_mode(): Created $test_file\n"
+            if $test_and_exit or $verbose;
+    } else {
+        die "[*] test_mode(): Could not create $test_file\n";
+    }
+    my $gpg = new GnuPG(homedir=>$gpg_homedir);
+    die "[*] test_mode(): Could not create new gpg object with ",
+        "homedir: $gpg_homedir" unless $gpg;
+
+    $gpg->encrypt(plaintext=>$test_file, output=>"${test_file}.gpg",
+                  recipient=>$encrypt_user);
+    if (-e "$test_file.gpg") {
+        print "[+] test_mode(): Successful encrypt of $test_file\n"
+            if $test_and_exit or $verbose;
+    } else {
+        die "[*] test_mode(): not encrypt $test_file\n";
+    }
+    unlink $test_file if -e $test_file;
+    $gpg->decrypt(ciphertext=>"${test_file}.gpg", output=>$test_file,
+                  passphrase=>$pw);
+    if (-e $test_file) {
+        print "[+] test_mode(): Successful decrypt of $test_file\n"
+            if $test_and_exit or $verbose;
+    } else {
+        die "[*] test_mode(): Could not decrypt $test_file.gpg\n";
+    }
+    open F, "< $test_file" or
+        die "[*] test_mode(): Could not open $test_file: $!";
+    my $line = <F>;
+    close F;
+    chomp $line;
+    if ($line eq 'gpgdir test') {
+        print "[+] test_mode(): Decrypted content matches original.\n",
+            "[+] test_mode(): Success!\n\n"
+            if $test_and_exit or $verbose;
+    } else {
+        die "[*] test_mode(): Decrypted content does not match original. Fail!";
+    }
+    return 1;
 }
 
 sub usage_and_exit() {
@@ -474,8 +494,9 @@ sub usage_and_exit() {
 gpgdir
     version: $version, by Michael Rash (mbr\@cipherdyne.org)
 
-Usage: gpgdir [-e <directory>] [-d <directory>] [-g <directory>] [-c] [-u]
-              [-n] [-p] [-v] [-h]
+Usage: gpgdir [-e <directory>] [-d <directory>] [-g <directory>] [-p] [-s]
+              [--Exclude <pattern>] [--Exclude-from <file>] [--no-recurse]
+              [--no-delete] [--no-preserve-times] [-t] [-v] [-V] [-h]
 
 Options:
     -e, --encrypt <directory>   - Encrypt <directory> and all of its
@@ -485,17 +506,19 @@ Options:
     -g, --gnupg-dir <directory> - Specify a path to a .gnupg directory for
                                   gpg keys (the default is ~/.gnupg if this
                                   option is not used).
-    -n, --no-recurse            - Don't recursively encrypt/decrypt
-                                  subdirectories.
+    -p, --pw-file <file>        - Read password in from <file>.
+    -s, --skip-test             - Skip encrypt -> decrypt test.
+    -t, --test-mode             - Run in testing mode and exit.
     --Exclude <pattern>         - Skip all filenames that match <pattern>.
     --Exclude-from <file>       - Skip all filenames that match any pattern
                                   contained within <file>.
-    -c, --compress              - Compress files when running in --encrypt
-                                  mode.
-    -u, --uncompress            - Uncompress files when running in --decrypt
-                                  mode.
-    -p, --pw-file <file>        - Read password in from <file>.
-    -v, --version               - print version.
+    --no-recurse                - Don't recursively encrypt/decrypt
+                                  subdirectories.
+    --no-delete                 - Don't delete original unencrypted files.
+    --no-preserve-times         - Don't preserve original mtime and atime
+                                  values on encrypted/decrypted files.
+    -v, --verbose               - Run in verbose mode.
+    -V, --Version               - print version.
     -h, --help                  - print help.
 _HELP_
     exit 0;
