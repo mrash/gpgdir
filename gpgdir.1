@@ -9,7 +9,11 @@
 .I directory
 .B ] [-d
 .I directory
-.B ] [-n] [-c] [-u] [-p
+.B ] [-n] [-c] [-u] [--Exclude
+.I pattern
+.B ] [--Exclude-from
+.I file
+.B ] [-p
 .I pw-file
 .B ] [-v] [-h]
 .SH DESCRIPTION
@@ -46,6 +50,22 @@ Decrypt the directory specified on the command line.
 .BR \-n ", " \-\^\-no-recurse
 Instruct gpgdir to not recurse through any subdirectories of the directory
 that is being encrypted or decrypted.
+.TP
+
+.BR \-\^\-Exclude\ \<pattern>
+Instruct gpgdir to skip all files that match
+.B pattern
+as a regex match against each filename.  This is similar to the
+.B --exclude
+option in the standard GNU tar command.
+.TP
+
+.BR \-\^\-Exclude-from\ \<file>
+Instruct gpgdir to exclude all files matched by patterns listed in
+.B file.
+This is similar to the
+.B --exclude-from
+the GNU tar command.
 .TP
 
 .BR \-c ", " \-\^\-compress
@@ -93,6 +113,10 @@ To decrypt a directory:
 
 .B $ gpgdir -d ~/testdir
 
+To encrypt a directory but skip all filenames that contain the string "host":
+
+.B $ gpgdir -e ~/testdir --Exclude host
+
 To encrypt a directory and no subdirectories:
 
 .B $ gpgdir -e /home/user/testdir --no-recurse
@@ -100,6 +124,11 @@ To encrypt a directory and no subdirectories:
 .SH DEPENDENCIES
 .B gpgdir
 requires that gpg, the Gnu Privacy Guard (http://www.gnupg.org) is installed.
+.B gpgdir
+also requires the GnuPG perl module from CPAN, but it is bundled with
+.B gpgdir
+and is installed in /usr/lib/gpgdir at install-time so it does not pollute the
+system perl library tree.
 
 .SH "SEE ALSO"
 .BR gpg (1)
