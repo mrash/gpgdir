@@ -1,14 +1,14 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH GPGDIR 8 "September, 2002" Linux
+.TH GPGDIR 8 "February, 2003" Linux
 .SH NAME
 .B gpgdir
 .SH SYNOPSIS
-.B gpgdir [-e <directory] [-d <directory] --no-recurse --no-compress
+.B gpgdir [-e <directory>] [-d <directory>] --no-recurse --no-compress
 .SH DESCRIPTION
 .B gpgdir
-is a perl script that uses the CPAN GnuPG module to encrypt and decrypt
+is a perl script that uses the CPAN GnuPG perl module to encrypt and decrypt
 directories using a gpg key specified in ~/.gpgdirrc.  gpgdir recursively
 descends through a directory in order to make sure it encrypts or decrypts
 every file in a directory and all of its subdirectories.  In order to help
