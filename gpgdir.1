@@ -5,17 +5,30 @@
 .SH NAME
 .B gpgdir
 .SH SYNOPSIS
-.B gpgdir [-e <directory>] [-d <directory>] [-n] [-c] [-u] [-v] [-h]
+.B gpgdir [-e
+.I directory
+.B ] [-d
+.I directory
+.B ] [-n] [-c] [-u] [-p
+.I pw-file
+.B ] [-v] [-h]
 .SH DESCRIPTION
 .B gpgdir
 is a perl script that uses the CPAN GnuPG perl module to encrypt and decrypt
-directories using a gpg key specified in ~/.gpgdirrc.  gpgdir recursively
-descends through a directory in order to make sure it encrypts or decrypts
-every file in a directory and all of its subdirectories.  In order to help
-save space all files are compressed using gzip before being encrypted and
-uncompressed upon decryption.  In addition, gpgdir is careful not encrypt
-hidden files and directories.  gpgdir will compress each file using gzip
-unless the --no-compress option is specified.
+directories using a gpg key specified in ~/.gpgdirrc.
+.B gpgdir
+recursively descends through a directory in order to make sure it encrypts or
+decrypts every file in a directory and all of its subdirectories.  In order
+to help save space all files can optionally be compressed using gzip before
+being encrypted and uncompressed upon decryption through the use of the
+.B -c
+and
+.B -u
+options.
+Note that
+.B gpgdir
+is careful not encrypt hidden files and directories.  After all, you probably
+don't want your ~/.gnupg directory or ~/.bashrc file to be encrypted.
 
 .SH OPTIONS
 .PP
@@ -43,6 +56,12 @@ directory.
 .BR \-u ", " \-\^\-uncompress
 Instruct gpgdir to not uncompress files (using gunzip) when decrypting
 a directory.
+.TP
+
+.BR \-p ", " \-\^\-pw-file\ \<pw-file>
+Read decryption password from
+.B pw-file
+instead of typing it on the command line.
 .TP
 
 .BR \-v ", " \-\^\-version
@@ -78,13 +97,13 @@ To encrypt a directory and no subdirectories:
 
 .SH DEPENDENCIES
 .B gpgdir
-requires that the Gnu Privacy Guard (gpg, http://www.gnupg.org) is installed.
+requires that gpg, the Gnu Privacy Guard (http://www.gnupg.org) is installed.
 
 .SH "SEE ALSO"
-.BR gpg (1),
+.BR gpg (1)
 
 .SH AUTHOR
-Michael B. Rash <mbr@cipherdyne.org>
+Michael Rash <mbr@cipherdyne.org>
 
 .SH BUGS
 Send bug reports to mbr@cipherdyne.org. Suggestions and/or comments are
