@@ -4,3 +4,6 @@ Per Ronny Westin  Found PLAINTEXT vs. DECRYPTION_OKAY return code bug for GnuPG
 Kai Raven         Bugfix in man page for file compression/decompression wording.
 
 Craig Needs       Suggested --gnupg-dir option, testing help.
+
+Chris P           Found bug where gpgdir would not decrypt files that contained
+                  spaces.
