@@ -11,30 +11,39 @@
 .I directory
 .B ] [-g
 .I directory
-.B ] [-n] [-c] [-u] [--Exclude
+.B ] [-p
+.I pw-file
+.B ] [--Exclude
 .I pattern
 .B ] [--Exclude-from
 .I file
-.B ] [-p
-.I pw-file
-.B ] [-v] [-h]
+.B ] [--no-recurse] [--no-delete] [--no-preserve-times] [-t] [-s] [-V] [-v] [-h]
 .SH DESCRIPTION
 .B gpgdir
 is a perl script that uses the CPAN GnuPG perl module to encrypt and decrypt
 directories using a gpg key specified in ~/.gpgdirrc.
 .B gpgdir
 recursively descends through a directory in order to make sure it encrypts or
-decrypts every file in a directory and all of its subdirectories.  In order
-to help save space all files can optionally be compressed using gzip before
-being encrypted and uncompressed upon decryption through the use of the
-.B -c
-and
-.B -u
-options.
-Note that
-.B gpgdir
-is careful not encrypt hidden files and directories.  After all, you probably
-don't want your ~/.gnupg directory or ~/.bashrc file to be encrypted.
+decrypts every file in a directory and all of its subdirectories.  By default
+the mtime and atime values of all files will be preserved upon encryption and
+decryption (this can be disabled with the
+.B --no-preserve-times
+option).  Note that in
+.B --encrypt
+mode, gpgdir will delete the original files that
+it successfully encrypts (unless the
+.B --no-delete
+option is given).  However,
+upon startup gpgdir first asks for a the decryption password to be sure that a
+dummy file can successfully be encrypted and decrypted.  The initial test can
+be disabled with the
+.B --skip-test
+option so that a directory can easily be encrypted without having to also
+specify a password (this is consistent with
+.B gpg
+behavior).  Also, note that gpgdir is careful not encrypt hidden files and
+directories.  After all, you probably don't want your ~/.gnupg directory or
+~/.bashrc file to be encrypted.
 
 .SH OPTIONS
 .PP
@@ -56,9 +65,19 @@ run as one user but use the keys of another user (assuming permissions are
 setup correctly, etc.).
 .TP
 
-.BR \-n ", " \-\^\-no-recurse
-Instruct gpgdir to not recurse through any subdirectories of the directory
-that is being encrypted or decrypted.
+.BR \-p ", " \-\^\-pw-file\ \<pw-file>
+Read decryption password from
+.B pw-file
+instead of typing it on the command line.
+.TP
+
+.BR \-t ", " \-\^\-test-mode
+Run an encryption and decryption test against a dummy file and exit.  This
+test is always run by default in both
+.B --encrypt
+and
+.B --decrypt
+mode.
 .TP
 
 .BR \-\^\-Exclude\ \<pattern>
@@ -77,25 +96,33 @@ This is similar to the
 the GNU tar command.
 .TP
 
-.BR \-c ", " \-\^\-compress
-Instruct gpgdir to compress files (using gzip) when encrypting a
-directory.  This is not usually needed since
-.B gpg
-normally compresses files automatically.
+.BR " \-\^\-skip-test
+Skip encryption and decryption test.  This will allow
+.B gpgdir
+to be used to encrypt a directory without specifying a password (which
+normally gets used in encryption mode to test to make sure decryption
+against a dummy file works properly).
 .TP
 
-.BR \-u ", " \-\^\-uncompress
-Instruct gpgdir to uncompress files (using gunzip) when decrypting
-a directory.
+.BR \-\^\-no-recurse
+Instruct gpgdir to not recurse through any subdirectories of the directory
+that is being encrypted or decrypted.
 .TP
 
-.BR \-p ", " \-\^\-pw-file\ \<pw-file>
-Read decryption password from
-.B pw-file
-instead of typing it on the command line.
+.BR \-\^\-no-delete
+Instruct gpgdir to not delete original files at encrypt time.
 .TP
 
-.BR \-v ", " \-\^\-version
+.BR \-\^\-no-preserve times
+Instruct gpgdir to not preserve original file mtime and atime values
+upon encryption or decryption.
+.TP
+
+.BR \-v ", " \-\^\-verbose
+Run in verbose mode.
+.TP
+
+.BR \-V ", " \-\^\-Version
 Print version number and exit.
 .TP
 
