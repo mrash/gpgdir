@@ -55,8 +55,10 @@ my $decrypt_dir;
 my $total_encrypted = 0;
 my $total_decrypted = 0;
 my $norecurse       = 0;
-my $nocompress      = 0;
+my $compress        = 0;
+my $uncompress      = 0;
 my $printver        = 0;
+my $no_delete       = 0;
 my $help;
 
 open STDERR, ">&STDOUT" || die ' ** Could not dup STDERR to STDOUT';
@@ -90,17 +92,20 @@ if (-d "${homedir}/.gnupg") {
 $encrypt_user = &get_key();
 
 &usage_and_exit() unless(GetOptions (
-    'encrypt=s'   => \$encrypt_dir,  ### encrypt files in this directory
-    'decrypt=s'   => \$decrypt_dir,  ### decrypt files in this directory
-    'no-recurse'  => \$norecurse,    ### don't encrypt/decrypt files in subdirectories
-    'no-compress' => \$nocompress,   ### don't compress files
-    'version'     => \$printver,     ### print version
-    'help'        => \$help          ### print help
+    'encrypt=s'  => \$encrypt_dir,  # Encrypt files in this directory.
+    'decrypt=s'  => \$decrypt_dir,  # Decrypt files in this directory.
+    'compress'   => \$compress,     # Compress files (encrypt phase).
+    'uncompress' => \$uncompress,   # Compress files (decrypt phase).
+    'no-recurse' => \$norecurse,    # Don't encrypt/decrypt files in subdirectories.
+    'no-delete'  => \$no_delete,    # Don't delete files once they have
+                                    # been encrypted.
+    'version'    => \$printver,     # Print version
+    'help'       => \$help          # Print help
 ));
 &usage_and_exit() if $help;
 
 print " .. gpgdir version: $version by Michael Rash " .
-    "<mbr\@cipherdyne.com>\n" and exit 0 if $printver;
+    "<mbr\@cipherdyne.org>\n" and exit 0 if $printver;
 
 if ($decrypt_dir && $encrypt_dir) {
     die " ** You cannot encrypt and decrypt the same directory.\n";
@@ -109,6 +114,16 @@ if ($decrypt_dir && $encrypt_dir) {
 
 unless ($decrypt_dir || $encrypt_dir) {
     print " ** Please specify a directory to encrypt or decrypt.\n";
+    &usage_and_exit();
+}
+
+if ($encrypt_dir && $uncompress) {
+    print " ** The --uncompress option is only compatible with --decrypt.\n";
+    &usage_and_exit();
+}
+
+if ($decrypt_dir && $compress) {
+    print " ** The --compress option is only compatible with --encrypt.\n";
     &usage_and_exit();
 }
 
@@ -127,7 +142,7 @@ if ($encrypt_dir) {
     $dir =~ s|/$||;  ### remove any trailing slash
     ReadMode 'noecho';
     while (! $pw) {
-        print localtime() . " .. Enter a password to decrypt $dir: ";
+        print " .. Enter a password to decrypt $dir: ";
         $pw = ReadLine 0;
         chomp $pw;
     }
@@ -155,23 +170,24 @@ unless ($norecurse) {
 }
 
 if ($encrypt) {
-    print localtime() . " .. Total number of files encrypted: " .
+    print " .. Total number of files encrypted: " .
         "$total_encrypted\n";
 } else {
-    print localtime() . " .. Total number of files decrypted: " .
+    print " .. Total number of files decrypted: " .
         "$total_decrypted\n";
 }
-print localtime() . " .. Finished.\n";
+print " .. Finished.\n";
 
 exit 0;
 #==================== end main =====================
+
 sub gpg_operation() {
     my $dir = shift;
     my @errs;
     die " .. Directory: $dir does not exist.\n" unless -d $dir;
 
     if ($dir =~ m|\.gnupg|) {  ### don't encrypt any .gnupg directories!!!
-        print localtime() . " ** Skipping directory: $dir\n";
+        print " ** Skipping directory: $dir\n";
         return;
     }
     chdir $dir or die " ** Could not chdir: $dir\n";
@@ -181,94 +197,77 @@ sub gpg_operation() {
 
     shift @files; shift @files;
 
-    my $longest_filename = 0;
-    for my $file (@files) {
-        $longest_filename = length $file if (length $file > $longest_filename);
-    }
-
     if ($encrypt) {
-        $longest_filename += 5;
-        print localtime() . " .. Directory: $dir ==> Encrypting <==\n";
+        print " .. ==> Encrypting <==  $dir\n";
     } else {
-        print localtime() . " .. Directory: $dir ==> Decrypting <==\n";
+        print " .. ==> Decrypting <==  $dir\n";
     }
 
+    my %errs;
     FILE: for my $file (@files) {
         next FILE unless $file =~ /\S/ && -e $file;
+        if (-l $file) {
+            $errs{'link'}{'ctr'}++;
+            $errs{'link'}{'msg'} = 'file is a link';
+            next FILE;
+        } elsif (-d $file) {
+            $errs{'directory'}{'ctr'}++;
+            $errs{'directory'}{'msg'} = 'directory skip';
+            next FILE;
+        } elsif (-s $file == 0) {
+            $errs{'zero'}{'ctr'}++;
+            $errs{'zero'}{'msg'} = 'zero byte file';
+            next FILE;
+        } elsif ($file =~ m|^\.|) {  ### don't encrypt hidden files
+            $errs{'hidden'}{'ctr'}++;
+            $errs{'hidden'}{'msg'} = 'hidden file';
+            next FILE;
+        }
         if ($encrypt) {
-            ### don't encrypt files that are already
-            ### encrypted, and make sure they exist
-            if (-l $file) {
-                push @errs, localtime() . " ** Skipping " .
-                    "link: $file\n";
-            } elsif (-s $file == 0) {
-                push @errs, localtime() . " ** Skipping " .
-                    "zero byte file: $file\n";
             ### NOTE: encrypted files cannot be modified, so go ahead and
             ### encrypt $file over any existing $file.gpg encrypted file.
-            } elsif (! -d $file && $file =~ /\.gpg$/) {
-                push @errs, localtime() . " ** Skipping " .
-                    "encrypted file: $file\n";
-            } elsif (! -d $file) {
+            if ($file =~ /\.gpg$/) {
+                $errs{'encrypted'}{'ctr'}++;
+                $errs{'encrypted'}{'msg'} = 'previously encrypted';
+            } else {
                 my $compressed = 0;
-                if ($file =~ m|^\.|) {  ### don't encrypt hidden files
-                    push @errs, localtime() . " ** Skipping " .
-                        "hidden file: $file\n";
-                    next FILE;
-                }
-                unless ($nocompress) {
+                if ($compress) {
                     unless ($file =~ m|\.gz$|) {
-                        print localtime() . " .. Compressing " .
-                            sprintf("%${longest_filename}s", $file) .
-                                " -> ${file}.gz\n";
+                        print " .. Compressing:  $file\n";
                         system "$gzipCmd $file";
                         if (-e "${file}.gz") {
                             $compressed = 1;
                             $file = "${file}.gz";
                         } else {
-                            push @errs, localtime() . " ** Could not " .
-                                "compress: $file\n";
+                            $errs{'bad_compress'}{'ctr'}++;
+                            $errs{'bad_compress'}{'msg'} = 'failed compress';
                             next FILE;
                         }
                     }
                 }
-                print localtime() . " .. Encrypting  " .
-                    sprintf("%${longest_filename}s", $file) .
-                        " -> ${file}.gpg\n";
+                print " .. Encrypting:  $file\n" .
                 $gpg->encrypt(plaintext=>$file, output=>"${file}.gpg",
                               recipient=>$encrypt_user);
                 if (-e "${file}.gpg" && -s "${file}.gpg" != 0) {
                     $total_encrypted++;
                     ### only delete the original file if
                     ### the encrypted one exists
-                    unlink $file;
+                    unlink $file unless $no_delete;
                 } else {
-                    push @errs, localtime() . " ** Could not " .
-                        "encrypt: $file\n";
+                    $errs{'bad_encrypt'}{'ctr'}++;
+                    $errs{'bad_encrypt'}{'msg'} = 'failed encrypt';
                 }
             }
         } else {
-            my ($filename) = ($file =~ /^(\S+)\.gpg/);
-            if (-l $file) {
-                push @errs, localtime() . " ** Skipping " .
-                    "link: $file\n";
-            } elsif (-s $file == 0) {
-                push @errs, localtime() . " ** Skipping zero byte " .
-                    "file: $file\n";
-            } elsif ($file !~ /\.gpg$/) {
-                if (! -d $file) {
-                    push @errs, localtime() . " ** Skipping " .
-                        "decrypted file: $file\n";
-                }
-            } elsif (-e $filename) {
-                push @errs, localtime() . " ** Skipping file: $file since " .
-                    "the decrypted file: $filename already exists.\n";
-            } elsif (! -d $file) {
+            my ($filename) = ($file =~ /^(\S+)\.gpg$/);
+            next unless $filename;
+            if (-e $filename) {
+                $errs{'decrypted'}{'ctr'}++;
+                $errs{'decrypted'}{'msg'} = 'previously decrypted';
+            } else {
                 ### don't decrypt a file on top of a normal file of
                 ### the same name
-                print localtime() . " .. Decrypting    " .
-                    sprintf("%${longest_filename}s", $file) .
-                        " -> $filename\n";
+                print " .. Decrypting:  $file\n";
                 $gpg->decrypt(ciphertext=>$file, output=>$filename,
                               passphrase=>$pw);
                 if (-e $filename && -s $filename != 0) {
@@ -276,31 +275,30 @@ sub gpg_operation() {
                     ### file if the decrypted one exists
                     unlink $file;
                     $total_decrypted++;
-                    if ($filename =~ /(\S+)\.gz/) {
+                    if ($uncompress && $filename =~ /(\S+)\.gz/) {
                         my $ufile = $1;
-                        print localtime() . " .. Uncompressing " .
-                            sprintf("%${longest_filename}s", $filename) .
-                                " -> $ufile\n";
+                        print " .. Uncompressing:  $filename\n";
                         system "$gunzipCmd $filename";
                         unless (-e $ufile) {
-                            push @errs, localtime() . " ** Could not " .
-                                "uncompress: $filename\n";
+                            $errs{'bad_gunzip'}{'ctr'}++;
+                            $errs{'bad_gunzip'}{'msg'} = 'failed gunzip';
                         }
                     }
                 } else {
-                    push @errs, localtime() . " ** Could not " .
-                        "decrypt: $file\n";
+                    $errs{'bad_decrypt'}{'ctr'}++;
+                    $errs{'bad_decrypt'}{'msg'} = 'failed decrypt';
                 }
             }
         }
     }
-    if (@errs) {
-        print localtime() . " .. Errors/Warnings:\n";
-        ### print any errors
-        for my $err (@errs) {
-            print $err;
+    if (%errs) {
+        print " .. Errors/Warnings:\n";
+        for my $problem (keys %errs) {
+            print " ** Error: \"$errs{$problem}{'msg'}\", ",
+                "Count: $errs{$problem}{'ctr'}\n";
         }
     }
+    print "\n";
     chdir $initial_dir or die " ** Could not chdir: $initial_dir\n";
     return;
 }
@@ -336,7 +334,7 @@ sub get_key() {
         my $key = '';
         for my $line (@lines) {
             chomp $line;
-            if ($line =~ /^use_key\s+(.*)$/) {
+            if ($line =~ /^use_key\s+(\w{8})$/) {
                 $key = $1;
                 last;
             }
@@ -344,8 +342,9 @@ sub get_key() {
         if ($key && $key =~ /\S/) {
             return $key;
         } else {
-            print " ** Please edit ${homedir}/.gpgdirrc to include " .
-                "your gpg key identifier.  Exiting.\n";
+            print " ** Please edit ${homedir}/.gpgdirrc to include your gpg key",
+                "    identifier (e.g. \"D4696445\").  See the output of ",
+                "\"gpg --list-keys\"\n";
             exit 1;
         }
     } else {
@@ -354,7 +353,7 @@ sub get_key() {
             "${homedir}/.gpgdirrc.  Exiting.\n";
         print F "# Config file for gpgdir.\n";
         print F "# Set the key to use to encrypt files with\n";
-        print F "# \"use_key <key>\", e.g. \"use_key A742839F\".\n";
+        print F "# \"use_key <key>\", e.g. \"use_key D4696445\".\n";
         print F "# See \"gpg --list-keys\" for a list of keys.\n";
         print F "\n";
         print F "# Uncomment and replace \"KEYID\" with your real " .
@@ -377,12 +376,20 @@ sub find_subdirs() {
 }
 
 sub usage_and_exit() {
-    print "gpgdir usage:\n",
-        "   -e, --encrypt <directory>\n",
-        "   -d, --decrypt <directory>\n",
-        "   --no-recurse     - Don't encrypt/decrypt subdirectories.\n",
-        "   --no-compress    - Don't compress files.\n",
-        "   -v, --version    - print version.\n",
-        "   -h, --help       - print help\n";
+    print <<_HELP_;
+gpgdir
+    version: $version, by Michael Rash (mbr\@cipherdyne.org)
+
+Usage: gpgdir [-e <directory>] [-d <directory>] [-c] [-u] [-n] [-v] [-h]
+
+Options:
+   -e, --encrypt <directory>
+   -d, --decrypt <directory>
+   -c, --compress   - Compress files when running in --encrypt mode.
+   -u, --uncompress - Uncompress files when running in --decrypt mode.
+   -n, --no-recurse - Don't recursively encrypt/decrypt subdirectories.
+   -v, --version    - print version.
+   -h, --help       - print help.
+_HELP_
     exit 0;
 }
