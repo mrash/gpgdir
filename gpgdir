@@ -136,7 +136,7 @@ sub gpg_operation() {
                 print localtime() . " ... Encrypting $file -> ${file}.gpg\n";
                 $gpg->encrypt(plaintext=>$file, output=>"${file}.gpg",
                               recipient=>$encrypt_user);
-                if (-e "${file}.gpg") {
+                if (-e "${file}.gpg" && -s "${file}.gpg" != 0) {
                     $total_encrypted++;
                     ### only delete the original file if the encrypted one exists
                     unlink $file;
@@ -150,7 +150,7 @@ sub gpg_operation() {
                 print localtime() . " ... Decrypting $file -> $filename\n";
                 $gpg->decrypt(ciphertext=>$file, output=>$filename,
                               passphrase=>$pw);
-                if (-e $filename) {
+                if (-e $filename && -s $filename != 0) {
                     $total_decrypted++;
                     ### only delete the original encrypted file if the decrypted one exists
                     unlink $file;
