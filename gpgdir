@@ -141,9 +141,12 @@ sub gpg_operation() {
                 push @errs, localtime() . " ... @@@ Skipping encrypted file: $file\n";
             } elsif (-s $file == 0) {
                 push @errs, localtime() . " ... @@@ Skipping zero byte file: $file\n";
-            } elsif (-e "${file}.gpg") {
-                push @errs, localtime() . " ... @@@ Skipping file: $file since " .
-                    "$file.gpg already exists.\n";
+            }
+            ### NOTE: encrypted files cannot be modified, so go ahead and
+            ### encrypt $file over any existing $file.gpg encrypted file.
+#            } elsif (-e "${file}.gpg") {
+#                push @errs, localtime() . " ... @@@ Skipping file: $file since " .
+#                    "$file.gpg already exists.\n";
             } elsif (! -d $file) {
                 if ($file =~ m|^\.|) {  ### don't encrypt hidden files
                     push @errs, localtime() . " ... @@@ Skipping hidden file: $file\n";
