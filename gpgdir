@@ -216,9 +216,8 @@ sub gpg_operation() {
                                 " -> ${file}.gz\n";
                         system "$gzipCmd $file";
                         if (-e "${file}.gz") {
-                            move "${file}.gz", "${file}.gz_C";
-                            $file = "${file}.gz_C";
                             $compressed = 1;
+                            $file = "${file}.gz";
                         } else {
                             push @errs, localtime() . " ** Could not " .
                                 "compress: $file\n";
@@ -258,18 +257,6 @@ sub gpg_operation() {
                 push @errs, localtime() . " ** Skipping file: $file since " .
                     "the decrypted file: $filename already exists.\n";
             } elsif (! -d $file) {
-                my $cfile;
-                my $decompress = 0;
-                if ($filename =~ /(\S+)_C$/) {  ### the file was compressed
-                    $cfile = $1;
-                    if (-e $cfile) {
-                        push @errs, localtime() . " ** Skipping file: " .
-                            "$file since $cfile already exists.\n";
-                        next FILE;
-                    } else {
-                        $decompress = 1;
-                    }
-                }
                 ### don't decrypt a file on top of a normal file of
                 ### the same name
                 print localtime() . " .. Decrypting    " .
@@ -278,20 +265,19 @@ sub gpg_operation() {
                 $gpg->decrypt(ciphertext=>$file, output=>$filename,
                               passphrase=>$pw);
                 if (-e $filename && -s $filename != 0) {
-                    $total_decrypted++;
                     ### only delete the original encrypted
                     ### file if the decrypted one exists
                     unlink $file;
-                    if ($decompress) {
-                        my ($ufile) = ($cfile =~ /(\S+)\.gz/);
+                    $total_decrypted++;
+                    if ($filename =~ /(\S+)\.gz/) {
+                        my $ufile = $1;
                         print localtime() . " .. Uncompressing " .
-                            sprintf("%${longest_filename}s", $cfile) .
+                            sprintf("%${longest_filename}s", $filename) .
                                 " -> $ufile\n";
-                        move $filename, $cfile;
-                        system "$gunzipCmd $cfile";
+                        system "$gunzipCmd $filename";
                         unless (-e $ufile) {
                             push @errs, localtime() . " ** Could not " .
-                                "uncompress: $cfile\n";
+                                "uncompress: $filename\n";
                         }
                     }
                 } else {
@@ -364,6 +350,9 @@ sub get_key() {
         print F "# \"use_key <key>\", e.g. \"use_key A742839F\".\n";
         print F "# See \"gpg --list-keys\" for a list of keys.\n";
         print F "\n";
+        print F "# Uncomment and replace \"KEYID\" with your real " .
+            "key id on the next line:\n";
+        print F "#use_key KEYID\n";
         close F;
         print " ** Please edit ${homedir}/.gpgdirrc to include " .
             "your gpg key identifier.  Exiting.\n";
