@@ -30,32 +30,49 @@ use strict;
 
 #======================= config =======================
 my $install_dir = '/usr/bin';
-my $manpage = 'gpgdir.1';
+my $libdir      = '/usr/lib/gpgdir';
+my $manpage     = 'gpgdir.1';
 
 ### system binaries
 my $gzipCmd = '/usr/bin/gzip';
 my $perlCmd = '/usr/bin/perl';
+my $makeCmd = '/usr/bin/make';
 #===================== end config =====================
 
-die " ** gzip command is not located at: $gzipCmd" unless -e $gzipCmd;
-die " ** $gzipCmd is not executable." unless -x $gzipCmd;
-
-unless (((system "$perlCmd -e 'use GnuPG' 2> /dev/null") >> 8) == 0) {
-    die " ** It does not appear that you have the GnuPG installed.\n" .
-        "    Download from http://www.cpan.org and install it.\n";
-}
 ### Everthing after this point must be executed as root.
 $< == 0 && $> == 0 or
     die " ** You must be root (or equivalent " .
         "UID 0 account) to install gpgdir!  Exiting.\n";
 
-print localtime() . " .. Installing gpgdir in $install_dir\n";
+my %Cmds = (
+    'gzip' => $gzipCmd,
+    'perl' => $perlCmd,
+    'make' => $makeCmd
+);
+
+### make sure we can find the system binaries
+### in the expected locations.
+&check_commands();
+
+### create directories, make sure executables exist, etc.
+&setup();
+
+print " .. Installing gpgdir in $install_dir\n";
 &install_gpgdir();
-print localtime() . " .. Installing man page.\n";
+
+print " .. Installing GnuPG perl module in $libdir\n";
+&install_gnupg_pm();
+
+print " .. Installing Term::Readkey perl module in $libdir\n";
+&install_term_readkey_pm();
+
+print " .. Installing man page.\n";
 &install_manpage();
-print localtime() . " .. gpgdir installed!\n";
+
+print " .. gpgdir installed!\n";
 
 exit 0;
+#===================== end main =======================
 
 sub install_gpgdir() {
     die " ** gpgdir does not exist.  Download gpgdir from " .
@@ -66,6 +83,40 @@ sub install_gpgdir() {
         "permissions on gpgdir to 0755";
     chown 0, 0, "${install_dir}/gpgdir" or
         die " ** Could not chown 0,0,${install_dir}/gpgdir: $!";
+    return;
+}
+
+sub install_gnupg_pm() {
+    ### installing GnuPG
+    chdir 'GnuPG' or die " ** Could not chdir to ",
+        "GnuPG: $!";
+    unless (-e 'Makefile.PL' && -e 'GnuPG.pm') {
+        die " ** Your source directory appears to be incomplete!  GnuPG.pm ",
+            "is missing.\n    Download the latest sources from ",
+            "http://www.cipherdyne.org\n";
+    }
+    system "$Cmds{'perl'} Makefile.PL PREFIX=$libdir LIB=$libdir";
+    system $Cmds{'make'};
+#    system "$Cmds{'make'} test";
+    system "$Cmds{'make'} install";
+    chdir '..';
+    return;
+}
+
+sub install_term_readkey_pm() {
+    ### installing GnuPG
+    chdir 'TermReadKey' or die " ** Could not chdir to ",
+        "TermReadKey: $!";
+    unless (-e 'Makefile.PL' && -e 'ReadKey.pm') {
+        die " ** Your source directory appears to be incomplete!  ReadKey.pm ",
+            "is missing.\n    Download the latest sources from ",
+            "http://www.cipherdyne.org\n";
+    }
+    system "$Cmds{'perl'} Makefile.PL PREFIX=$libdir LIB=$libdir";
+    system $Cmds{'make'};
+#    system "$Cmds{'make'} test";
+    system "$Cmds{'make'} install";
+    chdir '..';
     return;
 }
 
@@ -116,16 +167,57 @@ sub install_manpage() {
     }
     mkdir $mpath, 0755 unless -d $mpath;
     my $mfile = "${mpath}/${manpage}";
-    print localtime() . " .. Installing $manpage man page as: $mfile\n";
+    print " .. Installing $manpage man page as: $mfile\n";
     copy $manpage, $mfile or die " ** Could not copy $manpage to " .
         "$mfile: $!";
     chmod 0644, $mfile or die " ** Could not set permissions on ".
         "$mfile to 0644";
     chown 0, 0, $mfile or
         die " ** Could not chown 0,0,$mfile: $!";
-    print localtime() . " .. Compressing man page: $mfile\n";
+    print " .. Compressing man page: $mfile\n";
     ### remove the old one so gzip doesn't prompt us
     unlink "${mfile}.gz" if -e "${mfile}.gz";
-    system "$gzipCmd $mfile";
+    system "$Cmds{'gzip'} $mfile";
+    return;
+}
+
+### check paths to commands and attempt to correct if any are wrong.
+sub check_commands() {
+    my @path = qw(
+        /bin
+        /sbin
+        /usr/bin
+        /usr/sbin
+        /usr/local/bin
+        /usr/local/sbin
+    );
+    CMD: for my $cmd (keys %Cmds) {
+        unless (-x $Cmds{$cmd}) {
+            my $found = 0;
+            PATH: for my $dir (@path) {
+                if (-x "${dir}/${cmd}") {
+                    $Cmds{$cmd} = "${dir}/${cmd}";
+                    $found = 1;
+                    last PATH;
+                }
+            }
+            unless ($found) {
+                die "\n ** Could not find $cmd anywhere!!!  ",
+                    "Please edit the config section to include the path to ",
+                    "$cmd.\n";
+            }
+        }
+        unless (-x $Cmds{$cmd}) {
+            die "\n ** $cmd is located at ",
+                "$Cmds{$cmd} but is not executable by uid: $<\n";
+        }
+    }
+    return;
+}
+
+sub setup() {
+    unless (-d $libdir) {
+        mkdir $libdir, 0755 or die " ** Could not create $libdir: $!"
+    }
     return;
 }
