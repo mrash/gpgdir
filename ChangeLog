@@ -1,4 +1,4 @@
-gpgdir-0.9.2 (01//2005):
+gpgdir-0.9.2 (01/05/2005):
     - Added preservation of file mtime and atime values (may be disabled
       with the --no-preserve-times option).
     - Added testing encryption and decryption of dummy file (may be
@@ -9,6 +9,8 @@ gpgdir-0.9.2 (01//2005):
     - Updated get_homedir() to reference HOME environmental variable if
       the /etc/passwd file does not exist (OS X being a good example).
     - Added --verbose mode.
+    - Updated output to generate errors on a per-file basis instead of
+      dumping them at the end of an encrypt/decrypt operation.
 
 gpgdir-0.9.1 (11/11/2004):
     - Updated GnuPG.pm perl module to handle return code of PLAINTEXT
