@@ -264,7 +264,7 @@ sub run_gnupg($) {
 	# some ends must be closed in the child.
 	#
 	# Besides this is just plain good hygiene
-	my $max_fd = POSIX::sysconf( POSIX::_SC_OPEN_MAX ) || 256;
+	my $max_fd = POSIX::sysconf( &POSIX::_SC_OPEN_MAX ) || 256;
 	foreach my $f ( 3 .. $max_fd ) {
 	    next if $f == fileno $self->{status_fd};
 	    POSIX::close( $f );
