@@ -53,6 +53,8 @@ my $pw;
 my $encrypt;
 my $encrypt_dir;
 my $decrypt_dir;
+my $exclude_pat     = '';
+my $exclude_file    = '';
 my $total_encrypted = 0;
 my $total_decrypted = 0;
 my $norecurse       = 0;
@@ -61,11 +63,26 @@ my $uncompress      = 0;
 my $printver        = 0;
 my $no_delete       = 0;
 my $pw_file         = '';
+my @exclude_patterns = ();
 my $help;
 
 my %Cmds = (
     'gzip'   => $gzipCmd,
     'gunzip' => $gunzipCmd,
+);
+
+my %err_msgs = (
+    'exclude'        => 'file matched exclude pattern',
+    'link'           => 'file is a link',
+    'directory'      => 'directory skip',
+    'zero'           => 'zero byte file',
+    'hidden'         => 'hidden file',
+    'encrypted'      => 'previously encrypted',
+    'bad_compress'   => 'failed compress',
+    'bad_encrypt'    => 'failed encrypt',
+    'decrypted'      => 'previously decrypted',
+    'bad_decompress' => 'failed decompress',
+    'bad_decrypt'    => 'failed decrypt'
 );
 
 ### make sure we can find the system binaries
@@ -93,17 +110,25 @@ if (-d "${homedir}/.gnupg") {
 ### get the key identifier from ~/.gnupg
 $encrypt_user = &get_key();
 
+### make Getopts case sensitive
+Getopt::Long::Configure('no_ignore_case');
+
 &usage_and_exit() unless(GetOptions (
-    'encrypt=s'  => \$encrypt_dir,  # Encrypt files in this directory.
-    'decrypt=s'  => \$decrypt_dir,  # Decrypt files in this directory.
-    'compress'   => \$compress,     # Compress files (encrypt phase).
-    'uncompress' => \$uncompress,   # Compress files (decrypt phase).
-    'no-recurse' => \$norecurse,    # Don't encrypt/decrypt files in subdirectories.
-    'no-delete'  => \$no_delete,    # Don't delete files once they have
-                                    # been encrypted.
-    'pw-file=s'  => \$pw_file,      # Read password out of this file.
-    'version'    => \$printver,     # Print version
-    'help'       => \$help          # Print help
+    'encrypt=s'      => \$encrypt_dir,  # Encrypt files in this directory.
+    'decrypt=s'      => \$decrypt_dir,  # Decrypt files in this directory.
+    'Exclude=s'      => \$exclude_pat,  # Exclude a pattern from encrypt/decrypt
+                                        # cycle.
+    'Exclude-from=s' => \$exclude_file, # Exclude patterns in <file> from 
+                                        # encrypt decrypt cycle.
+    'compress'       => \$compress,     # Compress files (encrypt phase).
+    'uncompress'     => \$uncompress,   # Compress files (decrypt phase).
+    'no-recurse'     => \$norecurse,    # Don't encrypt/decrypt files in
+                                        # subdirectories.
+    'no-delete'      => \$no_delete,    # Don't delete files once they have
+                                        # been encrypted.
+    'pw-file=s'      => \$pw_file,      # Read password out of this file.
+    'version'        => \$printver,     # Print version
+    'help'           => \$help          # Print help
 ));
 &usage_and_exit() if $help;
 
@@ -130,9 +155,23 @@ if ($decrypt_dir && $compress) {
     &usage_and_exit();
 }
 
+push @exclude_patterns, $exclude_pat if $exclude_pat;
+
+if ($exclude_file) {
+print "here.............\n";
+    open P, "< $exclude_file" or die " ** Could not open file: $exclude_file";
+    my @lines = <P>;
+    close P;
+    for my $line (@lines) {
+        next unless $line =~ /\S/;
+        chomp $line;
+        push @exclude_patterns, $line;
+    }
+}
+
 my $gpg = new GnuPG(homedir=>$gpg_homedir);
 
-die " ** Could not create new gpg object with " .
+die " ** Could not create new gpg object with ",
     "homedir: $gpg_homedir" unless $gpg;
 
 if ($encrypt_dir) {
@@ -149,7 +188,7 @@ if ($encrypt_dir) {
     } else {
         ReadMode 'noecho';
         while (! $pw) {
-            print " .. Enter a password to decrypt $dir: ";
+            print " .. Enter password to decrypt directory $dir: ";
             $pw = ReadLine 0;
             chomp $pw;
         }
@@ -196,7 +235,6 @@ exit 0;
 
 sub gpg_operation() {
     my $dir = shift;
-    my @errs;
     die " ** Directory: $dir does not exist.\n" unless -d $dir;
 
     if ($dir =~ m|\.gnupg|) {  ### don't encrypt any .gnupg directories!!!
@@ -219,29 +257,32 @@ sub gpg_operation() {
     my %errs;
     FILE: for my $file (@files) {
         next FILE unless $file =~ /\S/ && -e $file;
+        if (@exclude_patterns) {
+            for my $pat (@exclude_patterns) {
+                if ($file =~ /$pat/) {
+                    $errs{'exclude'}{$file} = '';
+                    next FILE;
+                }
+            }
+        }
         if (-l $file) {
-            $errs{'link'}{'ctr'}++;
-            $errs{'link'}{'msg'} = 'file is a link';
+            $errs{'link'}{$file} = '';
             next FILE;
         } elsif (-d $file) {
-            $errs{'directory'}{'ctr'}++;
-            $errs{'directory'}{'msg'} = 'directory skip';
+            $errs{'directory'}{$file} = '';
             next FILE;
         } elsif (-s $file == 0) {
-            $errs{'zero'}{'ctr'}++;
-            $errs{'zero'}{'msg'} = 'zero byte file';
+            $errs{'zero'}{$file} = '';
             next FILE;
         } elsif ($file =~ m|^\.|) {  ### don't encrypt hidden files
-            $errs{'hidden'}{'ctr'}++;
-            $errs{'hidden'}{'msg'} = 'hidden file';
+            $errs{'hidden'}{$file} = '';
             next FILE;
         }
         if ($encrypt) {
             ### NOTE: encrypted files cannot be modified, so go ahead and
             ### encrypt $file over any existing $file.gpg encrypted file.
             if ($file =~ /\.gpg$/) {
-                $errs{'encrypted'}{'ctr'}++;
-                $errs{'encrypted'}{'msg'} = 'previously encrypted';
+                $errs{'encrypted'}{$file} = '';
             } else {
                 my $compressed = 0;
                 if ($compress) {
@@ -252,8 +293,7 @@ sub gpg_operation() {
                             $compressed = 1;
                             $file = "${file}.gz";
                         } else {
-                            $errs{'bad_compress'}{'ctr'}++;
-                            $errs{'bad_compress'}{'msg'} = 'failed compress';
+                            $errs{'bad_compress'}{$file} = '';
                             next FILE;
                         }
                     }
@@ -267,16 +307,14 @@ sub gpg_operation() {
                     ### the encrypted one exists
                     unlink $file unless $no_delete;
                 } else {
-                    $errs{'bad_encrypt'}{'ctr'}++;
-                    $errs{'bad_encrypt'}{'msg'} = 'failed encrypt';
+                    $errs{'bad_encrypt'}{$file} = '';
                 }
             }
         } else {
             my ($filename) = ($file =~ /^(\S+)\.gpg$/);
             next unless $filename;
             if (-e $filename) {
-                $errs{'decrypted'}{'ctr'}++;
-                $errs{'decrypted'}{'msg'} = 'previously decrypted';
+                $errs{'decrypted'}{$file} = '';
             } else {
                 ### don't decrypt a file on top of a normal file of
                 ### the same name
@@ -293,13 +331,11 @@ sub gpg_operation() {
                         print " .. Uncompressing:  $filename\n";
                         system "$Cmds{'gunzip'} $filename";
                         unless (-e $ufile) {
-                            $errs{'bad_gunzip'}{'ctr'}++;
-                            $errs{'bad_gunzip'}{'msg'} = 'failed gunzip';
+                            $errs{'bad_gunzip'}{$file} = '';
                         }
                     }
                 } else {
-                    $errs{'bad_decrypt'}{'ctr'}++;
-                    $errs{'bad_decrypt'}{'msg'} = 'failed decrypt';
+                    $errs{'bad_decrypt'}{$file} = '';
                 }
             }
         }
@@ -307,8 +343,9 @@ sub gpg_operation() {
     if (%errs) {
         print " .. Errors/Warnings:\n";
         for my $problem (keys %errs) {
-            print " ** Error: \"$errs{$problem}{'msg'}\", ",
-                "Count: $errs{$problem}{'ctr'}\n";
+            for my $file (keys %{$errs{$problem}}) {
+                print " ** Error: \"$err_msgs{$problem}\": $file\n";
+            }
         }
     }
     print "\n";
