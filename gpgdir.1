@@ -9,6 +9,8 @@
 .I directory
 .B ] [-d
 .I directory
+.B ] [-g
+.I directory
 .B ] [-n] [-c] [-u] [--Exclude
 .I pattern
 .B ] [--Exclude-from
@@ -45,6 +47,13 @@ Encrypt the directory specified on the command line.
 
 .BR \-d ", " \-\^\-decrypt\ \<directory>
 Decrypt the directory specified on the command line.
+.TP
+
+.BR \-g ", " \-\^\-gnupg-dir\ \<directory>
+Specify which .gnupg directory will be used to find GPG keys.  The default
+is ~/.gnupg if this option is not used.  This option allows gpgdir to be
+run as one user but use the keys of another user (assuming permissions are
+setup correctly, etc.).
 .TP
 
 .BR \-n ", " \-\^\-no-recurse
@@ -120,6 +129,10 @@ To encrypt a directory but skip all filenames that contain the string "host":
 To encrypt a directory and no subdirectories:
 
 .B $ gpgdir -e /home/user/testdir --no-recurse
+
+To encrypt root's home directory, but use the GPG keys associated with the user "bob":
+
+.B # gpgdir -e /root -g /home/bob/.gnupg
 
 .SH DEPENDENCIES
 .B gpgdir
