@@ -7,13 +7,18 @@ Version:  0.9.2
 gpgdir is a perl script that uses the CPAN GnuPG perl module to encrypt and
 decrypt directories using a gpg key specified in ~/.gpgdirrc.  gpgdir
 recursively descends through a directory in order to make sure it encrypts or
-decrypts every file in a directory and all of its subdirectories.  In order
-to help save space all files can optionally be compressed using gzip before
-being encrypted and uncompressed upon decryption through the use of the -c
-and -u options.  Note that gpgdir is careful not encrypt hidden files and
-directories.  After all, you probably don't want your ~/.gnupg directory or
-~/.bashrc file to be encrypted.
-
+decrypts every file in a directory and all of its subdirectories.  By default
+the mtime and atime values of all files will be preserved upon encryption and
+decryption (this can be disabled with the --no-preserve-times option).  Note
+that in --encrypt mode, gpgdir will delete the original files that it
+successfully encrypts (unless the --no-delete option is given).  However,
+upon startup gpgdir first asks for a the decryption password to be sure that
+a dummy file can successfully be encrypted and decrypted.  The initial test
+can be disabled with the --skip-test option so that a directory can easily be
+encrypted without having to also specify a password (this is consistent with
+gpg behavior).  Also, note that gpgdir is careful not encrypt hidden files
+and directories.  After all, you probably don't want your ~/.gnupg directory
+or ~/.bashrc file to be encrypted.
 
 Installation:
     Just run the install.pl script (as root) that comes with the gpgdir
