@@ -34,10 +34,20 @@ my $manpage = 'gpgdir.1';
 
 ### system binaries
 my $gzipCmd = '/usr/bin/gzip';
+my $perlCmd = '/usr/bin/perl';
 #===================== end config =====================
 
 die " ** gzip command is not located at: $gzipCmd" unless -e $gzipCmd;
 die " ** $gzipCmd is not executable." unless -x $gzipCmd;
+
+unless (((system "$perlCmd -e 'use GnuPG' 2> /dev/null") >> 8) == 0) {
+    die " ** It does not appear that you have the GnuPG installed.\n" .
+        "    Download from http://www.cpan.org and install it.\n";
+}
+### Everthing after this point must be executed as root.
+$< == 0 && $> == 0 or
+    die " ** You must be root (or equivalent " .
+        "UID 0 account) to install gpgdir!  Exiting.\n";
 
 print localtime() . " .. Installing gpgdir in $install_dir\n";
 &install_gpgdir();
