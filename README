@@ -2,28 +2,35 @@ File:     gpgdir
 Author:   Michael Rash <mbr@cipherdyne.org>
 Download: http://www.cipherdyne.org/gpgdir
 License:  GNU General Public License
-Version:  0.1
+Version:  0.4
 
-gpgdir is a perl script that uses the CPAN GnuPG module to encrypt and decrypt
-directories using a gpg key specified in ~/.gpgdirrc.  gpgdir supports
-recursively descending through a directory in order to make sure it encrypts
-or decrypts every file in a directory and all of its subdirectories.  In order
-to help save space all files are compressed using gzip before being encrypted
-and decompressed upon decryption.  In addition, gpgdir is careful not encrypt
-hidden files and directories.  After all you probably don't want your ~/.gnupg
-directory or ~/.bashrc file to be encrypted. :)
+gpgdir is a perl script that uses the CPAN GnuPG perl module to encrypt and
+decrypt directories using a gpg key specified in ~/.gpgdirrc.  gpgdir
+recursively descends through a directory in order to make sure it encrypts or
+decrypts every file in a directory and all of its subdirectories.  In order
+to help save space all files can optionally be compressed using gzip before
+being encrypted and uncompressed upon decryption through the use of the -c
+and -u options.  Note that gpgdir is careful not encrypt hidden files and
+directories.  After all, you probably don't want your ~/.gnupg directory or
+~/.bashrc file to be encrypted.
+
 
 Installation:
-    Just root the install.pl script (as root) that comes with the gpgdir
+    Just run the install.pl script (as root) that comes with the gpgdir
     sources.
 
+
 Command line options:
-    -e, --encrypt  <directory>    Encrypt <directory>
-    -d, --decrypt  <directory     Decrypt <directory>
-    --no-recurse                  Don't recurse through subdirectories
-    --no-compress                 Don't compress files
-    -v, --version                 Print version
-    -h, --help                    Print help
+   -e, --encrypt <directory>  - Encrypt <directory> and all of its
+                                subdirectories.
+   -d, --decrypt <directory>  - Decrypt <directory> and all of its
+                                subdirectories.
+   -c, --compress             - Compress files when running in --encrypt mode.
+   -u, --uncompress           - Uncompress files when running in --decrypt mode.
+   -n, --no-recurse           - Don't recursively encrypt/decrypt subdirectories.
+   -p, --pw-file <file>       - Read password in from <file>.
+   -v, --version              - print version.
+   -h, --help                 - print help.
 
 
 Examples:
