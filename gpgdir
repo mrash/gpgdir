@@ -6,7 +6,7 @@
 #
 # Purpose:  To encrypt/decrypt whole directories
 #
-# Author: Michael B. Rash (mbr@ciphedyne.com)
+# Author: Michael Rash (mbr@cipherdyne.com)
 #
 # Version: 0.9.2
 #
@@ -235,7 +235,7 @@ sub gpg_operation() {
                     "Skipping.\n";
                 next FILE;
             }
-            print "[+] Encrypting:  $file\n" .
+            print "[+] Encrypting:  $file\n";
             $gpg->encrypt(plaintext=>$filename, output=>"$filename.gpg",
                           recipient=>$encrypt_user);
             if (-e "$filename.gpg" && -s "$filename.gpg" != 0) {
@@ -256,7 +256,8 @@ sub gpg_operation() {
                 next FILE;
             }
         } else {
-            my ($decrypt_filename) = ($filename =~ /^(\S+)\.gpg$/);
+            ### allow filenames with spaces
+            my ($decrypt_filename) = ($filename =~ /^(.+)\.gpg$/);
             next unless $decrypt_filename;
             ### don't decrypt a file on top of a normal file of
             ### the same name
@@ -435,7 +436,8 @@ sub get_password() {
         if ($test_and_exit) {
             $msg = '[+] test_mode(): Enter decryption password: ';
         } elsif ($encrypt) {
-            $msg = '[+] Enter decryption password (for initial test): ';
+            $msg = '[+] Enter decryption password (for initial ' .
+                'encrypt/decrypt test): ';
         }
         ### get the password without echoing the chars back to the screen
         ReadMode 'noecho';
