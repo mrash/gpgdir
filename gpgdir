@@ -158,7 +158,6 @@ if ($decrypt_dir && $compress) {
 push @exclude_patterns, $exclude_pat if $exclude_pat;
 
 if ($exclude_file) {
-print "here.............\n";
     open P, "< $exclude_file" or die " ** Could not open file: $exclude_file";
     my @lines = <P>;
     close P;
