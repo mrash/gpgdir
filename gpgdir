@@ -248,7 +248,7 @@ sub gpg_operation() {
             } elsif (! -d $file) {
                 my $cfile;
                 my $decompress = 0;
-                if ($filename =~ /(\S+)_C/) {  ### the file was compressed
+                if ($filename =~ /(\S+)_C$/) {  ### the file was compressed
                     $cfile = $1;
                     if (-e $cfile) {
                         push @errs, localtime() . " ... @@@ Skipping file: " .
