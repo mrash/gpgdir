@@ -107,6 +107,7 @@ exit 0;
 #==================== end main =====================
 sub gpg_operation() {
     my $dir = shift;
+    my @errs;
     die " ... Directory: $dir does not exist.\n" unless -d $dir;
 
     if ($dir =~ m|\.gnupg|) {  ### don't encrypt any .gnupg directories
@@ -120,21 +121,36 @@ sub gpg_operation() {
 
     shift @files; shift @files;
 
-    if ($encrypt) {
-        print localtime() . " ... Encrypting files in: $dir\n";
-    } else {
-        print localtime() . " ... Decrypting files in: $dir\n";
+    my $longest_filename = 0;
+    for my $file (@files) {
+        $longest_filename = length $file if (length $file > $longest_filename);
     }
+
+    if ($encrypt) {
+        print localtime() . " ... Directory: $dir ==> Encrypting <==\n";
+    } else {
+        print localtime() . " ... Directory: $dir ==> Decrypting <==\n";
+    }
+
     FILE: for my $file (@files) {
+        next FILE unless $file =~ /\S/ && -e $file;
         if ($encrypt) {
             ### don't encrypt files that are already
             ### encrypted, and make sure they exist
-            if ($file !~ /\.gpg$/ && ! -d $file && -e $file) {
+            if (! -d $file && $file =~ /\.gpg$/) {
+                push @errs, localtime() . " ... @@@ Skipping encrypted file: $file\n";
+            } elsif (-s $file == 0) {
+                push @errs, localtime() . " ... @@@ Skipping zero byte file: $file\n";
+            } elsif (-e "${file}.gpg") {
+                push @errs, localtime() . " ... @@@ Skipping file: $file since " .
+                    "$file.gpg already exists.\n";
+            } elsif (! -d $file) {
                 if ($file =~ m|^\.|) {  ### don't encrypt hidden files
-                    print localtime() . " ... @@@ Skipping hidden file: $file\n";
+                    push @errs, localtime() . " ... @@@ Skipping hidden file: $file\n";
                     next FILE;
                 }
-                print localtime() . " ... Encrypting $file -> ${file}.gpg\n";
+                print localtime() . " ... Encrypting " .
+                    sprintf("%${longest_filename}s", $file) .  " -> ${file}.gpg\n";
                 $gpg->encrypt(plaintext=>$file, output=>"${file}.gpg",
                               recipient=>$encrypt_user);
                 if (-e "${file}.gpg" && -s "${file}.gpg" != 0) {
@@ -142,18 +158,25 @@ sub gpg_operation() {
                     ### only delete the original file if the encrypted one exists
                     unlink $file;
                 } else {
-                    print localtime() . " ... @@@ Could not encrypt: $file\n";
+                    push @errs, localtime() . " ... @@@ Could not encrypt: $file\n";
                 }
-            } else {
-                print localtime() . " ... @@@ Skipping $file since it is either ".
-                    "already encrypted or is a directory.\n";
             }
         } else {
             my ($filename) = ($file =~ /^(\S+)\.gpg/);
-            if ($file =~ /\.gpg$/ && ! -e $filename && ! -d $file && -e $file) {
+            if ($file !~ /\.gpg$/) {
+                if (! -d $file) {
+                    push @errs, localtime() . " ... @@@ Skipping decrypted file: $file\n";
+                }
+            } elsif (-e $filename) {
+                push @errs, localtime() . " ... @@@ Skipping file: $file since " .
+                    "the decrypted file: $filename already exists.\n";
+            } elsif (-s $file == 0) {
+                push @errs, localtime() . " ... @@@ Skipping zero byte file: $file\n";
+            } elsif (! -d $file) {
                 ### don't decrypt a file on top of a normal file of
                 ### the same name
-                print localtime() . " ... Decrypting $file -> $filename\n";
+                print localtime() . " ... Decrypting " .
+                    sprintf("%${longest_filename}s", $file) .  " -> $filename\n";
                 $gpg->decrypt(ciphertext=>$file, output=>$filename,
                               passphrase=>$pw);
                 if (-e $filename && -s $filename != 0) {
@@ -162,12 +185,16 @@ sub gpg_operation() {
                     ### file if the decrypted one exists
                     unlink $file;
                 } else {
-                    print localtime() . " ... @@@ Could not decrypt: $file\n";
+                    push @errs, localtime() . " ... @@@ Could not decrypt: $file\n";
                 }
-            } else {
-                print localtime() . " ... @@@ Skipping file: $file since it is " .
-                    "either a directory, does not exist, or $filename already exists.\n";
             }
+        }
+    }
+    if (@errs) {
+        print localtime() . " ... Errors:\n";
+        ### print any errors
+        for my $err (@errs) {
+            print $err;
         }
     }
     chdir $initial_dir or die " ... @@@ Could not chdir: $initial_dir\n";
