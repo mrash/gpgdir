@@ -144,7 +144,9 @@ sub gpg_operation() {
                 } else {
                     print localtime() . " ... @@@ Could not encrypt: $file\n";
                 }
-            }
+            } else {
+                print localtime() . " ... @@@ Skipping $file since it is either ".
+                    "already encrypted or is a directory.\n";
         } else {
             my ($filename) = ($file =~ /^(\S+)\.gpg/);
             if ($file =~ /\.gpg$/ && ! -e $filename && ! -d $file && -e $file) {
@@ -161,6 +163,9 @@ sub gpg_operation() {
                 } else {
                     print localtime() . " ... @@@ Could not decrypt: $file\n";
                 }
+            } else {
+                print localtime() . " ... @@@ Skipping file: $file since it is " .
+                    "either a directory, does not exist, or $filename already exists.\n";
             }
         }
     }
