@@ -36,6 +36,8 @@ use Cwd;
 use strict;
 
 #==================== config =======================
+my $version = '0.1';
+
 ### system binaries
 my $gunzipCmd = '/usr/bin/gunzip';
 my $gzipCmd   = '/usr/bin/gzip';
@@ -54,6 +56,7 @@ my $total_encrypted = 0;
 my $total_decrypted = 0;
 my $norecurse       = 0;
 my $nocompress      = 0;
+my $printver        = 0;
 my $help;
 
 open STDERR, ">&STDOUT" || die ' ** Could not dup STDERR to STDOUT';
@@ -91,9 +94,13 @@ $encrypt_user = &get_key();
     'decrypt=s'   => \$decrypt_dir,  ### decrypt files in this directory
     'no-recurse'  => \$norecurse,    ### don't encrypt/decrypt files in subdirectories
     'no-compress' => \$nocompress,   ### don't compress files
-    'help'        => \$help
+    'version'     => \$printver,     ### print version
+    'help'        => \$help          ### print help
 ));
 &usage_and_exit() if $help;
+
+print " .. gpgdir version: $version by Michael Rash " .
+    "<mbr\@cipherdyne.com>\n" and exit 0 if $printver;
 
 if ($decrypt_dir && $encrypt_dir) {
     die " ** You cannot encrypt and decrypt the same directory.\n";
@@ -370,10 +377,12 @@ sub find_subdirs() {
 }
 
 sub usage_and_exit() {
-    print "gpgdir usage:\n";
-    print "   --encrypt <directory>\n";
-    print "   --decrypt <directory>\n";
-    print "   --no-recurse     - Don't encrypt/decrypt subdirectories.\n";
-    print "   --no-compress    - Don't compress files.\n";
+    print "gpgdir usage:\n",
+        "   -e, --encrypt <directory>\n",
+        "   -d, --decrypt <directory>\n",
+        "   --no-recurse     - Don't encrypt/decrypt subdirectories.\n",
+        "   --no-compress    - Don't compress files.\n",
+        "   -v, --version    - print version.\n",
+        "   -h, --help       - print help\n";
     exit 0;
 }

@@ -18,10 +18,12 @@ Installation:
     sources.
 
 Command line options:
-    -e  --encrypt  <directory>    Encrypt <directory>
-    -d  --decrypt  <directory     Decrypt <directory>
+    -e, --encrypt  <directory>    Encrypt <directory>
+    -d, --decrypt  <directory     Decrypt <directory>
     --no-recurse                  Don't recurse through subdirectories
     --no-compress                 Don't compress files
+    -v, --version                 Print version
+    -h, --help                    Print help
 
 
 Examples:
