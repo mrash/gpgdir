@@ -153,6 +153,11 @@ To encrypt a directory but skip all filenames that contain the string "host":
 
 .B $ gpgdir -e ~/testdir --Exclude host
 
+To encrypt a directory but skip the encryption/decryption test (so you will
+not be prompted for a decryption password):
+
+.B $ gpgdir -e ~/testdir -s
+
 To encrypt a directory and no subdirectories:
 
 .B $ gpgdir -e /home/user/testdir --no-recurse
