@@ -127,7 +127,8 @@ sub gpg_operation() {
     }
     FILE: for my $file (@files) {
         if ($encrypt) {
-            ### don't encrypt files that are already encrypted, and make sure they exist
+            ### don't encrypt files that are already
+            ### encrypted, and make sure they exist
             if ($file !~ /\.gpg$/ && ! -d $file && -e $file) {
                 if ($file =~ m|^\.|) {  ### don't encrypt hidden files
                     print localtime() . " ... @@@ Skipping hidden file: $file\n";
@@ -145,14 +146,17 @@ sub gpg_operation() {
                 }
             }
         } else {
-            if ($file =~ /\.gpg$/ && ! -d $file && -e $file) {
-                my ($filename) = ($file =~ /^(\S+)\.gpg/);
+            my ($filename) = ($file =~ /^(\S+)\.gpg/);
+            if ($file =~ /\.gpg$/ && ! -e $filename && ! -d $file && -e $file) {
+                ### don't decrypt a file on top of a normal file of
+                ### the same name
                 print localtime() . " ... Decrypting $file -> $filename\n";
                 $gpg->decrypt(ciphertext=>$file, output=>$filename,
                               passphrase=>$pw);
                 if (-e $filename && -s $filename != 0) {
                     $total_decrypted++;
-                    ### only delete the original encrypted file if the decrypted one exists
+                    ### only delete the original encrypted
+                    ### file if the decrypted one exists
                     unlink $file;
                 } else {
                     print localtime() . " ... @@@ Could not decrypt: $file\n";
