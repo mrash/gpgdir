@@ -1,0 +1,5 @@
+gpgdir-0.3 (09/27/2003):
+    -Bundled perl modules GnuPG and TermReadKey with gpgdir.
+    -Modified install.pl and gpgdir to install and use GnuPG and
+     TermReadKey modules from the /usr/lib/gpgdir directory.
+    -Added check_commands() subroutine from psad.
