@@ -740,7 +740,7 @@ sub decrypt_postread($) {
     }
 
     $self->abort_gnupg( "protocol error: expected DECRYPTION_OKAY got $cmd: \n" )
-      unless $cmd =~ /DECRYPTION_OKAY/;
+      unless $cmd =~ /DECRYPTION_OKAY/ or $cmd =~ /PLAINTEXT/;
 
     return $sig ? $sig : 1;
 }
