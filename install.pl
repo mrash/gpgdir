@@ -6,7 +6,7 @@
 #
 # Purpose: To install gpgdir on a Linux system.
 #
-# Author: Michael Rash (mbr@cipherdyne.com)
+# Author: Michael Rash (mbr@cipherdyne.org)
 #
 # License (GNU Public License):
 #
@@ -59,7 +59,7 @@ exit 0;
 
 sub install_gpgdir() {
     die " ** gpgdir does not exist.  Download gpgdir from " .
-        "http://www.cipherdyne.com/gpgdir" unless -e 'gpgdir';
+        "http://www.cipherdyne.org/gpgdir" unless -e 'gpgdir';
     copy 'gpgdir', "${install_dir}/gpgdir" or die " ** Could not copy " .
         "gpgdir to $install_dir: $!";
     chmod 0755, "${install_dir}/gpgdir" or die " ** Could not set " .
@@ -71,7 +71,7 @@ sub install_gpgdir() {
 
 sub install_manpage() {
     die " ** man page: $manpage does not exist.  Download gpgdir " .
-        "from http://www.cipherdyne.com/gpgdir" unless -e $manpage;
+        "from http://www.cipherdyne.org/gpgdir" unless -e $manpage;
     ### default location to put the gpgdir man page, but check with
     ### /etc/man.config
     my $mpath = '/usr/share/man/man1';
