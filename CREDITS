@@ -1,2 +1,6 @@
-Kai Raven       Bugfix in man page for file compression/decompression wording.
-Craig Needs     Suggested --gnupg-dir option, testing help.
+Per Ronny Westin  Found PLAINTEXT vs. DECRYPTION_OKAY return code bug for GnuPG
+                  1.2.6.
+
+Kai Raven         Bugfix in man page for file compression/decompression wording.
+
+Craig Needs       Suggested --gnupg-dir option, testing help.

@@ -1,3 +1,8 @@
+gpgdir-0.9.1 (11//2004):
+    - Updated GnuPG.pm perl module to handle return code of PLAINTEXT
+      which seems to be returned by GunPG now (as of version 1.2.6)
+      instead of DECRYPTION_OKAY upon a successful decryption.
+
 gpgdir-0.9 (09/12/2004):
     - Added --gnupg-dir option to allow a user to specify a different
       user's .gnupg directory for encryption keys.
