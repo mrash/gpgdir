@@ -42,8 +42,7 @@ my $version = '0.9.2';
 ### establish some defaults
 my $encrypt_user;
 my $gpg_homedir;
-my $dir;
-my @subdirs;
+my $dir             = '';
 my $pw              = '';
 my $encrypt_dir     = '';
 my $decrypt_dir     = '';
@@ -63,18 +62,7 @@ my $help            = 0;
 my $encrypt         = 0;
 my $pw_file         = '';
 my @exclude_patterns = ();
-
-my %err_msgs = (
-    'exclude'        => 'file matched exclude pattern',
-    'link'           => 'file is a link',
-    'directory'      => 'directory skip',
-    'zero'           => 'zero byte file',
-    'hidden'         => 'hidden file',
-    'encrypted'      => 'previously encrypted',
-    'bad_encrypt'    => 'failed encrypt',
-    'decrypted'      => 'previously decrypted',
-    'bad_decrypt'    => 'failed decrypt'
-);
+my %files            = ();
 
 unless ($< == $>) {
     die "[*] Real and effective uid must be the same.  Make sure\n",
@@ -165,6 +153,13 @@ if ($encrypt_dir) {
     $encrypt = 0;
 }
 
+if ($dir) {
+    die "[*] Directory does not exist: $dir" unless -e $dir;
+    die "[*] Not a directory: $dir" unless -d $dir;
+}
+
+my $initial_dir = cwd or die "[*] Could not get CWD: $!";
+
 &get_password unless $encrypt and $skip_test_mode;
 
 ### run a test to make sure gpgdir and encrypt and decrypt a file
@@ -173,14 +168,17 @@ unless ($skip_test_mode) {
     exit $rv if $test_and_exit;
 }
 
-die "[*] Directory does not exist: $dir" unless -e $dir;
-die "[*] Not a directory: $dir" unless -d $dir;
-
-my $initial_dir = cwd or die "[*] Could not get CWD: $!";
-
 $dir =~ s|/$||;  ### remove any trailing slash
-if ($dir !~ m|^/|) {
+if ($dir eq '.') {
+    $dir = $initial_dir;
+} elsif ($dir !~ m|^/|) {
     $dir = $initial_dir . '/' . $dir;
+}
+
+if ($encrypt) {
+    print "[+] Encrypting directory: $dir\n";
+} else {
+    print "[+] Decrypting directory: $dir\n";
 }
 
 my $gpg = new GnuPG(homedir=>$gpg_homedir);
@@ -188,18 +186,11 @@ my $gpg = new GnuPG(homedir=>$gpg_homedir);
 die "[*] Could not create new gpg object with ",
     "homedir: $gpg_homedir" unless $gpg;
 
-unless ($norecurse) {
-    ### find all subdirectories of $dir
-    find(\&find_subdirs, $dir);
-    for my $subdir (@subdirs) {
-        ### perform the encrypt/decrypt operation on the directory
-        &gpg_operation($subdir);
-    }
-} else {
-    ### perform the encrypt/decrypt operation only on the
-    ### specific directory
-    &gpg_operation($dir);
-}
+### build a hash of file paths to work against
+&get_files($dir);
+
+### perform the gpg operation (encrypt/decrypt)
+&gpg_operation();
 
 if ($encrypt) {
     print "[+] Total number of files encrypted: " .
@@ -214,126 +205,118 @@ exit 0;
 #==================== end main =====================
 
 sub gpg_operation() {
-    my $dir = shift;
-    die "[*] Directory: $dir does not exist.\n" unless -d $dir;
 
-    if ($dir =~ m|\.gnupg|) {  ### don't encrypt any .gnupg directories!!!
-        print "[-] Skipping directory: $dir\n";
-        return;
-    }
-    chdir $dir or die "[*] Could not chdir: $dir\n";
-    opendir D, '.' or die "[*] Could not open $dir";
-    my @files = readdir D;
-    closedir D;
+    ### sort by oldest to youngest mtime
+    FILE: for my $file (sort
+            {$files{$a}{'mtime'} <=> $files{$b}{'mtime'}} keys %files) {
 
-    shift @files; shift @files;
-
-    if ($encrypt) {
-        print "[+] ==> Encrypting <==  $dir\n";
-    } else {
-        print "[+] ==> Decrypting <==  $dir\n";
-    }
-
-    my %errs;
-    FILE: for my $file (@files) {
-        next FILE unless $file =~ /\S/ && -e $file;
-        if (@exclude_patterns) {
-            for my $pat (@exclude_patterns) {
-                if ("$dir/$file" =~ m|$pat|) {
-                    $errs{'exclude'}{$file} = $pat;
-                    next FILE;
-                }
-            }
-        }
-        if (-l $file) {
-            $errs{'link'}{$file} = '';
-            next FILE;
-        } elsif (-d $file) {
-#            $errs{'directory'}{$file} = '';
-            next FILE;
-        } elsif (-s $file == 0) {
-            $errs{'zero'}{$file} = '';
-            next FILE;
-        } elsif ($file =~ m|^\.|) {  ### don't encrypt hidden files
-            $errs{'hidden'}{$file} = '';
+        ### see if we have an exclusion pattern that implies
+        ### we should skip this file
+        if (@exclude_patterns and &exclude_file($file)) {
+            print "[+] Skipping excluded file: $file\n"
+                if $verbose;
             next FILE;
         }
+
+        ### dir is always a full path
+        my ($dir, $filename) = ($file =~ m|(.*)/(.*)|);
+
+        unless (chdir($dir)) {
+            print "[-] Could not chdir $dir, skipping.\n";
+            next FILE;
+        }
+
+        my $mtime = $files{$file}{'mtime'};
+        my $atime = $files{$file}{'atime'};
+
         if ($encrypt) {
-            if ($file =~ /\.gpg$/) {
-                $errs{'encrypted'}{$file} = '';
-            } else {
-                my $atime = '';
-                my $mtime = '';
+            if (-e "$filename.gpg") {
+                print "[-] Encrypted file $file.gpg already exists. ",
+                    "Skipping.\n";
+                next FILE;
+            }
+            print "[+] Encrypting:  $file\n" .
+            $gpg->encrypt(plaintext=>$filename, output=>"$filename.gpg",
+                          recipient=>$encrypt_user);
+            if (-e "$filename.gpg" && -s "$filename.gpg" != 0) {
+                ### set the atime and mtime to be the same as the
+                ### original file.
                 unless ($no_fs_times) {
-                    ($atime, $mtime) = (stat($file))[8,9];
-                    die unless $atime and $mtime;
-                }
-                print "[+] Encrypting:  $file\n" .
-                $gpg->encrypt(plaintext=>$file, output=>"${file}.gpg",
-                              recipient=>$encrypt_user);
-                if (-e "${file}.gpg" && -s "${file}.gpg" != 0) {
-                    ### set the atime and mtime to be the same as the
-                    ### original file.
-                    unless ($no_fs_times) {
-                        utime $atime, $mtime, "${file}.gpg";
+                    if (defined $mtime and $mtime and
+                            defined $atime and $atime) {
+                        utime $atime, $mtime, "$filename.gpg";
                     }
-                    $total_encrypted++;
-                    ### only delete the original file if
-                    ### the encrypted one exists
-                    unlink $file unless $no_delete;
-                } else {
-                    $errs{'bad_encrypt'}{$file} = '';
                 }
+                $total_encrypted++;
+                ### only delete the original file if
+                ### the encrypted one exists
+                unlink $filename unless $no_delete;
+            } else {
+                print "[-] Could not encrypt file: $file\n";
+                next FILE;
             }
         } else {
-            my ($filename) = ($file =~ /^(\S+)\.gpg$/);
-            next unless $filename;
-            if (-e $filename) {
-                $errs{'decrypted'}{$file} = '';
-            } else {
-                my $atime = '';
-                my $mtime = '';
-                unless ($no_fs_times) {
-                    ($atime, $mtime) = (stat($file))[8,9];
-                    die unless $atime and $mtime;
-                }
-                ### don't decrypt a file on top of a normal file of
-                ### the same name
-                print "[+] Decrypting:  $file\n";
-                $gpg->decrypt(ciphertext=>$file, output=>$filename,
-                              passphrase=>$pw);
-                if (-e $filename && -s $filename != 0) {
-                    ### set the atime and mtime to be the same as the
-                    ### original file.
-                    unless ($no_fs_times) {
-                        utime $atime, $mtime, $filename;
-                    }
-                    ### only delete the original encrypted
-                    ### file if the decrypted one exists
-                    unlink $file;
-                    $total_decrypted++;
-                } else {
-                    $errs{'bad_decrypt'}{$file} = '';
-                }
+            my ($decrypt_filename) = ($filename =~ /^(\S+)\.gpg$/);
+            next unless $decrypt_filename;
+            ### don't decrypt a file on top of a normal file of
+            ### the same name
+            if (-e $decrypt_filename) {
+                print "[-] Decrypted file $dir/$decrypt_filename ",
+                    "already exists. Skipping.\n";
+                next FILE;
             }
-        }
-    }
-    if (%errs) {
-        print "[+] Errors/Warnings:\n";
-        for my $problem (keys %errs) {
-            for my $file (keys %{$errs{$problem}}) {
-                if ($problem eq 'exclude') {
-                    my $pat = $errs{$problem}{$file};
-                    print "[-] Error: \"$err_msgs{$problem}: $pat\": $file\n";
-                } else {
-                    print "[-] Error: \"$err_msgs{$problem}\": $file\n";
+            print "[+] Decrypting:  $dir/$filename\n";
+            $gpg->decrypt(ciphertext=>$filename, output=>$decrypt_filename,
+                          passphrase=>$pw);
+            if (-e $decrypt_filename && -s $decrypt_filename != 0) {
+                ### set the atime and mtime to be the same as the
+                ### original file.
+                unless ($no_fs_times) {
+                    if (defined $mtime and $mtime and
+                            defined $atime and $atime) {
+                        utime $atime, $mtime, $decrypt_filename;
+                    }
                 }
+                ### only delete the original encrypted
+                ### file if the decrypted one exists
+                unlink $filename;
+                $total_decrypted++;
+            } else {
+                print "[-] Could not decrypt file: $file\n";
+                next FILE;
             }
         }
     }
     print "\n";
     chdir $initial_dir or die "[*] Could not chdir: $initial_dir\n";
     return;
+}
+
+sub get_files() {
+    my $dir = shift;
+
+    print "[+] Building file list...\n";
+    if ($norecurse) {
+        opendir D, $dir or die "[*] Could not open $dir: $!";
+        my @files = readdir D;
+        closedir D;
+        shift @files; shift @files;
+        for my $file (@files) {
+            &check_file_criteria("$dir/$file");
+        }
+    } else {
+        ### get all files in all subdirectories
+        find(\&find_files, $dir);
+    }
+    return;
+}
+
+sub exclude_file() {
+    my $file = shift;
+    for my $pat (@exclude_patterns) {
+        return 1 if $file =~ m|$pat|;
+    }
+    return 0;
 }
 
 sub get_homedir() {
@@ -399,10 +382,35 @@ sub get_key() {
     return;
 }
 
-sub find_subdirs() {
+sub find_files() {
     my $file = $File::Find::name;
-    if (-d $file && -e $file) {
-        push @subdirs, $file;
+    &check_file_criteria($file);
+    return;
+}
+
+sub check_file_criteria() {
+    my $file = shift;
+    ### skip all links, zero size files, all hidden
+    ### files (includes .gnupg files), etc.
+    if (-e $file and not -d $file and not -l $file
+            and -s $file != 0 and $file !~ m|/\.|) {
+        if ($encrypt) {
+            if ($file =~ m|\.gpg|) {
+                print "[-] Skipping encrypted file: $file\n";
+                return;
+            }
+        } else {
+            if ($file !~ m|\.gpg|) {
+                print "[-] Skipping unencrypted file: $file\n";
+                return;
+            }
+        }
+        my ($atime, $mtime) = (stat($file))[8,9];
+        $files{$file}{'atime'} = $atime;
+        $files{$file}{'mtime'} = $mtime;
+    } else {
+        print "[-] Skipping file: $file\n"
+            if $verbose;
     }
     return;
 }
