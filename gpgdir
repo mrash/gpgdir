@@ -314,7 +314,11 @@ sub get_files() {
 sub exclude_file() {
     my $file = shift;
     for my $pat (@exclude_patterns) {
-        return 1 if $file =~ m|$pat|;
+        if ($file =~ m|$pat|) {
+            print "[+] Skipping $file (matches exclude pattern: $pat)\n"
+                if $verbose;
+            return 1;
+        }
     }
     return 0;
 }
@@ -392,8 +396,13 @@ sub check_file_criteria() {
     my $file = shift;
     ### skip all links, zero size files, all hidden
     ### files (includes .gnupg files), etc.
-    if (-e $file and not -d $file and not -l $file
-            and -s $file != 0 and $file !~ m|/\.|) {
+    if (-d $file) {
+        print "[-] Skipping directory: $file\n"
+            if $verbose;
+        return;
+    }
+    if (-e $file and not -l $file and -s $file != 0
+            and $file !~ m|/\.|) {
         if ($encrypt) {
             if ($file =~ m|\.gpg|) {
                 print "[-] Skipping encrypted file: $file\n";
