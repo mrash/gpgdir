@@ -1,3 +1,8 @@
+gpgdir-0.9 (08//2004):
+    - Added --gnupg-dir option to allow a user to specify a different
+      user's .gnupg directory for encryption keys.
+    - Switched to "[+]" (and related) message prefixes.
+
 gpgdir-0.8 (05/29/2004):
     - Added --Exclude and --Exclude-from options to allow files to be
       excluded based on regex matches.
