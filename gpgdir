@@ -185,14 +185,17 @@ sub gpg_operation() {
         if ($encrypt) {
             ### don't encrypt files that are already
             ### encrypted, and make sure they exist
-            if (! -d $file && $file =~ /\.gpg$/) {
+            if (-l $file) {
                 push @errs, localtime() . " ... @@@ Skipping " .
-                    "encrypted file: $file\n";
+                    "link: $file\n";
             } elsif (-s $file == 0) {
                 push @errs, localtime() . " ... @@@ Skipping " .
                     "zero byte file: $file\n";
             ### NOTE: encrypted files cannot be modified, so go ahead and
             ### encrypt $file over any existing $file.gpg encrypted file.
+            } elsif (! -d $file && $file =~ /\.gpg$/) {
+                push @errs, localtime() . " ... @@@ Skipping " .
+                    "encrypted file: $file\n";
             } elsif (! -d $file) {
                 my $compressed = 0;
                 if ($file =~ m|^\.|) {  ### don't encrypt hidden files
@@ -234,7 +237,13 @@ sub gpg_operation() {
             }
         } else {
             my ($filename) = ($file =~ /^(\S+)\.gpg/);
-            if ($file !~ /\.gpg$/) {
+            if (-l $file) {
+                push @errs, localtime() . " ... @@@ Skipping " .
+                    "link: $file\n";
+            } elsif (-s $file == 0) {
+                push @errs, localtime() . " ... @@@ Skipping zero byte " .
+                    "file: $file\n";
+            } elsif ($file !~ /\.gpg$/) {
                 if (! -d $file) {
                     push @errs, localtime() . " ... @@@ Skipping " .
                         "decrypted file: $file\n";
@@ -242,9 +251,6 @@ sub gpg_operation() {
             } elsif (-e $filename) {
                 push @errs, localtime() . " ... @@@ Skipping file: $file since " .
                     "the decrypted file: $filename already exists.\n";
-            } elsif (-s $file == 0) {
-                push @errs, localtime() . " ... @@@ Skipping zero byte " .
-                    "file: $file\n";
             } elsif (! -d $file) {
                 my $cfile;
                 my $decompress = 0;
