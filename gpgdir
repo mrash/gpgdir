@@ -40,8 +40,8 @@ use strict;
 my $version = '0.4';
 
 ### system binaries
-my $gunzipCmd = '/usr/bin/gunzip';
-my $gzipCmd   = '/usr/bin/gzip';
+my $gunzipCmd = '/bin/gunzip';
+my $gzipCmd   = '/bin/gzip';
 #================== end config =====================
 
 ### establish some defaults
@@ -75,9 +75,9 @@ my %Cmds = (
 open STDERR, ">&STDOUT" || die ' ** Could not dup STDERR to STDOUT';
 
 unless ($< == $>) {
-    print " ** Real and effective uid must be the same.  Make sure\n";
-    print "    gpgdir has not been installed as a SUID binary.\n";
-    die "Exiting.\n";
+    die " ** Real and effective uid must be the same.  Make sure\n",
+        "    gpgdir has not been installed as a SUID binary.\n",
+        "Exiting.\n";
 }
 
 ### get the path to the .gnupg directory in the user's home directory
@@ -85,8 +85,8 @@ my $homedir = &get_homedir();
 if (-d "${homedir}/.gnupg") {
     $gpg_homedir = "${homedir}/.gnupg";
 } else {
-    print " ** GPG directory: ${homedir}/.gnupg does not exist.  Please\n";
-    print "    create it by executing: \"gpg --gen-key\".  Exiting.\n";
+    print " ** GPG directory: ${homedir}/.gnupg does not exist.  Please\n",
+        "    create it by executing: \"gpg --gen-key\".  Exiting.\n";
     exit 1;
 }
 
@@ -197,7 +197,7 @@ exit 0;
 sub gpg_operation() {
     my $dir = shift;
     my @errs;
-    die " .. Directory: $dir does not exist.\n" unless -d $dir;
+    die " ** Directory: $dir does not exist.\n" unless -d $dir;
 
     if ($dir =~ m|\.gnupg|) {  ### don't encrypt any .gnupg directories!!!
         print " ** Skipping directory: $dir\n";
@@ -318,7 +318,7 @@ sub gpg_operation() {
 
 sub get_homedir() {
     my $uid = $<;
-    open P, "< /etc/passwd" or die " ** Could not open /etc/passwd.  " .
+    open P, "< /etc/passwd" or die " ** Could not open /etc/passwd.  ",
         "Exiting.\n";
     my @lines = <P>;
     close P;
@@ -331,16 +331,16 @@ sub get_homedir() {
             last;
         }
     }
-    die " ** Could not extract homedir from /etc/passwd for " .
+    die " ** Could not extract homedir from /etc/passwd for ",
         "uid: $uid.  Exiting.\n" unless $homedir;
-    die " ** homedir: $homedir does not exist.  " .
+    die " ** homedir: $homedir does not exist.  ",
         "Exiting.\n" unless -d $homedir;
     return $homedir;
 }
 
 sub get_key() {
     if (-e "${homedir}/.gpgdirrc") {
-        open F, "< ${homedir}/.gpgdirrc" or die " .. Could not open " .
+        open F, "< ${homedir}/.gpgdirrc" or die " ** Could not open ",
             "${homedir}/.gpgdirrc.  Exiting.\n";
         my @lines = <F>;
         close F;
@@ -362,16 +362,15 @@ sub get_key() {
         }
     } else {
         print " .. Creating gpgdir rc file: ${homedir}/.gpgdirrc\n";
-        open F, "> ${homedir}/.gpgdirrc" or die " .. Could not open " .
+        open F, "> ${homedir}/.gpgdirrc" or die " ** Could not open " .
             "${homedir}/.gpgdirrc.  Exiting.\n";
-        print F "# Config file for gpgdir.\n";
-        print F "# Set the key to use to encrypt files with\n";
-        print F "# \"use_key <key>\", e.g. \"use_key D4696445\".\n";
-        print F "# See \"gpg --list-keys\" for a list of keys.\n";
-        print F "\n";
-        print F "# Uncomment and replace \"KEYID\" with your real " .
-            "key id on the next line:\n";
-        print F "#use_key KEYID\n";
+        print F "# Config file for gpgdir.\n",
+            "# Set the key to use to encrypt files with\n",
+            "# \"use_key <key>\", e.g. \"use_key D4696445\".\n",
+            "# See \"gpg --list-keys\" for a list of keys.\n\n",
+            "# Uncomment and replace \"KEYID\" with your real ",
+            "key id on the next line:\n",
+            "#use_key KEYID\n";
         close F;
         print " ** Please edit ${homedir}/.gpgdirrc to include " .
             "your gpg key identifier.  Exiting.\n";
@@ -409,13 +408,13 @@ sub check_commands() {
                 }
             }
             unless ($found) {
-                die "\n ** Could not find $cmd anywhere!!!  ",
+                die " ** Could not find $cmd anywhere!!!  ",
                     "Please edit the config section to include the path to ",
                     "$cmd.\n";
             }
         }
         unless (-x $Cmds{$cmd}) {
-            die "\n ** $cmd is located at ",
+            die " ** $cmd is located at ",
                 "$Cmds{$cmd} but is not executable by uid: $<\n";
         }
     }
