@@ -147,6 +147,7 @@ sub gpg_operation() {
             } else {
                 print localtime() . " ... @@@ Skipping $file since it is either ".
                     "already encrypted or is a directory.\n";
+            }
         } else {
             my ($filename) = ($file =~ /^(\S+)\.gpg/);
             if ($file =~ /\.gpg$/ && ! -e $filename && ! -d $file && -e $file) {
