@@ -1,0 +1,84 @@
+.\" Process this file with
+.\" groff -man -Tascii foo.1
+.\"
+.TH GPGDIR 8 "September, 2002" Linux
+.SH NAME
+.B gpgdir
+.SH SYNOPSIS
+.B gpgdir [-e <directory] [-d <directory] --no-recurse --no-compress
+.SH DESCRIPTION
+.B gpgdir
+is a perl script that uses the CPAN GnuPG module to encrypt and decrypt
+directories using a gpg key specified in ~/.gpgdirrc.  gpgdir recursively
+descends through a directory in order to make sure it encrypts or decrypts
+every file in a directory and all of its subdirectories.  In order to help
+save space all files are compressed using gzip before being encrypted and
+uncompressed upon decryption.  In addition, gpgdir is careful not encrypt
+hidden files and directories.  gpgdir will compress each file using gzip
+unless the --no-compress option is specified.
+
+.SH OPTIONS
+.PP
+.PD 0
+.TP
+
+.BR \-e ", " \-\^\-encrypt\ \<directory>
+Encrypt the directory specified on the command line.
+.TP
+
+.BR \-d ", " \-\^\-decrypt\ \<directory>
+Decrypt the directory specified on the command line.
+.TP
+
+.BR \-\^\-no-recurse
+Instruct gpgdir to not recurse through any subdirectories of the directory
+that is being encrypted or decrypted.
+.TP
+
+.BR \-\^\-no-compress
+Instruct gpgdir to not compress files 
+.TP
+
+.SH FILES
+.B ~/.gpgdirrc
+.RS
+Contains the key id of the user gpg key that will be used to encrypt
+or decrypt the files within a directory.
+.RE
+
+.SH EXAMPLES
+The following examples illustrate the command line arguments that could
+be supplied to gpgdir in a few situations:
+
+To encrypt a directory:
+
+.B $ gpgdir -e ~/testdir
+
+To decrypt a directory:
+
+.B $ gpgdir -d ~/testdir
+
+To encrypt a directory and no subdirectories:
+
+.B $ gpgdir -e ~/testdir --no-recurse
+
+.SH DEPENDENCIES
+.B gpgdir
+requires that both gpg (http://www.gnupg.org) and the GnuPG perl module
+are installed.
+
+.SH "SEE ALSO"
+.BR gpg (1),
+
+.SH AUTHOR
+Michael B. Rash <mbr@cipherdyne.com>
+
+.SH BUGS
+Send bug reports to mbr@cipherdyne.com. Suggestions and/or comments are
+always welcome as well.
+
+.SH DISTRIBUTION
+.B gpgdir
+is distributed under the GNU General Public License (GPL), and the latest
+version may be downloaded from
+.B http://www.cipherdyne.com
