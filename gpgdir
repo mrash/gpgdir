@@ -8,7 +8,7 @@
 #
 # Author: Michael B. Rash (mbr@ciphedyne.com)
 #
-# Version: 0.3
+# Version: 0.4
 #
 # License (GNU General Public License):
 #
@@ -37,7 +37,7 @@ use Cwd;
 use strict;
 
 #==================== config =======================
-my $version = '0.3';
+my $version = '0.4';
 
 ### system binaries
 my $gunzipCmd = '/usr/bin/gunzip';
@@ -60,6 +60,7 @@ my $compress        = 0;
 my $uncompress      = 0;
 my $printver        = 0;
 my $no_delete       = 0;
+my $pw_file         = '';
 my $help;
 
 my %Cmds = (
@@ -100,6 +101,7 @@ $encrypt_user = &get_key();
     'no-recurse' => \$norecurse,    # Don't encrypt/decrypt files in subdirectories.
     'no-delete'  => \$no_delete,    # Don't delete files once they have
                                     # been encrypted.
+    'pw-file=s'  => \$pw_file,      # Read password out of this file.
     'version'    => \$printver,     # Print version
     'help'       => \$help          # Print help
 ));
@@ -135,25 +137,34 @@ die " ** Could not create new gpg object with " .
 
 if ($encrypt_dir) {
     $dir = $encrypt_dir;
-    $dir =~ s|/$||;  ### remove any trailing slash
     $encrypt = 1;
 } elsif ($decrypt_dir) {
     ### get the password without echoing the chars back to the screen
     $dir = $decrypt_dir;
-    $dir =~ s|/$||;  ### remove any trailing slash
-    ReadMode 'noecho';
-    while (! $pw) {
-        print " .. Enter a password to decrypt $dir: ";
-        $pw = ReadLine 0;
+    if ($pw_file) {
+        open PW, "< $pw_file" or die " ** Could not open $pw_file: $!";
+        $pw = <PW>;
+        close PW;
         chomp $pw;
+    } else {
+        ReadMode 'noecho';
+        while (! $pw) {
+            print " .. Enter a password to decrypt $dir: ";
+            $pw = ReadLine 0;
+            chomp $pw;
+        }
+        ReadMode 'normal';
+        print "\n";
     }
-    ReadMode 'normal';
-    print "\n";
     $encrypt = 0;
 }
 
-my $initial_dir = cwd;
+die " ** Directory does not exist: $dir" unless -e $dir;
+die " ** Not a directory: $dir" unless -d $dir;
 
+my $initial_dir = cwd or die " ** Could not get CWD: $!";
+
+$dir =~ s|/$||;  ### remove any trailing slash
 if ($dir !~ m|^/|) {
     $dir = $initial_dir . '/' . $dir;
 }
@@ -166,7 +177,8 @@ unless ($norecurse) {
         &gpg_operation($subdir);
     }
 } else {
-    ### perform the encrypt/decrypt operation on the directory
+    ### perform the encrypt/decrypt operation only on the
+    ### specific directory
     &gpg_operation($dir);
 }
 
@@ -415,16 +427,19 @@ sub usage_and_exit() {
 gpgdir
     version: $version, by Michael Rash (mbr\@cipherdyne.org)
 
-Usage: gpgdir [-e <directory>] [-d <directory>] [-c] [-u] [-n] [-v] [-h]
+Usage: gpgdir [-e <directory>] [-d <directory>] [-c] [-u] [-n] [-p] [-v] [-h]
 
 Options:
-   -e, --encrypt <directory>
-   -d, --decrypt <directory>
-   -c, --compress   - Compress files when running in --encrypt mode.
-   -u, --uncompress - Uncompress files when running in --decrypt mode.
-   -n, --no-recurse - Don't recursively encrypt/decrypt subdirectories.
-   -v, --version    - print version.
-   -h, --help       - print help.
+   -e, --encrypt <directory>  - Encrypt <directory> and all of its
+                                subdirectories.
+   -d, --decrypt <directory>  - Decrypt <directory> and all of its
+                                subdirectories.
+   -c, --compress             - Compress files when running in --encrypt mode.
+   -u, --uncompress           - Uncompress files when running in --decrypt mode.
+   -n, --no-recurse           - Don't recursively encrypt/decrypt subdirectories.
+   -p, --pw-file <file>       - Read password in from <file>.
+   -v, --version              - print version.
+   -h, --help                 - print help.
 _HELP_
     exit 0;
 }
