@@ -49,6 +49,8 @@ my $decrypt_dir     = '';
 my $homedir         = '';
 my $exclude_pat     = '';
 my $exclude_file    = '';
+my $include_pat     = '';
+my $include_file    = '';
 my $total_encrypted = 0;
 my $total_decrypted = 0;
 my $norecurse       = 0;
@@ -62,6 +64,7 @@ my $help            = 0;
 my $encrypt         = 0;
 my $pw_file         = '';
 my @exclude_patterns = ();
+my @include_patterns = ();
 my %files            = ();
 
 unless ($< == $>) {
@@ -80,8 +83,13 @@ Getopt::Long::Configure('no_ignore_case');
     'pw-file=s'      => \$pw_file,        # Read password out of this file.
     'Exclude=s'      => \$exclude_pat,    # Exclude a pattern from encrypt/decrypt
                                           # cycle.
-    'Exclude-from=s' => \$exclude_file,   # Exclude patterns in <file> from 
+    'Exclude-from=s' => \$exclude_file,   # Exclude patterns in <file> from
                                           # encrypt decrypt cycle.
+    'Include=s'      => \$include_pat,    # Specify a pattern used to restrict
+                                          # encrypt/decrypt operation to.
+    'Include-from=s' => \$include_file,   # Specify a file of include patterns to
+                                          # restrict all encrypt/decrypt
+                                          # operations to.
     'test-mode'      => \$test_and_exit,  # Run encrypt -> decrypt test only and
                                           # exit.
     'skip-test'      => \$skip_test_mode, # Skip encrypt -> decrypt test.
@@ -131,7 +139,7 @@ unless ($decrypt_dir || $encrypt_dir || $test_and_exit) {
     &usage_and_exit();
 }
 
-### exlude file pattern
+### exclude file pattern
 push @exclude_patterns, $exclude_pat if $exclude_pat;
 
 if ($exclude_file) {
@@ -142,6 +150,20 @@ if ($exclude_file) {
         next unless $line =~ /\S/;
         chomp $line;
         push @exclude_patterns, $line;
+    }
+}
+
+### include file pattern
+push @include_patterns, $include_pat if $include_pat;
+
+if ($include_file) {
+    open P, "< $include_file" or die "[*] Could not open file: $include_file";
+    my @lines = <P>;
+    close P;
+    for my $line (@lines) {
+        next unless $line =~ /\S/;
+        chomp $line;
+        push @include_patterns, $line;
     }
 }
 
@@ -214,6 +236,14 @@ sub gpg_operation() {
         ### we should skip this file
         if (@exclude_patterns and &exclude_file($file)) {
             print "[+] Skipping excluded file: $file\n"
+                if $verbose;
+            next FILE;
+        }
+
+        ### see if we have an inclusion pattern that implies
+        ### we should process this file
+        if (@include_patterns and not &include_file($file)) {
+            print "[+] Skipping non-included file: $file\n"
                 if $verbose;
             next FILE;
         }
@@ -317,6 +347,18 @@ sub exclude_file() {
     for my $pat (@exclude_patterns) {
         if ($file =~ m|$pat|) {
             print "[+] Skipping $file (matches exclude pattern: $pat)\n"
+                if $verbose;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+sub include_file() {
+    my $file = shift;
+    for my $pat (@include_patterns) {
+        if ($file =~ m|$pat|) {
+            print "[+] Including $file (matches include pattern: $pat)\n"
                 if $verbose;
             return 1;
         }

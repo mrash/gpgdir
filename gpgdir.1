@@ -17,6 +17,10 @@
 .I pattern
 .B ] [--Exclude-from
 .I file
+.B ] [--Include
+.I pattern
+.B ] [--Include-from
+.I file
 .B ] [--no-recurse] [--no-delete] [--no-preserve-times] [-t] [-s] [-V] [-v] [-h]
 .SH DESCRIPTION
 .B gpgdir
@@ -96,6 +100,17 @@ This is similar to the
 the GNU tar command.
 .TP
 
+.BR \-\^\-Include\ \<pattern>
+Instruct gpgdir to only include files that match
+.B pattern
+as a regex match against each filename.
+.TP
+
+.BR \-\^\-Include-from\ \<file>
+Instruct gpgdir to only include files matched by patterns listed in
+.B file.
+.TP
+
 .BR " \-\^\-skip-test
 Skip encryption and decryption test.  This will allow
 .B gpgdir
@@ -152,6 +167,10 @@ To decrypt a directory:
 To encrypt a directory but skip all filenames that contain the string "host":
 
 .B $ gpgdir -e ~/testdir --Exclude host
+
+To encrypt a directory but only encrypt those files that contain the string "passwd":
+
+.B $ gpgdir -e ~/testdir --Include passwd
 
 To encrypt a directory but skip the encryption/decryption test (so you will
 not be prompted for a decryption password):
