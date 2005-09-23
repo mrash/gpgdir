@@ -182,19 +182,19 @@ if ($dir) {
 
 my $initial_dir = cwd or die "[*] Could not get CWD: $!";
 
-&get_password unless $encrypt and $skip_test_mode;
-
-### run a test to make sure gpgdir and encrypt and decrypt a file
-unless ($skip_test_mode) {
-    my $rv = &test_mode();
-    exit $rv if $test_and_exit;
-}
+&get_password() unless $encrypt and $skip_test_mode;
 
 $dir =~ s|/$||;  ### remove any trailing slash
 if ($dir eq '.') {
     $dir = $initial_dir;
 } elsif ($dir !~ m|^/|) {
     $dir = $initial_dir . '/' . $dir;
+}
+
+### run a test to make sure gpgdir and encrypt and decrypt a file
+unless ($skip_test_mode) {
+    my $rv = &test_mode();
+    exit $rv if $test_and_exit;
 }
 
 if ($encrypt) {
@@ -495,13 +495,17 @@ sub get_password() {
 }
 
 sub test_mode() {
-    my $test_file = '/tmp/.gpgdir_test';
+    my $test_file = "$dir/gpgdir_test";
     print "[+] test_mode(): Encrypt/Decrypt test of $test_file\n"
         if $test_and_exit or $verbose;
 
     if (-e $test_file) {
         unlink $test_file or
             die "[*] test_mode(): Could not remove $test_file: $!";
+    }
+    if (-e "$test_file.gpg") {
+        unlink "$test_file.gpg" or
+            die "[*] test_mode(): Could not remove $test_file.gpg: $!";
     }
     open G, "> $test_file" or
         die "[*] test_mode(): Could not create $test_file: $!";
@@ -523,10 +527,10 @@ sub test_mode() {
     if (-e "$test_file.gpg") {
         print "[+] test_mode(): Successful encrypt of $test_file\n"
             if $test_and_exit or $verbose;
+        unlink $test_file if -e $test_file;
     } else {
         die "[*] test_mode(): not encrypt $test_file\n";
     }
-    unlink $test_file if -e $test_file;
     $gpg->decrypt(ciphertext=>"${test_file}.gpg", output=>$test_file,
                   passphrase=>$pw);
     if (-e $test_file) {
@@ -547,6 +551,8 @@ sub test_mode() {
     } else {
         die "[*] test_mode(): Decrypted content does not match original. Fail!";
     }
+    unlink $test_file if -e $test_file;
+    unlink "$test_file.gpg" if -e "$test_file.gpg";
     return 1;
 }
 
