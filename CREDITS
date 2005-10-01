@@ -1,9 +1,15 @@
-Per Ronny Westin  Found PLAINTEXT vs. DECRYPTION_OKAY return code bug for GnuPG
-                  1.2.6.
+Per Ronny Westin
+    - Found PLAINTEXT vs. DECRYPTION_OKAY return code bug for GnuPG 1.2.6.
 
-Kai Raven         Bugfix in man page for file compression/decompression wording.
+Kai Raven
+    - Bugfix in man page for file compression/decompression wording.
 
-Craig Needs       Suggested --gnupg-dir option, testing help.
+Craig Needs
+    - Suggested --gnupg-dir option, testing help.
 
-Chris P           Found bug where gpgdir would not decrypt files that contained
-                  spaces.
+Chris P
+    - Found bug where gpgdir would not decrypt files that contained spaces.
+
+Ian Scott
+    - Reported "protocol error: expected SHM_GET_XXX got GOOD_PASSPHRASE"
+      bug in GnuPG module.
