@@ -283,7 +283,7 @@ sub cpr_send($$$;$) {
     my ($self,$key,$value, $optional) = @_;
 
     my ( $cmd, $arg ) = $self->read_from_status;
-    unless ( defined $cmd && $cmd =~ /^SHM_GET/) {
+    unless ( defined $cmd && ($cmd =~ /^SHM_GET/ or $cmd =~ /GOOD_PASSPHRASE/)) {
 	$self->abort_gnupg( "protocol error: expected SHM_GET_XXX got $cmd\n" )
 	  unless $optional;
 	$self->next_status( $cmd, $arg );
