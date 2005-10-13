@@ -1,4 +1,4 @@
-gpgdir-0.9.4 (10//2005):
+gpgdir-0.9.4 (10/12/2005):
     - Updated test mode to encrypt and decrypt a testing file within the
       directory to be encrypted or decrypted.  This file is located at
       <dir>/gpgdir_test, and is removed after the test is completed.
