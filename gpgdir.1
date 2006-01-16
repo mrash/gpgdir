@@ -50,31 +50,24 @@ directories.  After all, you probably don't want your ~/.gnupg directory or
 ~/.bashrc file to be encrypted.
 
 .SH OPTIONS
-.PP
-.PD 0
-.TP
 
 .BR \-e ", " \-\^\-encrypt\ \<directory>
 Encrypt the directory specified on the command line.
 .TP
-
 .BR \-d ", " \-\^\-decrypt\ \<directory>
 Decrypt the directory specified on the command line.
 .TP
-
 .BR \-g ", " \-\^\-gnupg-dir\ \<directory>
 Specify which .gnupg directory will be used to find GPG keys.  The default
 is ~/.gnupg if this option is not used.  This option allows gpgdir to be
 run as one user but use the keys of another user (assuming permissions are
 setup correctly, etc.).
 .TP
-
 .BR \-p ", " \-\^\-pw-file\ \<pw-file>
 Read decryption password from
 .B pw-file
 instead of typing it on the command line.
 .TP
-
 .BR \-t ", " \-\^\-test-mode
 Run an encryption and decryption test against a dummy file and exit.  This
 test is always run by default in both
@@ -83,7 +76,6 @@ and
 .B --decrypt
 mode.
 .TP
-
 .BR \-\^\-Exclude\ \<pattern>
 Instruct gpgdir to skip all files that match
 .B pattern
@@ -91,7 +83,6 @@ as a regex match against each filename.  This is similar to the
 .B --exclude
 option in the standard GNU tar command.
 .TP
-
 .BR \-\^\-Exclude-from\ \<file>
 Instruct gpgdir to exclude all files matched by patterns listed in
 .B file.
@@ -99,18 +90,15 @@ This is similar to the
 .B --exclude-from
 the GNU tar command.
 .TP
-
 .BR \-\^\-Include\ \<pattern>
 Instruct gpgdir to only include files that match
 .B pattern
 as a regex match against each filename.
 .TP
-
 .BR \-\^\-Include-from\ \<file>
 Instruct gpgdir to only include files matched by patterns listed in
 .B file.
 .TP
-
 .BR " \-\^\-skip-test
 Skip encryption and decryption test.  This will allow
 .B gpgdir
@@ -118,73 +106,66 @@ to be used to encrypt a directory without specifying a password (which
 normally gets used in encryption mode to test to make sure decryption
 against a dummy file works properly).
 .TP
-
 .BR \-\^\-no-recurse
 Instruct gpgdir to not recurse through any subdirectories of the directory
 that is being encrypted or decrypted.
 .TP
-
 .BR \-\^\-no-delete
 Instruct gpgdir to not delete original files at encrypt time.
 .TP
-
 .BR \-\^\-no-preserve times
 Instruct gpgdir to not preserve original file mtime and atime values
 upon encryption or decryption.
 .TP
-
 .BR \-v ", " \-\^\-verbose
 Run in verbose mode.
 .TP
-
 .BR \-V ", " \-\^\-Version
 Print version number and exit.
 .TP
-
 .BR \-h ", " \-\^\-help
 Print usage information and exit.
 .TP
-
 .SH FILES
 .B ~/.gpgdirrc
 .RS
 Contains the key id of the user gpg key that will be used to encrypt
 or decrypt the files within a directory.
 .RE
-
+.PP
 .SH EXAMPLES
 The following examples illustrate the command line arguments that could
 be supplied to gpgdir in a few situations:
-
+.PP
 To encrypt a directory:
-
+.PP
 .B $ gpgdir -e ~/testdir
-
+.PP
 To decrypt a directory:
-
+.PP
 .B $ gpgdir -d ~/testdir
-
+.PP
 To encrypt a directory but skip all filenames that contain the string "host":
-
+.PP
 .B $ gpgdir -e ~/testdir --Exclude host
-
+.PP
 To encrypt a directory but only encrypt those files that contain the string "passwd":
-
+.PP
 .B $ gpgdir -e ~/testdir --Include passwd
-
+.PP
 To encrypt a directory but skip the encryption/decryption test (so you will
 not be prompted for a decryption password):
-
+.PP
 .B $ gpgdir -e ~/testdir -s
-
+.PP
 To encrypt a directory and no subdirectories:
-
+.PP
 .B $ gpgdir -e /home/user/testdir --no-recurse
-
+.PP
 To encrypt root's home directory, but use the GPG keys associated with the user "bob":
-
+.PP
 .B # gpgdir -e /root -g /home/bob/.gnupg
-
+.PP
 .SH DEPENDENCIES
 .B gpgdir
 requires that gpg, the Gnu Privacy Guard (http://www.gnupg.org) is installed.
