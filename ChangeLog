@@ -1,6 +1,11 @@
-gpgdir-0.9.8 (07//2006):
-    - Updated to use GnuPG::Interface instead of GnuPG module.
-    - Added perl module installation code from fwknop.
+gpgdir-0.9.8 (07/03/2006):
+    - Updated to use GnuPG::Interface instead of GnuPG module.  This should
+      fix the incompatibility issues seen between the GnuPG module and some
+      GnuPG installations.
+    - Added perl module installation code from fwknop (see
+      http://www.cipherdyne.org/fwknop/).  This allows gpgdir to
+      preferentially use any perl modules that are already be installed on the
+      system.
 
 gpgdir-0.9.4 (10/12/2005):
     - Updated test mode to encrypt and decrypt a testing file within the
