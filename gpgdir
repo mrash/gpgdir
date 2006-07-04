@@ -31,7 +31,9 @@ use lib '/usr/lib/gpgdir';
 use File::Find;
 use File::Copy;
 use Term::ReadKey;
-use GnuPG;
+use GnuPG::Interface;
+use IO::File;
+use IO::Handle;
 use Getopt::Long;
 use Cwd;
 use strict;
@@ -184,12 +186,12 @@ my $initial_dir = cwd or die "[*] Could not get CWD: $!";
 
 &get_password() unless $encrypt and $skip_test_mode;
 
-$dir =~ s|/$||;  ### remove any trailing slash
 if ($dir eq '.') {
     $dir = $initial_dir;
 } elsif ($dir !~ m|^/|) {
     $dir = $initial_dir . '/' . $dir;
 }
+$dir =~ s|/$||;  ### remove any trailing slash
 
 ### run a test to make sure gpgdir and encrypt and decrypt a file
 unless ($skip_test_mode) {
@@ -203,9 +205,18 @@ if ($encrypt) {
     print "[+] Decrypting directory: $dir\n";
 }
 
-my $gpg = new GnuPG(homedir=>$gpg_homedir);
+my $gpg = GnuPG::Interface->new();
 
-die "[*] Could not create new gpg object with ",
+if ($verbose) {
+    $gpg->options->hash_init(
+        'homedir' => $gpg_homedir);
+} else {
+    $gpg->options->hash_init(
+        'batch' => 1,
+        'homedir' => $gpg_homedir);
+}
+
+die "[*] Could not create new GnuPG::Interface object with ",
     "homedir: $gpg_homedir" unless $gpg;
 
 ### build a hash of file paths to work against
@@ -225,6 +236,142 @@ print "[+] Finished.\n";
 
 exit 0;
 #==================== end main =====================
+
+sub encrypt_file() {
+    my ($in_file, $out_file) = @_;
+
+    my $gpg = GnuPG::Interface->new();
+
+    if ($verbose) {
+        $gpg->options->hash_init(
+            'homedir' => $gpg_homedir);
+    } else {
+        $gpg->options->hash_init(
+            'batch' => 1,
+            'homedir' => $gpg_homedir);
+    }
+
+    die "[*] Could not create new gpg object with ",
+        "homedir: $gpg_homedir" unless $gpg;
+
+    $gpg->options->default_key($encrypt_user);
+    $gpg->options->push_recipients($encrypt_user);
+
+    my ($input_fh, $output_fh, $error_fh, $pw_fh, $status_fh) =
+        (IO::File->new($in_file),
+        IO::File->new("> $out_file"),
+        IO::Handle->new(),
+        IO::Handle->new(),
+        IO::Handle->new());
+
+    my $handles = GnuPG::Handles->new(
+        stdin  => $input_fh,
+        stdout => $output_fh,
+        stderr => $error_fh,
+        passphrase => $pw_fh,
+        status => $status_fh
+    );
+    $handles->options('stdin')->{'direct'}  = 1;
+    $handles->options('stdout')->{'direct'} = 1;
+
+    my $pid = $gpg->encrypt('handles' => $handles);
+
+    print $pw_fh $pw;
+    close $pw_fh;
+
+    my @errors = <$error_fh>;
+
+    if ($verbose) {
+        print for @errors;
+    } else {
+        for (@errors) {
+            print if /bad\s+pass/;
+        }
+    }
+
+    close $input_fh;
+    close $output_fh;
+    close $error_fh;
+    close $status_fh;
+
+    waitpid $pid, 0;
+
+    if (-s $out_file == 0) {
+        unlink $out_file;
+        die "[*] Created zero-size file: $out_file\n",
+            "    deleting and exiting (try re-running with -v).";
+    }
+
+    return;
+}
+
+sub decrypt_file() {
+    my ($in_file, $out_file) = @_;
+
+    my $gpg = GnuPG::Interface->new();
+
+    if ($verbose) {
+        $gpg->options->hash_init(
+            'homedir' => $gpg_homedir);
+    } else {
+        $gpg->options->hash_init(
+            'batch' => 1,
+            'homedir' => $gpg_homedir);
+    }
+
+    die "[*] Could not create new gpg object with ",
+        "homedir: $gpg_homedir" unless $gpg;
+
+    $gpg->options->default_key($encrypt_user);
+    $gpg->options->push_recipients($encrypt_user);
+
+    my ($input_fh, $output_fh, $error_fh, $pw_fh, $status_fh) =
+        (IO::File->new($in_file),
+        IO::File->new("> $out_file"),
+        IO::Handle->new(),
+        IO::Handle->new(),
+        IO::Handle->new());
+
+    my $handles = GnuPG::Handles->new(
+        stdin  => $input_fh,
+        stdout => $output_fh,
+        stderr => $error_fh,
+        passphrase => $pw_fh,
+        status => $status_fh
+    );
+    $handles->options('stdin')->{'direct'}  = 1;
+    $handles->options('stdout')->{'direct'} = 1;
+
+    my $pid = $gpg->decrypt('handles' => $handles);
+
+    print $pw_fh $pw;
+    close $pw_fh;
+
+    my @errors = <$error_fh>;
+
+    if ($verbose) {
+        print for @errors;
+    } else {
+        for (@errors) {
+            print if /bad\s+pass/;
+        }
+    }
+
+    close $input_fh;
+    close $output_fh;
+    close $error_fh;
+    close $status_fh;
+
+    waitpid $pid, 0;
+
+    if (-s $out_file == 0) {
+        unlink $out_file;
+        die "[*] Created zero-size file: $out_file\n",
+            "    deleting and exiting (try re-running with -v).";
+    }
+
+    return;
+}
 
 sub gpg_operation() {
 
@@ -266,8 +413,8 @@ sub gpg_operation() {
                 next FILE;
             }
             print "[+] Encrypting:  $file\n";
-            $gpg->encrypt(plaintext=>$filename, output=>"$filename.gpg",
-                          recipient=>$encrypt_user);
+            &encrypt_file($filename, "$filename.gpg");
+
             if (-e "$filename.gpg" && -s "$filename.gpg" != 0) {
                 ### set the atime and mtime to be the same as the
                 ### original file.
@@ -297,8 +444,8 @@ sub gpg_operation() {
                 next FILE;
             }
             print "[+] Decrypting:  $dir/$filename\n";
-            $gpg->decrypt(ciphertext=>$filename, output=>$decrypt_filename,
-                          passphrase=>$pw);
+            &decrypt_file($filename, $decrypt_filename);
+
             if (-e $decrypt_filename && -s $decrypt_filename != 0) {
                 ### set the atime and mtime to be the same as the
                 ### original file.
@@ -507,6 +654,7 @@ sub test_mode() {
         unlink "$test_file.gpg" or
             die "[*] test_mode(): Could not remove $test_file.gpg: $!";
     }
+
     open G, "> $test_file" or
         die "[*] test_mode(): Could not create $test_file: $!";
     print G "gpgdir test\n";
@@ -518,41 +666,47 @@ sub test_mode() {
     } else {
         die "[*] test_mode(): Could not create $test_file\n";
     }
-    my $gpg = new GnuPG(homedir=>$gpg_homedir);
-    die "[*] test_mode(): Could not create new gpg object with ",
-        "homedir: $gpg_homedir" unless $gpg;
 
-    $gpg->encrypt(plaintext=>$test_file, output=>"${test_file}.gpg",
-                  recipient=>$encrypt_user);
-    if (-e "$test_file.gpg") {
+    &encrypt_file($test_file, "${test_file}.gpg");
+
+    if (-e "$test_file.gpg" and (-s $test_file != 0)) {
         print "[+] test_mode(): Successful encrypt of $test_file\n"
             if $test_and_exit or $verbose;
         unlink $test_file if -e $test_file;
     } else {
-        die "[*] test_mode(): not encrypt $test_file\n";
+        die "[*] test_mode(): not encrypt $test_file (try adding -v).\n";
     }
-    $gpg->decrypt(ciphertext=>"${test_file}.gpg", output=>$test_file,
-                  passphrase=>$pw);
-    if (-e $test_file) {
+
+    &decrypt_file("${test_file}.gpg", $test_file);
+
+    if (-e $test_file and (-s $test_file != 0)) {
         print "[+] test_mode(): Successful decrypt of $test_file\n"
             if $test_and_exit or $verbose;
     } else {
-        die "[*] test_mode(): Could not decrypt $test_file.gpg\n";
+        die "[*] test_mode(): Could not decrypt $test_file.gpg ",
+            "(try adding -v).\n";
     }
     open F, "< $test_file" or
         die "[*] test_mode(): Could not open $test_file: $!";
     my $line = <F>;
     close F;
-    chomp $line;
-    if ($line eq 'gpgdir test') {
-        print "[+] test_mode(): Decrypted content matches original.\n",
-            "[+] test_mode(): Success!\n\n"
-            if $test_and_exit or $verbose;
+
+    if (defined $line and $line =~ /\S/) {
+        chomp $line;
+        if ($line eq 'gpgdir test') {
+            print "[+] test_mode(): Decrypted content matches original.\n",
+                "[+] test_mode(): Success!\n\n"
+                if $test_and_exit or $verbose;
+        } else {
+            die "[*] test_mode(): Decrypted content does not match ",
+                "original (try adding -v).";
+        }
     } else {
-        die "[*] test_mode(): Decrypted content does not match original. Fail!";
+        die "[*] test_mode(): Fail (try adding -v).\n";
     }
     unlink $test_file if -e $test_file;
     unlink "$test_file.gpg" if -e "$test_file.gpg";
+
     return 1;
 }
 
@@ -575,7 +729,7 @@ Options:
                                   option is not used).
     -p, --pw-file <file>        - Read password in from <file>.
     -s, --skip-test             - Skip encrypt -> decrypt test.
-    -t, --test-mode             - Run in testing mode and exit.
+    -t, --test-mode             - Run encrypt -> decrypt test and exit.
     --Exclude <pattern>         - Skip all filenames that match <pattern>.
     --Exclude-from <file>       - Skip all filenames that match any pattern
                                   contained within <file>.

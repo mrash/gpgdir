@@ -24,7 +24,7 @@
 .B ] [--no-recurse] [--no-delete] [--no-preserve-times] [-t] [-s] [-V] [-v] [-h]
 .SH DESCRIPTION
 .B gpgdir
-is a perl script that uses the CPAN GnuPG perl module to encrypt and decrypt
+is a perl script that uses the CPAN GnuPG::Interface perl module to encrypt and decrypt
 directories using a gpg key specified in ~/.gpgdirrc.
 .B gpgdir
 recursively descends through a directory in order to make sure it encrypts or
@@ -170,7 +170,7 @@ To encrypt root's home directory, but use the GPG keys associated with the user 
 .B gpgdir
 requires that gpg, the Gnu Privacy Guard (http://www.gnupg.org) is installed.
 .B gpgdir
-also requires the GnuPG perl module from CPAN, but it is bundled with
+also requires the GnuPG::Interface perl module from CPAN, but it is bundled with
 .B gpgdir
 and is installed in /usr/lib/gpgdir at install-time so it does not pollute the
 system perl library tree.

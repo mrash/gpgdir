@@ -1,3 +1,7 @@
+gpgdir-0.9.8 (07//2006):
+    - Updated to use GnuPG::Interface instead of GnuPG module.
+    - Added perl module installation code from fwknop.
+
 gpgdir-0.9.4 (10/12/2005):
     - Updated test mode to encrypt and decrypt a testing file within the
       directory to be encrypted or decrypted.  This file is located at

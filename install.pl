@@ -25,7 +25,9 @@
 # $Id$
 #
 
+use Cwd;
 use File::Copy;
+use Getopt::Long;
 use strict;
 
 #======================= config =======================
@@ -39,20 +41,52 @@ my $perlCmd = '/usr/bin/perl';
 my $makeCmd = '/usr/bin/make';
 #===================== end config =====================
 
-### Everthing after this point must be executed as root.
-$< == 0 && $> == 0 or
-    die "[*] You must be root (or equivalent " .
-        "UID 0 account) to install gpgdir!  Exiting.\n";
+my $print_help = 0;
+my $uninstall  = 0;
+my $cmdline_force_install = 0;
 
-my %Cmds = (
+my %cmds = (
     'gzip' => $gzipCmd,
     'perl' => $perlCmd,
     'make' => $makeCmd
 );
 
+### map perl modules to versions
+my %required_perl_modules = (
+    'Class::MethodMaker' => {
+        'version' => '2.08',
+        'force-lib-install' => 0,
+        'mod-dir' => 'Class-MethodMaker'
+    },
+    'GnuPG::Interface' => {
+        'version' => '0.34',
+        'force-lib-install' => 0,
+        'mod-dir' => 'GnuPG-Interface'
+    },
+    'Term::ReadKey' => {
+        'version' => '2.30',
+        'force-lib-install' => 0,
+        'mod-dir' => 'TermReadKey'
+    }
+);
+
+&usage(1) unless (GetOptions(
+    'force-mod-install' => \$cmdline_force_install,  ### force install of all modules
+    'uninstall' => \$uninstall,      # Uninstall gpgdir.
+    'help'      => \$print_help      # Display help.
+));
+&usage(0) if $print_help;
+
+### Everthing after this point must be executed as root.
+$< == 0 && $> == 0 or
+    die "[*] You must be root (or equivalent " .
+        "UID 0 account) to install gpgdir!  Exiting.\n";
+
 ### make sure we can find the system binaries
 ### in the expected locations.
 &check_commands();
+
+my $src_dir = getcwd() or die "[*] Could not get current working directory.";
 
 ### create directories, make sure executables exist, etc.
 &setup();
@@ -60,11 +94,10 @@ my %Cmds = (
 print "[+] Installing gpgdir in $install_dir\n";
 &install_gpgdir();
 
-print "[+] Installing GnuPG perl module in $libdir\n";
-&install_gnupg_pm();
-
-print "[+] Installing Term::Readkey perl module in $libdir\n";
-&install_term_readkey_pm();
+### install perl modules
+for my $module (keys %required_perl_modules) {
+    &install_perl_module($module);
+}
 
 print "[+] Installing man page.\n";
 &install_manpage();
@@ -86,38 +119,74 @@ sub install_gpgdir() {
     return;
 }
 
-sub install_gnupg_pm() {
-    ### installing GnuPG
-    chdir 'GnuPG' or die "[*] Could not chdir to ",
-        "GnuPG: $!";
-    unless (-e 'Makefile.PL' && -e 'GnuPG.pm') {
-        die "[*] Your source directory appears to be incomplete!  GnuPG.pm ",
-            "is missing.\n    Download the latest sources from ",
-            "http://www.cipherdyne.org\n";
+sub install_perl_module() {
+    my $mod_name = shift;
+
+    die '[*] Missing version key in required_perl_modules hash.'
+        unless defined $required_perl_modules{$mod_name}{'version'};
+    die '[*] Missing force-lib-install key in required_perl_modules hash.'
+        unless defined $required_perl_modules{$mod_name}{'force-lib-install'};
+    die '[*] Missing mod-dir key in required_perl_modules hash.'
+        unless defined $required_perl_modules{$mod_name}{'mod-dir'};
+
+    my $version = $required_perl_modules{$mod_name}{'version'};
+
+    my $install_module = 0;
+
+    if ($required_perl_modules{$mod_name}{'force-lib-install'}
+            or $cmdline_force_install) {
+        ### install regardless of whether the module may already be
+        ### installed (this module may be a CPAN module that has been
+        ### modified specifically for this project, or is a dedicated
+        ### module for this project).
+        $install_module = 1;
+    } else {
+        if (has_perl_module($mod_name)) {
+            print "[+] Module $mod_name is already installed in the ",
+                "system perl tree, skipping.\n";
+        } else {
+            ### install the module in the /usr/lib/gpgdir directory because
+            ### it is not already installed.
+            $install_module = 1;
+        }
     }
-    system "$Cmds{'perl'} Makefile.PL PREFIX=$libdir LIB=$libdir";
-    system $Cmds{'make'};
-#    system "$Cmds{'make'} test";
-    system "$Cmds{'make'} install";
-    chdir '..';
+
+    if ($install_module) {
+        unless (-d $libdir) {
+            print "[+] Creating $libdir\n";
+            mkdir $libdir, 0755 or die "[*] Could not mkdir $libdir: $!";
+        }
+        print "[+] Installing $mod_name $version perl module in $libdir/\n";
+        my $mod_dir = $required_perl_modules{$mod_name}{'mod-dir'};
+        chdir $mod_dir or die "[*] Could not chdir to ",
+            "$mod_dir: $!";
+        unless (-e 'Makefile.PL') {
+            die "[*] Your $mod_name source directory appears to be incomplete!\n",
+                "    Download the latest sources from ",
+                "http://www.cipherdyne.org\n";
+        }
+        system "$cmds{'make'} clean" if -e 'Makefile';
+        system "$cmds{'perl'} Makefile.PL PREFIX=$libdir LIB=$libdir";
+        system $cmds{'make'};
+#        system "$cmds{'make'} test";
+        system "$cmds{'make'} install";
+        chdir $src_dir or die "[*] Could not chdir $src_dir: $!";
+
+        print "\n\n";
+    }
     return;
 }
 
-sub install_term_readkey_pm() {
-    ### installing GnuPG
-    chdir 'TermReadKey' or die "[*] Could not chdir to ",
-        "TermReadKey: $!";
-    unless (-e 'Makefile.PL' && -e 'ReadKey.pm') {
-        die "[*] Your source directory appears to be incomplete!  ReadKey.pm ",
-            "is missing.\n    Download the latest sources from ",
-            "http://www.cipherdyne.org\n";
-    }
-    system "$Cmds{'perl'} Makefile.PL PREFIX=$libdir LIB=$libdir";
-    system $Cmds{'make'};
-#    system "$Cmds{'make'} test";
-    system "$Cmds{'make'} install";
-    chdir '..';
-    return;
+sub has_perl_module() {
+    my $module = shift;
+
+    # 5.8.0 has a bug with require Foo::Bar alone in an eval, so an
+    # extra statement is a workaround.
+    my $file = "$module.pm";
+    $file =~ s{::}{/}g;
+    eval { require $file };
+
+    return $@ ? 0 : 1;
 }
 
 sub install_manpage() {
@@ -177,7 +246,7 @@ sub install_manpage() {
     print "[+] Compressing man page: $mfile\n";
     ### remove the old one so gzip doesn't prompt us
     unlink "${mfile}.gz" if -e "${mfile}.gz";
-    system "$Cmds{'gzip'} $mfile";
+    system "$cmds{'gzip'} $mfile";
     return;
 }
 
@@ -191,12 +260,12 @@ sub check_commands() {
         /usr/local/bin
         /usr/local/sbin
     );
-    CMD: for my $cmd (keys %Cmds) {
-        unless (-x $Cmds{$cmd}) {
+    CMD: for my $cmd (keys %cmds) {
+        unless (-x $cmds{$cmd}) {
             my $found = 0;
             PATH: for my $dir (@path) {
                 if (-x "${dir}/${cmd}") {
-                    $Cmds{$cmd} = "${dir}/${cmd}";
+                    $cmds{$cmd} = "${dir}/${cmd}";
                     $found = 1;
                     last PATH;
                 }
@@ -207,9 +276,9 @@ sub check_commands() {
                     "$cmd.\n";
             }
         }
-        unless (-x $Cmds{$cmd}) {
+        unless (-x $cmds{$cmd}) {
             die "[*] $cmd is located at ",
-                "$Cmds{$cmd} but is not executable by uid: $<\n";
+                "$cmds{$cmd} but is not executable by uid: $<\n";
         }
     }
     return;
@@ -220,4 +289,20 @@ sub setup() {
         mkdir $libdir, 0755 or die "[*] Could not create $libdir: $!"
     }
     return;
+}
+
+sub usage() {
+    my $exit_status = shift;
+    print <<_HELP_;
+
+Usage: install.pl [-f] [-u] [-h]
+
+    -u  --uninstall     - Uninstall gpgdir.
+    -f  --force-mod     - Force all perl modules to be installed
+                          even if some already exist in the system
+                          /usr/lib/perl5 tree.
+    -h  --help          - Prints this help message.
+
+_HELP_
+    exit $exit_status;
 }

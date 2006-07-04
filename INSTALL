@@ -9,6 +9,7 @@ sources directory:
 # ./install.pl
 
 Note that you need to be root since gpgdir will need to install the
-GnuPG and Term::ReadKey perl modules in /usr/lib/gpgdir.  Gpgdir makes
-use of perl modules from this directory so as to not pollute perl
-modules that are installed in the system perl lib tree.
+GnuPG::Interface, Class::MethodMaker, and Term::ReadKey perl modules in
+/usr/lib/gpgdir.  Gpgdir makes use of perl modules from this directory
+so as to not pollute perl modules that are installed in the system perl
+lib tree.
