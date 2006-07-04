@@ -2,7 +2,7 @@ File:     gpgdir
 Author:   Michael Rash <mbr@cipherdyne.org>
 Download: http://www.cipherdyne.org/gpgdir
 License:  GNU General Public License
-Version:  0.9.2
+Version:  0.9.8
 
 gpgdir is a perl script that uses the CPAN GnuPG::Interface perl module to
 encrypt and decrypt directories using a gpg key specified in ~/.gpgdirrc.
