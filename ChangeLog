@@ -1,3 +1,11 @@
+gpgdir-0.9.9 (//2006):
+    - Added the --Skip-mod-install command line argument to install.pl to
+      allow all perl module installs to be skipped.
+    - Added the --force-mod-regex command line argument to install.pl to allow
+      a regex match on perl module names to force matching modules to be
+      installed.
+    - Updated to TermReadKey-2.30 from 2.21.
+
 gpgdir-0.9.8 (07/03/2006):
     - Updated to use GnuPG::Interface instead of GnuPG module.  This should
       fix the incompatibility issues seen between the GnuPG module and some
