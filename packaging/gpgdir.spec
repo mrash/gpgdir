@@ -55,21 +55,21 @@ make OPTS="$RPM_OPT_FLAGS" -C TermReadKey
 
 %install
 ### gpgdir module dirs
-mkdir -p $RPM_BUILD_ROOT%fwknoplibdir/%fwknopmoddir/auto/Term/ReadKey
-mkdir -p $RPM_BUILD_ROOT%fwknoplibdir/%fwknopmoddir/auto/Class/MethodMaker/array
-mkdir -p $RPM_BUILD_ROOT%fwknoplibdir/%fwknopmoddir/auto/Class/MethodMaker/Engine
-mkdir -p $RPM_BUILD_ROOT%fwknoplibdir/%fwknopmoddir/auto/Class/MethodMaker/hash
-mkdir -p $RPM_BUILD_ROOT%fwknoplibdir/%fwknopmoddir/auto/Class/MethodMaker/scalar
-mkdir -p $RPM_BUILD_ROOT%fwknoplibdir/%fwknopmoddir/Class/MethodMaker
-mkdir -p $RPM_BUILD_ROOT%fwknoplibdir/%fwknopmoddir/Term
-mkdir -p $RPM_BUILD_ROOT%fwknoplibdir/auto/GnuPG/Interface
-mkdir -p $RPM_BUILD_ROOT%fwknoplibdir/GnuPG
+mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Term/ReadKey
+mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Class/MethodMaker/array
+mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Class/MethodMaker/Engine
+mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Class/MethodMaker/hash
+mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Class/MethodMaker/scalar
+mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/Class/MethodMaker
+mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/Term
+mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/auto/GnuPG/Interface
+mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/GnuPG
 mkdir -p $RPM_BUILD_ROOT%_bindir
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
 mkdir -p $RPM_BUILD_ROOT%_sbindir
 
 install -m 755 gpgdir $RPM_BUILD_ROOT%_bindir/
-install -m 644 *.8 $RPM_BUILD_ROOT%{_mandir}/man1/
+install -m 644 gpgdir.1 $RPM_BUILD_ROOT%{_mandir}/man1/
 
 ### install perl modules used by gpgdir
 install -m 444 Class-MethodMaker/blib/lib/auto/Class/MethodMaker/array/*.* $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Class/MethodMaker/array/
@@ -99,10 +99,7 @@ install -m 444 TermReadKey/blib/arch/auto/Term/ReadKey/ReadKey.so $RPM_BUILD_ROO
 %files
 %defattr(-,root,root)
 %_bindir/*
-%{_mandir}/man8/*
-
-%dir %_sysconfdir/%name
-
+%{_mandir}/man1/*
 %_libdir/%name
 
 %changelog
