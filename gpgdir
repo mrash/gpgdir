@@ -42,8 +42,8 @@ use strict;
 my $version = '0.9.9';
 
 ### establish some defaults
-my $encrypt_user;
-my $gpg_homedir;
+my $encrypt_user    = '';
+my $gpg_homedir     = '';
 my $dir             = '';
 my $pw              = '';
 my $encrypt_dir     = '';
@@ -113,13 +113,10 @@ print "[+] gpgdir version: $version by Michael Rash " .
 ### get the path to the user's home directory
 $homedir = &get_homedir() unless $homedir;
 
-### get the key identifier from ~/.gnupg
-$encrypt_user = &get_key();
-
 if ($gpg_homedir) {  ### it was specified on the command line with --gnupg-dir
     unless ($gpg_homedir =~ /\.gnupg$/) {
         die "[*] Must specify the path to a user .gnupg directory ",
-            "e.g. /home/user/.gnupg\n";
+            "e.g. /home/username/.gnupg\n";
     }
 } else {
     if (-d "${homedir}/.gnupg") {
@@ -127,9 +124,12 @@ if ($gpg_homedir) {  ### it was specified on the command line with --gnupg-dir
     }
 }
 unless (-d $gpg_homedir) {
-    die "[*] GPG directory: ${homedir}/.gnupg does not exist.  Please\n",
+    die "[*] GnuPG directory: ${homedir}/.gnupg does not exist.  Please\n",
         "    create it by executing: \"gpg --gen-key\".  Exiting.\n";
 }
+
+### get the key identifier from ~/.gnupg
+$encrypt_user = &get_key();
 
 if ($decrypt_dir && $encrypt_dir) {
     die "[*] You cannot encrypt and decrypt the same directory.\n";
@@ -558,22 +558,21 @@ sub get_key() {
                 "identifier\n    (e.g. \"D4696445\").  See the output of ",
                 "\"gpg --list-keys\"\n";
         }
-    } else {
-        print "[+] Creating gpgdir rc file: ${homedir}/.gpgdirrc\n";
-        open F, "> ${homedir}/.gpgdirrc" or die "[*] Could not open " .
-            "${homedir}/.gpgdirrc.  Exiting.\n";
-        print F "# Config file for gpgdir.\n",
-            "# Set the key to use to encrypt files with\n",
-            "# \"use_key <key>\", e.g. \"use_key D4696445\".\n",
-            "# See \"gpg --list-keys\" for a list of keys.\n\n",
-            "# Uncomment and replace \"KEYID\" with your real ",
-            "key id on the next line:\n",
-            "#use_key KEYID\n";
-        close F;
-        die "[*] Please edit ${homedir}/.gpgdirrc to include " .
-            "your gpg key identifier.  Exiting.\n";
     }
-    return;
+    print "[+] Creating gpgdir rc file: ${homedir}/.gpgdirrc\n";
+    open F, "> ${homedir}/.gpgdirrc" or die "[*] Could not open " .
+        "${homedir}/.gpgdirrc.  Exiting.\n";
+    print F "# Config file for gpgdir.\n",
+        "# Set the key to use to encrypt files with\n",
+        "# \"use_key <key>\", e.g. \"use_key D4696445\".\n",
+        "# See \"gpg --list-keys\" for a list of keys.\n\n",
+        "# Uncomment and replace \"KEYID\" with your real ",
+        "key id on the next line:\n",
+        "#use_key KEYID\n";
+    close F;
+    print "[*] Please edit ${homedir}/.gpgdirrc to include " .
+        "your gpg key identifier.  Exiting.\n";
+    exit 0;
 }
 
 sub find_files() {
