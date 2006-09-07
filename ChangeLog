@@ -1,4 +1,5 @@
 gpgdir-0.9.9 (//2006):
+    - Added RPM .spec file to build gpgdir as an RPM.
     - Added the --Skip-mod-install command line argument to install.pl to
       allow all perl module installs to be skipped.
     - Added the --force-mod-regex command line argument to install.pl to allow
