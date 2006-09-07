@@ -8,6 +8,8 @@
 #
 # Author: Michael Rash (mbr@cipherdyne.org)
 #
+# Copyright (C) 2002-2006 Michael Rash (mbr@cipherdyne.org)
+#
 # License (GNU Public License):
 #
 #    This program is distributed in the hope that it will be useful,
@@ -43,6 +45,8 @@ my $makeCmd = '/usr/bin/make';
 
 my $print_help = 0;
 my $uninstall  = 0;
+my $force_install_re  = '';
+my $skip_module_install   = 0;
 my $cmdline_force_install = 0;
 
 my %cmds = (
@@ -54,24 +58,26 @@ my %cmds = (
 ### map perl modules to versions
 my %required_perl_modules = (
     'Class::MethodMaker' => {
-        'version' => '2.08',
-        'force-lib-install' => 0,
+        'force-install' => 0,
         'mod-dir' => 'Class-MethodMaker'
     },
     'GnuPG::Interface' => {
-        'version' => '0.34',
-        'force-lib-install' => 0,
+        'force-install' => 0,
         'mod-dir' => 'GnuPG-Interface'
     },
     'Term::ReadKey' => {
-        'version' => '2.30',
-        'force-lib-install' => 0,
+        'force-install' => 0,
         'mod-dir' => 'TermReadKey'
     }
 );
 
+### make Getopts case sensitive
+Getopt::Long::Configure('no_ignore_case');
+
 &usage(1) unless (GetOptions(
     'force-mod-install' => \$cmdline_force_install,  ### force install of all modules
+    'Force-mod-regex=s' => \$force_install_re,  ### force specific mod install with regex
+    'Skip-mod-install'  => \$skip_module_install,
     'uninstall' => \$uninstall,      # Uninstall gpgdir.
     'help'      => \$print_help      # Display help.
 ));
@@ -95,8 +101,10 @@ print "[+] Installing gpgdir in $install_dir\n";
 &install_gpgdir();
 
 ### install perl modules
-for my $module (keys %required_perl_modules) {
-    &install_perl_module($module);
+unless ($skip_module_install) {
+    for my $module (keys %required_perl_modules) {
+        &install_perl_module($module);
+    }
 }
 
 print "[+] Installing man page.\n";
@@ -122,30 +130,41 @@ sub install_gpgdir() {
 sub install_perl_module() {
     my $mod_name = shift;
 
-    die '[*] Missing version key in required_perl_modules hash.'
-        unless defined $required_perl_modules{$mod_name}{'version'};
-    die '[*] Missing force-lib-install key in required_perl_modules hash.'
-        unless defined $required_perl_modules{$mod_name}{'force-lib-install'};
+    die '[*] Missing force-install key in required_perl_modules hash.'
+        unless defined $required_perl_modules{$mod_name}{'force-install'};
     die '[*] Missing mod-dir key in required_perl_modules hash.'
         unless defined $required_perl_modules{$mod_name}{'mod-dir'};
 
-    my $version = $required_perl_modules{$mod_name}{'version'};
+    my $version = '(NA)';
+
+    my $mod_dir = $required_perl_modules{$mod_name}{'mod-dir'};
+
+    if (-e "$mod_dir/VERSION") {
+        open F, "< $mod_dir/VERSION" or
+            die "[*] Could not open $mod_dir/VERSION: $!";
+        $version = <F>;
+        close F;
+        chomp $version;
+    } else {
+        print "[-] Warning: VERSION file does not exist in $mod_dir\n";
+    }
 
     my $install_module = 0;
 
-    if ($required_perl_modules{$mod_name}{'force-lib-install'}
+    if ($required_perl_modules{$mod_name}{'force-install'}
             or $cmdline_force_install) {
         ### install regardless of whether the module may already be
-        ### installed (this module may be a CPAN module that has been
-        ### modified specifically for this project, or is a dedicated
-        ### module for this project).
+        ### installed
+        $install_module = 1;
+    } elsif ($force_install_re and $force_install_re =~ /$mod_name/) {
+        print "[+] Forcing installation of $mod_name module.\n";
         $install_module = 1;
     } else {
         if (has_perl_module($mod_name)) {
             print "[+] Module $mod_name is already installed in the ",
                 "system perl tree, skipping.\n";
         } else {
-            ### install the module in the /usr/lib/gpgdir directory because
+            ### install the module in the /usr/lib/fwknop directory because
             ### it is not already installed.
             $install_module = 1;
         }
@@ -156,14 +175,15 @@ sub install_perl_module() {
             print "[+] Creating $libdir\n";
             mkdir $libdir, 0755 or die "[*] Could not mkdir $libdir: $!";
         }
-        print "[+] Installing $mod_name $version perl module in $libdir/\n";
+        print "[+] Installing the $mod_name $version perl " .
+            "module in $libdir/\n";
         my $mod_dir = $required_perl_modules{$mod_name}{'mod-dir'};
         chdir $mod_dir or die "[*] Could not chdir to ",
             "$mod_dir: $!";
         unless (-e 'Makefile.PL') {
             die "[*] Your $mod_name source directory appears to be incomplete!\n",
                 "    Download the latest sources from ",
-                "http://www.cipherdyne.org\n";
+                "http://www.cipherdyne.org/\n";
         }
         system "$cmds{'make'} clean" if -e 'Makefile';
         system "$cmds{'perl'} Makefile.PL PREFIX=$libdir LIB=$libdir";
@@ -295,13 +315,15 @@ sub usage() {
     my $exit_status = shift;
     print <<_HELP_;
 
-Usage: install.pl [-f] [-u] [-h]
+Usage: install.pl [-f] [-F] [-u] [-h]
 
-    -u  --uninstall     - Uninstall gpgdir.
-    -f  --force-mod     - Force all perl modules to be installed
-                          even if some already exist in the system
-                          /usr/lib/perl5 tree.
-    -h  --help          - Prints this help message.
+    -u,  --uninstall            - Uninstall gpgdir.
+    -f, --force-mod-install     - Force all perl modules to be installed
+                                  even if some already exist in the system
+                                  /usr/lib/perl5 tree.
+    -F, --Force-mod-regex <re>  - Specify a regex to match a module name
+                                  and force the installation of such modules.
+    -h  --help                  - Prints this help message.
 
 _HELP_
     exit $exit_status;
