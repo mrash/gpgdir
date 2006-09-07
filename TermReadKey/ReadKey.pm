@@ -1,6 +1,6 @@
 #
 #  $Id$
-# 
+#
 
 =head1 NAME
 
@@ -10,7 +10,7 @@ Term::ReadKey - A perl module for simple terminal control
 
 	use Term::ReadKey;
 	ReadMode 4; # Turn off controls keys
-	while (not defined ($key = ReadKey(-1)) {
+	while (not defined ($key = ReadKey(-1))) {
 		# No key yet
 	}
 	print "Get key $key\n";
@@ -210,8 +210,7 @@ Currently maintained by Jonathan Stowe <jns@gellyfish.com>
 
 package Term::ReadKey;
 
-
-$VERSION = '2.21';
+$VERSION = '2.30';
 
 require Exporter;
 require AutoLoader;
@@ -223,17 +222,16 @@ use Carp;
 # Items to export into callers namespace by default
 # (move infrequently used names to @EXPORT_OK below)
 
-@EXPORT =  qw(
-	      ReadKey 
-              ReadMode 
-              ReadLine 
-              GetTerminalSize 
-              SetTerminalSize
-	      GetSpeed 
-              GetControlChars 
-              SetControlChars
-             );
-
+@EXPORT = qw(
+  ReadKey
+  ReadMode
+  ReadLine
+  GetTerminalSize
+  SetTerminalSize
+  GetSpeed
+  GetControlChars
+  SetControlChars
+);
 
 @EXPORT_OK = qw();
 
@@ -242,7 +240,6 @@ bootstrap Term::ReadKey;
 # Preloaded methods go here.  Autoload methods go after __END__, and are
 # processed by the autosplit program.
 
-
 # Should we use LINES and COLUMNS to try and get the terminal size?
 # Change this to zero if you have systems where these are commonly
 # set to erroneous values. (But if either are nero zero, they won't be
@@ -250,109 +247,130 @@ bootstrap Term::ReadKey;
 
 $UseEnv = 1;
 
+%modes = (
+    original    => 0,
+    restore     => 0,
+    normal      => 1,
+    noecho      => 2,
+    cbreak      => 3,
+    raw         => 4,
+    'ultra-raw' => 5
+);
 
-%modes=( original    => 0, 
-         restore     => 0, 
-         normal      => 1, 
-         noecho      => 2, 
-	 cbreak      => 3, 
-         raw         => 4, 
-         'ultra-raw' => 5);
-
-sub ReadMode {
-	my($mode) = $modes{$_[0]};
-	my($fh) = normalizehandle((@_>1?$_[1]:\*STDIN));
-	if(defined($mode))
-		{ SetReadMode($mode,$fh) } 
-	elsif( $_[0] =~ /^\d/)
-		{ SetReadMode($_[0],$fh) }
-	else
-		{ croak("Unknown terminal mode `$_[0]'"); }
-}
-
-sub normalizehandle {
-	my($file) = @_;
-#	print "Handle = $file\n";
-	if(ref($file)) { return $file; } # Reference is fine
-#	if($file =~ /^\*/) { return $file; } # Type glob is good
-	if (ref(\$file) eq 'GLOB') { return $file; } # Glob is good
-#	print "Caller = ",(caller(1))[0],"\n";
-	return \*{((caller(1))[0])."::$file"};
-}
-
-
-sub GetTerminalSize {
-	my($file) = normalizehandle((@_>1?$_[1]:\*STDOUT));
-	my(@results) = ();
-	my(@fail);
-	
-	if(&termsizeoptions() & 1) # VIO
-	{
-		@results = GetTermSizeVIO($file);
-		push(@fail,"VIOGetMode call");
-	} elsif(&termsizeoptions() & 2) # GWINSZ
-	{
-		@results = GetTermSizeGWINSZ($file);
-		push(@fail,"TIOCGWINSZ ioctl");
-	} elsif(&termsizeoptions() & 4) # GSIZE
-	{
-		@results = GetTermSizeGSIZE($file);
-		push(@fail,"TIOCGSIZE ioctl");
-	} elsif(&termsizeoptions() & 8) # WIN32
-	{
-		@results = GetTermSizeWin32($file);
-		push(@fail,"Win32 GetConsoleScreenBufferInfo call");
-	} else
-	{
-		@results = ();
-	}
-	
-	if(@results<4 and $UseEnv) {
-		my($C) = defined($ENV{COLUMNS}) ? $ENV{COLUMNS} : 0;
-		my($L) = defined($ENV{LINES}) ? $ENV{LINES} : 0;
-		if(($C >= 2) and ($L >=2)) {
-			@results = ($C+0,$L+0,0,0);
-		}
-		push(@fail,"COLUMNS and LINES environment variables");
-	}
-	
-	if(@results<4) {
-		my($prog) = "resize";
-		
-		# Workaround for Solaris path sillyness
-		if(-f "/usr/openwin/bin/resize") { $prog = "/usr/openwin/bin/resize"}
-		
-		my($resize) = scalar(`$prog 2>/dev/null`);
-		if(defined $resize and ($resize =~ /COLUMNS\s*=\s*(\d+)/ or 
-		   $resize =~ /setenv\s+COLUMNS\s+'?(\d+)/))  {
-			$results[0] = $1;
-			if( $resize =~ /LINES\s*=\s*(\d+)/ or
-			    $resize =~ /setenv\s+LINES\s+'?(\d+)/) {
-				$results[1] = $1;
-				@results[2,3] = (0,0);
-			} else {
-				@results = ();
-			}
-		} else {
-			@results = ();
-		}
-		push(@fail,"resize program");
-	}
-	
-	if(@results<4) {
-		die "Unable to get Terminal Size.".join("", map(" The $_ didn't work.",@fail));
-	}
-	
-	@results;
-}
-
-
-
-if(&blockoptions() & 1) # Use nodelay
+sub ReadMode
 {
-	if(&blockoptions() & 2) #poll
-	{
-		eval <<'DONE';
+    my ($mode) = $modes{ $_[0] };
+    my ($fh) = normalizehandle( ( @_ > 1 ? $_[1] : \*STDIN ) );
+    if ( defined($mode) ) { SetReadMode( $mode, $fh ) }
+    elsif ( $_[0] =~ /^\d/ ) { SetReadMode( $_[0], $fh ) }
+    else { croak("Unknown terminal mode `$_[0]'"); }
+}
+
+sub normalizehandle
+{
+    my ($file) = @_;
+
+    #	print "Handle = $file\n";
+    if ( ref($file) ) { return $file; }    # Reference is fine
+
+    #	if($file =~ /^\*/) { return $file; } # Type glob is good
+    if ( ref( \$file ) eq 'GLOB' ) { return $file; }    # Glob is good
+
+    #	print "Caller = ",(caller(1))[0],"\n";
+    return \*{ ( ( caller(1) )[0] ) . "::$file" };
+}
+
+sub GetTerminalSize
+{
+    my ($file) = normalizehandle( ( @_ > 1 ? $_[1] : \*STDOUT ) );
+    my (@results) = ();
+    my (@fail);
+
+    if ( &termsizeoptions() & 1 )                       # VIO
+    {
+        @results = GetTermSizeVIO($file);
+        push( @fail, "VIOGetMode call" );
+    }
+    elsif ( &termsizeoptions() & 2 )                    # GWINSZ
+    {
+        @results = GetTermSizeGWINSZ($file);
+        push( @fail, "TIOCGWINSZ ioctl" );
+    }
+    elsif ( &termsizeoptions() & 4 )                    # GSIZE
+    {
+        @results = GetTermSizeGSIZE($file);
+        push( @fail, "TIOCGSIZE ioctl" );
+    }
+    elsif ( &termsizeoptions() & 8 )                    # WIN32
+    {
+        @results = GetTermSizeWin32($file);
+        push( @fail, "Win32 GetConsoleScreenBufferInfo call" );
+    }
+    else
+    {
+        @results = ();
+    }
+
+    if ( @results < 4 and $UseEnv )
+    {
+        my ($C) = defined( $ENV{COLUMNS} ) ? $ENV{COLUMNS} : 0;
+        my ($L) = defined( $ENV{LINES} )   ? $ENV{LINES}   : 0;
+        if ( ( $C >= 2 ) and ( $L >= 2 ) )
+        {
+            @results = ( $C + 0, $L + 0, 0, 0 );
+        }
+        push( @fail, "COLUMNS and LINES environment variables" );
+    }
+
+    if ( @results < 4 )
+    {
+        my ($prog) = "resize";
+
+        # Workaround for Solaris path sillyness
+        if ( -f "/usr/openwin/bin/resize" ) {
+            $prog = "/usr/openwin/bin/resize";
+        }
+
+        my ($resize) = scalar(`$prog 2>/dev/null`);
+        if (
+            defined $resize
+            and (  $resize =~ /COLUMNS\s*=\s*(\d+)/
+                or $resize =~ /setenv\s+COLUMNS\s+'?(\d+)/ )
+          )
+        {
+            $results[0] = $1;
+            if (   $resize =~ /LINES\s*=\s*(\d+)/
+                or $resize =~ /setenv\s+LINES\s+'?(\d+)/ )
+            {
+                $results[1] = $1;
+                @results[ 2, 3 ] = ( 0, 0 );
+            }
+            else
+            {
+                @results = ();
+            }
+        }
+        else
+        {
+            @results = ();
+        }
+        push( @fail, "resize program" );
+    }
+
+    if ( @results < 4 )
+    {
+        die "Unable to get Terminal Size."
+          . join( "", map( " The $_ didn't work.", @fail ) );
+    }
+
+    @results;
+}
+
+if ( &blockoptions() & 1 )    # Use nodelay
+{
+    if ( &blockoptions() & 2 )    #poll
+    {
+        eval <<'DONE';
 		sub ReadKey {
 		  my($File) = normalizehandle((@_>1?$_[1]:\*STDIN));
                   if (defined $_[0] && $_[0] > 0) {
@@ -387,10 +405,10 @@ if(&blockoptions() & 1) # Use nodelay
                   $value;
 		}
 DONE
-	} 
-        elsif(&blockoptions() & 4) #select
-	{
-		eval <<'DONE';
+    }
+    elsif ( &blockoptions() & 4 )    #select
+    {
+        eval <<'DONE';
 		sub ReadKey {
 		  my($File) = normalizehandle((@_>1?$_[1]:\*STDIN));
                   if(defined $_[0] && $_[0]>0) {
@@ -412,8 +430,10 @@ DONE
 			$value;
 		}
 DONE
-	} else { #nothing
-		eval <<'DONE';
+    }
+    else
+    {    #nothing
+        eval <<'DONE';
 		sub ReadKey {
 		  my($File) = normalizehandle((@_>1?$_[1]:\*STDIN));
 		    if(defined $_[0] && $_[0]>0) {
@@ -457,11 +477,11 @@ DONE
 			$value;
 		}
 DONE
-	}
+    }
 }
-elsif(&blockoptions() & 2) # Use poll
+elsif ( &blockoptions() & 2 )    # Use poll
 {
-	eval <<'DONE';
+    eval <<'DONE';
 	sub ReadKey {
 	  my($File) = normalizehandle((@_>1?$_[1]:\*STDIN));
 		if(defined $_[0] && $_[0] != 0) {
@@ -478,9 +498,9 @@ elsif(&blockoptions() & 2) # Use poll
 	}
 DONE
 }
-elsif(&blockoptions() & 4) # Use select
+elsif ( &blockoptions() & 4 )    # Use select
 {
-	eval <<'DONE';
+    eval <<'DONE';
 	sub ReadKey {
 	  my($File) = normalizehandle((@_>1?$_[1]:\*STDIN));
 		if(defined $_[0] && $_[0] !=0 ) {
@@ -497,9 +517,9 @@ elsif(&blockoptions() & 4) # Use select
 	}
 DONE
 }
-elsif(&blockoptions() & 8) # Use Win32
+elsif ( &blockoptions() & 8 )    # Use Win32
 {
-	eval <<'DONE';
+    eval <<'DONE';
 	sub ReadKey {
 	  my($File) = normalizehandle((@_>1?$_[1]:\*STDIN));
 		if ($_[0]) {
@@ -522,7 +542,7 @@ DONE
 }
 else
 {
-	eval <<'DONE';
+    eval <<'DONE';
 	sub ReadKey {
 	  my($File) = normalizehandle((@_>1?$_[1]:\*STDIN));
 		if($_[0]) 
@@ -538,7 +558,7 @@ else
 DONE
 }
 
-package Term::ReadKey; # return to package ReadKey so AutoSplit is happy
+package Term::ReadKey;    # return to package ReadKey so AutoSplit is happy
 1;
 
 __END__;

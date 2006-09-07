@@ -200,10 +200,13 @@
 #       define DONT_USE_SELECT
 #       define DONT_USE_POLL
 
-#       define DONT_USE_TERMIO
+#       define DONT_USE_TERMIOS
 #       define DONT_USE_SGTTY
-#       define I_TERMIOS
-#       define CC_TERMIOS
+#       define I_TERMIO
+#       define CC_TERMIO
+
+/* This flag should be off in the lflags when we enable termio mode */
+#      define TRK_IDEFAULT     IDEFAULT
 
 #       define INCL_SUB
 #       define INCL_DOS
@@ -348,6 +351,10 @@
 # endif
 #endif
 
+#ifndef TRK_IDEFAULT
+/* This flag should be off in the lflags when we enable termio mode */
+#      define TRK_IDEFAULT     0
+#endif
 
 /* Fix up the disappearance of the '_' macro in Perl 5.7.2 */
 
@@ -1117,7 +1124,7 @@ void ReadMode(PerlIO *file,int mode)
 		memcpy((void*)&work,(void*)&savebuf,sizeof(struct tbuffer));
 
 		work.c_lflag &= ~(ECHO | ISIG | ICANON | XCASE);
-		work.c_lflag &= ~(ECHOE | ECHOK | ECHONL);
+		work.c_lflag &= ~(ECHOE | ECHOK | ECHONL | TRK_IDEFAULT);
 		work.c_iflag &= ~(IXON | IXOFF | IXANY | ICRNL | BRKINT);
 		if((work.c_cflag | PARENB)!=PARENB ) {
 			work.c_iflag &= ~(ISTRIP|INPCK);
@@ -1135,7 +1142,7 @@ void ReadMode(PerlIO *file,int mode)
 		memcpy((void*)&work,(void*)&savebuf,sizeof(struct tbuffer));
 
 		work.c_lflag &= ~(ECHO | ISIG | ICANON);
-		work.c_lflag &= ~(ECHOE | ECHOK | ECHONL);
+		work.c_lflag &= ~(ECHOE | ECHOK | ECHONL TRK_IDEFAULT);
 		work.c_iflag = savebuf.c_iflag;
 		work.c_iflag &= ~(IXON | IXOFF | IXANY | BRKINT);
 		work.c_oflag = savebuf.c_oflag;
@@ -1149,7 +1156,7 @@ void ReadMode(PerlIO *file,int mode)
 		memcpy((void*)&work,(void*)&savebuf,sizeof(struct tbuffer));
 
 		work.c_lflag &= ~(ECHO | ICANON);
-		work.c_lflag &= ~(ECHOE | ECHOK | ECHONL);
+		work.c_lflag &= ~(ECHOE | ECHOK | ECHONL | TRK_IDEFAULT);
 		work.c_lflag |= ISIG;
 		work.c_iflag = savebuf.c_iflag;
 		work.c_iflag &= ~(IXON | IXOFF | IXANY);
@@ -1166,7 +1173,7 @@ void ReadMode(PerlIO *file,int mode)
 
 		work.c_lflag |= (ISIG | ICANON);
 		work.c_lflag &= ~ECHO;
-		work.c_lflag &= ~(ECHOE | ECHOK | ECHONL);
+		work.c_lflag &= ~(ECHOE | ECHOK | ECHONL | TRK_IDEFAULT);
 		work.c_iflag = savebuf.c_iflag;
 		work.c_iflag &= ~(IXON | IXOFF | IXANY);
 		work.c_iflag |= savebuf.c_iflag & (IXON|IXOFF|IXANY);
@@ -1190,6 +1197,7 @@ void ReadMode(PerlIO *file,int mode)
 		memcpy((void*)&work,(void*)&savebuf,sizeof(struct tbuffer));
 
 		work.c_lflag |= (ECHO | ISIG | ICANON);
+      work.c_iflag &= ~TRK_IDEFAULT;
 		work.c_iflag = savebuf.c_iflag;
 		work.c_iflag &= ~(IXON | IXOFF | IXANY);
 		work.c_iflag |= savebuf.c_iflag & (IXON|IXOFF|IXANY);

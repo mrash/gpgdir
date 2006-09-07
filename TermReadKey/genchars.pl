@@ -165,7 +165,7 @@ XS(XS_Term__ReadKey_GetControlChars)
 		if(tcgetattr(PerlIO_fileno(file),&s))
 #else
 # ifdef CC_TERMIO
-		if(ioctl(fileno(PerlIO_file),TCGETA,&s))
+		if(ioctl(PerlIO_fileno(file),TCGETA,&s))
 # endif
 #endif
 			croak(\"Unable to read terminal settings in GetControlChars\");
@@ -203,7 +203,7 @@ XS(XS_Term__ReadKey_SetControlChars)
 		if(tcgetattr(PerlIO_fileno(file),&s))
 #else
 # ifdef CC_TERMIO
-		if(ioctl(fileno(PerlIO_file),TCGETA,&s))
+		if(ioctl(PerlIO_fileno(file),TCGETA,&s))
 # endif
 #endif
 			croak(\"Unable to read terminal settings in SetControlChars\");
@@ -230,7 +230,7 @@ XS(XS_Term__ReadKey_SetControlChars)
 		if(tcsetattr(PerlIO_fileno(file),TCSANOW,&s))
 #else
 # ifdef CC_TERMIO
-		if(ioctl(fileno(PerlIO_file),TCSETA,&s))
+		if(ioctl(PerlIO_fileno(file),TCSETA,&s))
 # endif
 #endif
 			croak(\"Unable to write terminal settings in SetControlChars\");

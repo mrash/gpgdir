@@ -7,3 +7,4 @@ ReadKey.xs
 genchars.pl
 ppport.h
 test.pl
+META.yml                                Module meta-data (added by MakeMaker)
