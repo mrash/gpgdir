@@ -1,0 +1,9 @@
+#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
+name:         TermReadKey
+version:      2.30
+version_from: ReadKey.pm
+installdirs:  site
+requires:
+
+distribution_type: module
+generated_by: ExtUtils::MakeMaker version 6.13
