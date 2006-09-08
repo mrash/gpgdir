@@ -103,5 +103,5 @@ install -m 444 TermReadKey/blib/arch/auto/Term/ReadKey/ReadKey.so $RPM_BUILD_ROO
 %_libdir/%name
 
 %changelog
-* Thu Sep 07 2006 Michael Rash <mbr@cipherdyne.org>
+* Thu Sep 09 2006 Michael Rash <mbr@cipherdyne.org>
 - Initial RPM release of gpgdir-0.9.9
