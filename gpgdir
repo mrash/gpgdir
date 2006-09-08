@@ -723,7 +723,7 @@ Options:
                                   subdirectories.
     -d, --decrypt <directory>   - Decrypt <directory> and all of its
                                   subdirectories.
-    -g, --gnupg-dir <directory> - Specify a path to a .gnupg directory for
+    -g, --gnupg-dir <dir>       - Specify a path to a .gnupg directory for
                                   gpg keys (the default is ~/.gnupg if this
                                   option is not used).
     -p, --pw-file <file>        - Read password in from <file>.
@@ -732,11 +732,16 @@ Options:
     --Exclude <pattern>         - Skip all filenames that match <pattern>.
     --Exclude-from <file>       - Skip all filenames that match any pattern
                                   contained within <file>.
+    --Include <pattern>         - Include only those filenames that match
+                                  <pattern>.
+    --Include-from <file>       - Include only those filenames that match a
+                                  pattern contained within <file>.
     --no-recurse                - Don't recursively encrypt/decrypt
                                   subdirectories.
     --no-delete                 - Don't delete original unencrypted files.
     --no-preserve-times         - Don't preserve original mtime and atime
                                   values on encrypted/decrypted files.
+    -u, --user-homedir <dir>    - Path to home directory.
     -v, --verbose               - Run in verbose mode.
     -V, --Version               - print version.
     -h, --help                  - print help.
