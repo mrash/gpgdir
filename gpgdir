@@ -94,6 +94,7 @@ Getopt::Long::Configure('no_ignore_case');
                                           # operations to.
     'test-mode'      => \$test_and_exit,  # Run encrypt -> decrypt test only and
                                           # exit.
+    'Key-id=s'       => \$encrypt_user,   # Specify encrypt/decrypt key
     'skip-test'      => \$skip_test_mode, # Skip encrypt -> decrypt test.
     'no-recurse'     => \$norecurse,      # Don't encrypt/decrypt files in
                                           # subdirectories.
@@ -129,7 +130,7 @@ unless (-d $gpg_homedir) {
 }
 
 ### get the key identifier from ~/.gnupg
-$encrypt_user = &get_key();
+$encrypt_user = &get_key() unless $encrypt_user;
 
 if ($decrypt_dir && $encrypt_dir) {
     die "[*] You cannot encrypt and decrypt the same directory.\n";
@@ -546,7 +547,10 @@ sub get_key() {
         my $key = '';
         for my $line (@lines) {
             chomp $line;
-            if ($line =~ /^use_key\s+(\w{8})$/) {
+            if ($line =~ /^use_key\s+(.*)$/) {
+                ### GnuPG accepts strings to match the key, so we don't
+                ### have to strictly require a key ID... just a string
+                ### that matches the key
                 $key = $1;
                 last;
             }
@@ -716,7 +720,8 @@ gpgdir
 
 Usage: gpgdir [-e <directory>] [-d <directory>] [-g <directory>] [-p] [-s]
               [--Exclude <pattern>] [--Exclude-from <file>] [--no-recurse]
-              [--no-delete] [--no-preserve-times] [-t] [-v] [-V] [-h]
+              [--no-delete] [--no-preserve-times] [-K <id>] [-t] [-v] [-V]
+              [-h]
 
 Options:
     -e, --encrypt <directory>   - Encrypt <directory> and all of its
@@ -736,6 +741,9 @@ Options:
                                   <pattern>.
     --Include-from <file>       - Include only those filenames that match a
                                   pattern contained within <file>.
+    -K, --Key-id <id>           - Specify GnuPG key ID, or key-matching
+                                  string. This overrides the use_key value
+                                  in ~/.gpgdirrc
     --no-recurse                - Don't recursively encrypt/decrypt
                                   subdirectories.
     --no-delete                 - Don't delete original unencrypted files.
