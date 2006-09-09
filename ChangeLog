@@ -1,3 +1,9 @@
+gpgdir-1.0 (//2006):
+    - Added --Key-id command line argument so that use_key can be overridden
+      from the command line
+    - Made the argument to use_key not have to strictly be a keyID since GnuPG
+      allows a unique string match on keys in the key ring
+
 gpgdir-0.9.9 (09/07/2006):
     - Added RPM .spec file to build gpgdir as an RPM.
     - Added the --Skip-mod-install command line argument to install.pl to
