@@ -21,6 +21,8 @@
 .I pattern
 .B ] [--Include-from
 .I file
+.B ] [-K
+.I Key-ID
 .B ] [--no-recurse] [--no-delete] [--no-preserve-times] [-t] [-s] [-V] [-v] [-h]
 .SH DESCRIPTION
 .B gpgdir
@@ -98,6 +100,13 @@ as a regex match against each filename.
 .BR \-\^\-Include-from\ \<file>
 Instruct gpgdir to only include files matched by patterns listed in
 .B file.
+.TP
+.BR \-K ", " \-\^\-Key-id\ \<id>
+Manually specify a GnuPG key ID from the command line.  Because GnuPG
+supports matching keys with a string,
+.B id
+does not strictly have to be a key ID; it can be a string that uniquely
+matches a key in the GnuPG key ring.
 .TP
 .BR " \-\^\-skip-test
 Skip encryption and decryption test.  This will allow
