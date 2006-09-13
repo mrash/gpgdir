@@ -10,6 +10,7 @@ gpgdir-1.0 (09/13/2006):
     - Added the ChangeLog.svn file to show exactly which files have been
       changed from release to release, and what the corresponding Subversion
       log messages are.
+    - Minor documentation updates.
 
 gpgdir-0.9.9 (09/07/2006):
     - Added RPM .spec file to build gpgdir as an RPM.
