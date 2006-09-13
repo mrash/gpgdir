@@ -64,6 +64,7 @@ my $skip_test_mode  = 0;
 my $verbose         = 0;
 my $help            = 0;
 my $encrypt         = 0;
+my $use_default_key = 0;
 my $pw_file         = '';
 my @exclude_patterns = ();
 my @include_patterns = ();
@@ -79,32 +80,34 @@ unless ($< == $>) {
 Getopt::Long::Configure('no_ignore_case');
 
 &usage_and_exit() unless(GetOptions (
-    'encrypt=s'      => \$encrypt_dir,    # Encrypt files in this directory.
-    'decrypt=s'      => \$decrypt_dir,    # Decrypt files in this directory.
-    'gnupg-dir=s'    => \$gpg_homedir,    # Path to /path/to/.gnupg directory.
-    'pw-file=s'      => \$pw_file,        # Read password out of this file.
-    'Exclude=s'      => \$exclude_pat,    # Exclude a pattern from encrypt/decrypt
-                                          # cycle.
-    'Exclude-from=s' => \$exclude_file,   # Exclude patterns in <file> from
-                                          # encrypt decrypt cycle.
-    'Include=s'      => \$include_pat,    # Specify a pattern used to restrict
-                                          # encrypt/decrypt operation to.
-    'Include-from=s' => \$include_file,   # Specify a file of include patterns to
-                                          # restrict all encrypt/decrypt
-                                          # operations to.
-    'test-mode'      => \$test_and_exit,  # Run encrypt -> decrypt test only and
-                                          # exit.
-    'Key-id=s'       => \$encrypt_user,   # Specify encrypt/decrypt key
-    'skip-test'      => \$skip_test_mode, # Skip encrypt -> decrypt test.
-    'no-recurse'     => \$norecurse,      # Don't encrypt/decrypt files in
-                                          # subdirectories.
-    'no-delete'      => \$no_delete,      # Don't delete files once they have
-                                          # been encrypted.
-    'user-homedir=s' => \$homedir,        # Path to home directory.
-    'no-preserve-times' => \$no_fs_times, # Don't preserve mtimes or atimes.
-    'verbose'        => \$verbose,        # Verbose mode.
-    'Version'        => \$printver,       # Print version
-    'help'           => \$help            # Print help
+    'encrypt=s'      => \$encrypt_dir,     # Encrypt files in this directory.
+    'decrypt=s'      => \$decrypt_dir,     # Decrypt files in this directory.
+    'gnupg-dir=s'    => \$gpg_homedir,     # Path to /path/to/.gnupg directory.
+    'pw-file=s'      => \$pw_file,         # Read password out of this file.
+    'Exclude=s'      => \$exclude_pat,     # Exclude a pattern from encrypt/decrypt
+                                           # cycle.
+    'Exclude-from=s' => \$exclude_file,    # Exclude patterns in <file> from
+                                           # encrypt decrypt cycle.
+    'Include=s'      => \$include_pat,     # Specify a pattern used to restrict
+                                           # encrypt/decrypt operation to.
+    'Include-from=s' => \$include_file,    # Specify a file of include patterns to
+                                           # restrict all encrypt/decrypt
+                                           # operations to.
+    'test-mode'      => \$test_and_exit,   # Run encrypt -> decrypt test only and
+                                           # exit.
+    'Key-id=s'       => \$encrypt_user,    # Specify encrypt/decrypt key
+    'Default-key'    => \$use_default_key, # Assume that default-key is set within
+                                           # ~/.gnupg/options.
+    'skip-test'      => \$skip_test_mode,  # Skip encrypt -> decrypt test.
+    'no-recurse'     => \$norecurse,       # Don't encrypt/decrypt files in
+                                           # subdirectories.
+    'no-delete'      => \$no_delete,       # Don't delete files once they have
+                                           # been encrypted.
+    'user-homedir=s' => \$homedir,         # Path to home directory.
+    'no-preserve-times' => \$no_fs_times,  # Don't preserve mtimes or atimes.
+    'verbose'        => \$verbose,         # Verbose mode.
+    'Version'        => \$printver,        # Print version
+    'help'           => \$help             # Print help
 ));
 &usage_and_exit() if $help;
 
@@ -130,7 +133,7 @@ unless (-d $gpg_homedir) {
 }
 
 ### get the key identifier from ~/.gnupg
-$encrypt_user = &get_key() unless $encrypt_user;
+$encrypt_user = &get_key() unless $encrypt_user or $use_default_key;
 
 if ($decrypt_dir && $encrypt_dir) {
     die "[*] You cannot encrypt and decrypt the same directory.\n";
@@ -233,7 +236,6 @@ if ($encrypt) {
     print "[+] Total number of files decrypted: " .
         "$total_decrypted\n";
 }
-print "[+] Finished.\n";
 
 exit 0;
 #==================== end main =====================
@@ -255,8 +257,10 @@ sub encrypt_file() {
     die "[*] Could not create new gpg object with ",
         "homedir: $gpg_homedir" unless $gpg;
 
-    $gpg->options->default_key($encrypt_user);
-    $gpg->options->push_recipients($encrypt_user);
+    unless ($use_default_key) {
+        $gpg->options->default_key($encrypt_user);
+        $gpg->options->push_recipients($encrypt_user);
+    }
 
     my ($input_fh, $output_fh, $error_fh, $pw_fh, $status_fh) =
         (IO::File->new($in_file),
@@ -323,8 +327,10 @@ sub decrypt_file() {
     die "[*] Could not create new gpg object with ",
         "homedir: $gpg_homedir" unless $gpg;
 
-    $gpg->options->default_key($encrypt_user);
-    $gpg->options->push_recipients($encrypt_user);
+    unless ($use_default_key) {
+        $gpg->options->default_key($encrypt_user);
+        $gpg->options->push_recipients($encrypt_user);
+    }
 
     my ($input_fh, $output_fh, $error_fh, $pw_fh, $status_fh) =
         (IO::File->new($in_file),
@@ -624,13 +630,19 @@ sub get_password() {
         close PW;
         chomp $pw;
     } else {
-        my $msg = '[+] Enter decryption password: ';
-        if ($test_and_exit) {
-            $msg = '[+] test_mode(): Enter decryption password: ';
-        } elsif ($encrypt) {
-            $msg = '[+] Enter decryption password (for initial ' .
-                'encrypt/decrypt test): ';
+        if ($use_default_key) {
+            print "[+] Using default GnuPG key.\n";
+        } else {
+            print "[+] Using GnuPG key: $encrypt_user\n";
         }
+        if ($test_and_exit) {
+            print "    *** test_mode() ***\n";
+        }
+        if ($encrypt) {
+            print '[+] Enter password (for initial ' .
+                "encrypt/decrypt test)\n";
+        }
+        my $msg = 'Password: ';
         ### get the password without echoing the chars back to the screen
         ReadMode 'noecho';
         while (! $pw) {
@@ -720,8 +732,8 @@ gpgdir
 
 Usage: gpgdir [-e <directory>] [-d <directory>] [-g <directory>] [-p] [-s]
               [--Exclude <pattern>] [--Exclude-from <file>] [--no-recurse]
-              [--no-delete] [--no-preserve-times] [-K <id>] [-t] [-v] [-V]
-              [-h]
+              [--no-delete] [--no-preserve-times] [-K <id>] [-D] [-t] [-v]
+              [-V] [-h]
 
 Options:
     -e, --encrypt <directory>   - Encrypt <directory> and all of its
@@ -744,6 +756,10 @@ Options:
     -K, --Key-id <id>           - Specify GnuPG key ID, or key-matching
                                   string. This overrides the use_key value
                                   in ~/.gpgdirrc
+    -D, --Default-key           - Use the key that GnuPG defines as the
+                                  default (i.e. the key that is specified
+                                  by the default-key option in
+                                  ~/.gnupg/options).
     --no-recurse                - Don't recursively encrypt/decrypt
                                   subdirectories.
     --no-delete                 - Don't delete original unencrypted files.
