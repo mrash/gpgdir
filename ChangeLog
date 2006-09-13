@@ -1,8 +1,15 @@
-gpgdir-1.0 (//2006):
+gpgdir-1.0 (09/13/2006):
     - Added --Key-id command line argument so that use_key can be overridden
       from the command line
     - Made the argument to use_key not have to strictly be a keyID since GnuPG
       allows a unique string match on keys in the key ring
+    - Added --Default-key to allow the user to have gpgdir use the default
+      key that is defined by GnuPG within the ~/.gnupg/options file.
+    - Updated the .gpgdirrc file to include the line "default_key" to allow
+      the user to have gpgdir prefer to use the GnuPG default key.
+    - Added the ChangeLog.svn file to show exactly which files have been
+      changed from release to release, and what the corresponding Subversion
+      log messages are.
 
 gpgdir-0.9.9 (09/07/2006):
     - Added RPM .spec file to build gpgdir as an RPM.
