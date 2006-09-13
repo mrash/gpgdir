@@ -23,7 +23,7 @@
 .I file
 .B ] [-K
 .I Key-ID
-.B ] [--no-recurse] [--no-delete] [--no-preserve-times] [-t] [-s] [-V] [-v] [-h]
+.B ] [-D] [--no-recurse] [--no-delete] [--no-preserve-times] [-t] [-s] [-V] [-v] [-h]
 .SH DESCRIPTION
 .B gpgdir
 is a perl script that uses the CPAN GnuPG::Interface perl module to encrypt and decrypt
@@ -60,7 +60,7 @@ Encrypt the directory specified on the command line.
 Decrypt the directory specified on the command line.
 .TP
 .BR \-g ", " \-\^\-gnupg-dir\ \<directory>
-Specify which .gnupg directory will be used to find GPG keys.  The default
+Specify which .gnupg directory will be used to find GnuPG keys.  The default
 is ~/.gnupg if this option is not used.  This option allows gpgdir to be
 run as one user but use the keys of another user (assuming permissions are
 setup correctly, etc.).
@@ -108,6 +108,15 @@ supports matching keys with a string,
 does not strictly have to be a key ID; it can be a string that uniquely
 matches a key in the GnuPG key ring.
 .TP
+.BR \-D ", " \-\^\-Default-key
+Use the key that GnuPG defines as the default, i.e. the key that is specified
+by the
+.B default-key
+variable in ~/.gnupg/options.  If the default-key variable is not defined
+within ~/.gnupg/options, then GnuPG tries to use the first suitable key on
+its key ring (the initial encrypt/decrypt test makes sure that the user
+knows the corresponding password for the key).
+.TP
 .BR " \-\^\-skip-test
 Skip encryption and decryption test.  This will allow
 .B gpgdir
@@ -150,7 +159,11 @@ To encrypt a directory:
 .PP
 .B $ gpgdir -e ~/testdir
 .PP
-To decrypt a directory:
+To encrypt a directory with the default GnuPG key defined in ~/.gnupg/options:
+.PP
+.B $ gpgdir -e ~/testdir --Default-key
+.PP
+To decrypt a directory with a key specified in ~/.gpgdirrc:
 .PP
 .B $ gpgdir -d ~/testdir
 .PP
@@ -171,7 +184,7 @@ To encrypt a directory and no subdirectories:
 .PP
 .B $ gpgdir -e /home/user/testdir --no-recurse
 .PP
-To encrypt root's home directory, but use the GPG keys associated with the user "bob":
+To encrypt root's home directory, but use the GnuPG keys associated with the user "bob":
 .PP
 .B # gpgdir -e /root -g /home/bob/.gnupg
 .PP
