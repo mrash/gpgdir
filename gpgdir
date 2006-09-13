@@ -8,7 +8,7 @@
 #
 # Author: Michael Rash (mbr@cipherdyne.com)
 #
-# Version: 0.9.9
+# Version: 1.0
 #
 # License (GNU General Public License):
 #
@@ -39,7 +39,7 @@ use Cwd;
 use strict;
 
 ### gpgdir version
-my $version = '0.9.9';
+my $version = '1.0';
 
 ### establish some defaults
 my $encrypt_user    = '';
@@ -553,35 +553,47 @@ sub get_key() {
         my $key = '';
         for my $line (@lines) {
             chomp $line;
-            if ($line =~ /^use_key\s+(.*)$/) {
+            if ($line =~ /^\s*default_key/) {
+                ### prefer to use the default GnuPG key
+                $use_default_key = 1;
+                return '';
+            } elsif ($line =~ /^\s*use_key\s+(.*)$/) {
                 ### GnuPG accepts strings to match the key, so we don't
                 ### have to strictly require a key ID... just a string
                 ### that matches the key
-                $key = $1;
-                last;
+                return $1;
             }
         }
-        if ($key && $key =~ /\S/) {
-            return $key;
-        } else {
-            die "[*] Please edit ${homedir}/.gpgdirrc to include your gpg key ",
-                "identifier\n    (e.g. \"D4696445\").  See the output of ",
-                "\"gpg --list-keys\"\n";
-        }
+        die
+"[*] Please edit ${homedir}/.gpgdirrc to include your gpg key identifier ",
+"    (e.g. \"D4696445\"; see the output of \"gpg --list-keys\"), or use the ",
+"    default GnuPG key defined in ~/.gnupg/options";
     }
-    print "[+] Creating gpgdir rc file: ${homedir}/.gpgdirrc\n";
+    print "[+] Creating gpgdir rc file: $homedir/.gpgdirrc\n";
     open F, "> ${homedir}/.gpgdirrc" or die "[*] Could not open " .
         "${homedir}/.gpgdirrc.  Exiting.\n";
-    print F "# Config file for gpgdir.\n",
-        "# Set the key to use to encrypt files with\n",
-        "# \"use_key <key>\", e.g. \"use_key D4696445\".\n",
-        "# See \"gpg --list-keys\" for a list of keys.\n\n",
-        "# Uncomment and replace \"KEYID\" with your real ",
-        "key id on the next line:\n",
-        "#use_key KEYID\n";
+
+    print F <<_CONFIGRC_;
+# Config file for gpgdir.
+#
+# Set the key to use to encrypt files with "use_key <key>", e.g.
+# "use_key D4696445".  See "gpg --list-keys" for a list of keys on your
+# GnuPG key ring.  Alternatively, if you want gpgdir to always use the
+# default key that is defined by the "default-key" variable in
+# ~/.gnupg/options, then uncomment the "default_key" line below.
+
+# Uncomment to use the GnuPG default key defined in ~/.gnupg/options:
+#default_key
+
+# If you want to use a specific GnuPG key, Uncomment the next line and
+# replace "KEYID" with your real key id:
+#use_key KEYID
+_CONFIGRC_
+
     close F;
-    print "[*] Please edit ${homedir}/.gpgdirrc to include " .
-        "your gpg key identifier.  Exiting.\n";
+    print
+"[*] Please edit $homedir/.gpgdirrc to include your gpg key identifier,\n",
+"    or use the default GnuPG key defined in ~/.gnupg/options.  Exiting.\n";
     exit 0;
 }
 
