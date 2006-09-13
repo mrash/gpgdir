@@ -565,8 +565,8 @@ sub get_key() {
             }
         }
         die
-"[*] Please edit ${homedir}/.gpgdirrc to include your gpg key identifier ",
-"    (e.g. \"D4696445\"; see the output of \"gpg --list-keys\"), or use the ",
+"[*] Please edit ${homedir}/.gpgdirrc to include your gpg key identifier\n",
+"    (e.g. \"D4696445\"; see the output of \"gpg --list-keys\"), or use the\n",
 "    default GnuPG key defined in ~/.gnupg/options";
     }
     print "[+] Creating gpgdir rc file: $homedir/.gpgdirrc\n";
