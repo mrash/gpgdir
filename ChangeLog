@@ -1,6 +1,7 @@
-gpgdir-1.0.1 (//2006):
+gpgdir-1.0.1 (09/16/2006):
     - Added --quiet option to have gpgdir print as little as possible to the
       screen when encrypting or decrypting a directory.
+    - Added x86_64 RPM (original patch from Mate Wierdl adapted for gpgdir).
 
 gpgdir-1.0 (09/13/2006):
     - Added --Key-id command line argument so that use_key can be overridden
