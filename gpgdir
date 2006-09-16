@@ -62,6 +62,7 @@ my $no_fs_times     = 0;
 my $test_and_exit   = 0;
 my $skip_test_mode  = 0;
 my $verbose         = 0;
+my $quiet           = 0;
 my $help            = 0;
 my $encrypt         = 0;
 my $use_default_key = 0;
@@ -95,6 +96,8 @@ Getopt::Long::Configure('no_ignore_case');
                                            # operations to.
     'test-mode'      => \$test_and_exit,   # Run encrypt -> decrypt test only and
                                            # exit.
+    'quiet'          => \$quiet,           # Print as little as possible to
+                                           # stdout.
     'Key-id=s'       => \$encrypt_user,    # Specify encrypt/decrypt key
     'Default-key'    => \$use_default_key, # Assume that default-key is set within
                                            # ~/.gnupg/options.
@@ -204,9 +207,9 @@ unless ($skip_test_mode) {
 }
 
 if ($encrypt) {
-    print "[+] Encrypting directory: $dir\n";
+    print "[+] Encrypting directory: $dir\n" unless $quiet;
 } else {
-    print "[+] Decrypting directory: $dir\n";
+    print "[+] Decrypting directory: $dir\n" unless $quiet;
 }
 
 my $gpg = GnuPG::Interface->new();
@@ -231,10 +234,10 @@ die "[*] Could not create new GnuPG::Interface object with ",
 
 if ($encrypt) {
     print "[+] Total number of files encrypted: " .
-        "$total_encrypted\n";
+        "$total_encrypted\n" unless $quiet;
 } else {
     print "[+] Total number of files decrypted: " .
-        "$total_decrypted\n";
+        "$total_decrypted\n" unless $quiet;
 }
 
 exit 0;
@@ -390,7 +393,7 @@ sub gpg_operation() {
         ### we should skip this file
         if (@exclude_patterns and &exclude_file($file)) {
             print "[+] Skipping excluded file: $file\n"
-                if $verbose;
+                if $verbose and not $quiet;
             next FILE;
         }
 
@@ -398,7 +401,7 @@ sub gpg_operation() {
         ### we should process this file
         if (@include_patterns and not &include_file($file)) {
             print "[+] Skipping non-included file: $file\n"
-                if $verbose;
+                if $verbose and not $quiet;
             next FILE;
         }
 
@@ -406,7 +409,7 @@ sub gpg_operation() {
         my ($dir, $filename) = ($file =~ m|(.*)/(.*)|);
 
         unless (chdir($dir)) {
-            print "[-] Could not chdir $dir, skipping.\n";
+            print "[-] Could not chdir $dir, skipping.\n" unless $quiet;
             next FILE;
         }
 
@@ -416,10 +419,10 @@ sub gpg_operation() {
         if ($encrypt) {
             if (-e "$filename.gpg") {
                 print "[-] Encrypted file $file.gpg already exists. ",
-                    "Skipping.\n";
+                    "Skipping.\n" unless $quiet;
                 next FILE;
             }
-            print "[+] Encrypting:  $file\n";
+            print "[+] Encrypting:  $file\n" unless $quiet;
             &encrypt_file($filename, "$filename.gpg");
 
             if (-e "$filename.gpg" && -s "$filename.gpg" != 0) {
@@ -436,7 +439,7 @@ sub gpg_operation() {
                 ### the encrypted one exists
                 unlink $filename unless $no_delete;
             } else {
-                print "[-] Could not encrypt file: $file\n";
+                print "[-] Could not encrypt file: $file\n" unless $quiet;
                 next FILE;
             }
         } else {
@@ -447,10 +450,10 @@ sub gpg_operation() {
             ### the same name
             if (-e $decrypt_filename) {
                 print "[-] Decrypted file $dir/$decrypt_filename ",
-                    "already exists. Skipping.\n";
+                    "already exists. Skipping.\n" unless $quiet;
                 next FILE;
             }
-            print "[+] Decrypting:  $dir/$filename\n";
+            print "[+] Decrypting:  $dir/$filename\n" unless $quiet;
             &decrypt_file($filename, $decrypt_filename);
 
             if (-e $decrypt_filename && -s $decrypt_filename != 0) {
@@ -467,12 +470,12 @@ sub gpg_operation() {
                 unlink $filename;
                 $total_decrypted++;
             } else {
-                print "[-] Could not decrypt file: $file\n";
+                print "[-] Could not decrypt file: $file\n" unless $quiet;
                 next FILE;
             }
         }
     }
-    print "\n";
+    print "\n" unless $quiet;
     chdir $initial_dir or die "[*] Could not chdir: $initial_dir\n";
     return;
 }
@@ -480,7 +483,7 @@ sub gpg_operation() {
 sub get_files() {
     my $dir = shift;
 
-    print "[+] Building file list...\n";
+    print "[+] Building file list...\n" unless $quiet;
     if ($norecurse) {
         opendir D, $dir or die "[*] Could not open $dir: $!";
         my @files = readdir D;
@@ -501,7 +504,7 @@ sub exclude_file() {
     for my $pat (@exclude_patterns) {
         if ($file =~ m|$pat|) {
             print "[+] Skipping $file (matches exclude pattern: $pat)\n"
-                if $verbose;
+                if $verbose and not $quiet;
             return 1;
         }
     }
@@ -513,7 +516,7 @@ sub include_file() {
     for my $pat (@include_patterns) {
         if ($file =~ m|$pat|) {
             print "[+] Including $file (matches include pattern: $pat)\n"
-                if $verbose;
+                if $verbose and not $quiet;
             return 1;
         }
     }
@@ -609,19 +612,19 @@ sub check_file_criteria() {
     ### files (includes .gnupg files), etc.
     if (-d $file) {
         print "[-] Skipping directory: $file\n"
-            if $verbose;
+            if $verbose and not $quiet;
         return;
     }
     if (-e $file and not -l $file and -s $file != 0
             and $file !~ m|/\.|) {
         if ($encrypt) {
             if ($file =~ m|\.gpg|) {
-                print "[-] Skipping encrypted file: $file\n";
+                print "[-] Skipping encrypted file: $file\n" unless $quiet;
                 return;
             }
         } else {
             if ($file !~ m|\.gpg|) {
-                print "[-] Skipping unencrypted file: $file\n";
+                print "[-] Skipping unencrypted file: $file\n" unless $quiet;
                 return;
             }
         }
@@ -630,7 +633,7 @@ sub check_file_criteria() {
         $files{$file}{'mtime'} = $mtime;
     } else {
         print "[-] Skipping file: $file\n"
-            if $verbose;
+            if $verbose and not $quiet;
     }
     return;
 }
@@ -643,16 +646,16 @@ sub get_password() {
         chomp $pw;
     } else {
         if ($use_default_key) {
-            print "[+] Using default GnuPG key.\n";
+            print "[+] Using default GnuPG key.\n" unless $quiet;
         } else {
-            print "[+] Using GnuPG key: $encrypt_user\n";
+            print "[+] Using GnuPG key: $encrypt_user\n" unless $quiet;
         }
         if ($test_and_exit) {
-            print "    *** test_mode() ***\n";
+            print "    *** test_mode() ***\n" unless $quiet;
         }
         if ($encrypt) {
             print '[+] Enter password (for initial ' .
-                "encrypt/decrypt test)\n";
+                "encrypt/decrypt test)\n" unless $quiet;
         }
         my $msg = 'Password: ';
         ### get the password without echoing the chars back to the screen
@@ -663,7 +666,11 @@ sub get_password() {
             chomp $pw;
         }
         ReadMode 'normal';
-        print "\n\n";
+        if ($quiet) {
+            print "\n";
+        } else {
+            print "\n\n";
+        }
     }
     return;
 }
@@ -671,7 +678,7 @@ sub get_password() {
 sub test_mode() {
     my $test_file = "$dir/gpgdir_test";
     print "[+] test_mode(): Encrypt/Decrypt test of $test_file\n"
-        if $test_and_exit or $verbose;
+        if (($test_and_exit or $verbose) and not $quiet);
 
     if (-e $test_file) {
         unlink $test_file or
@@ -689,7 +696,7 @@ sub test_mode() {
 
     if (-e $test_file) {
         print "[+] test_mode(): Created $test_file\n"
-            if $test_and_exit or $verbose;
+            if (($test_and_exit or $verbose) and not $quiet);
     } else {
         die "[*] test_mode(): Could not create $test_file\n";
     }
@@ -698,7 +705,7 @@ sub test_mode() {
 
     if (-e "$test_file.gpg" and (-s $test_file != 0)) {
         print "[+] test_mode(): Successful encrypt of $test_file\n"
-            if $test_and_exit or $verbose;
+            if (($test_and_exit or $verbose) and not $quiet);
         unlink $test_file if -e $test_file;
     } else {
         die "[*] test_mode(): not encrypt $test_file (try adding -v).\n";
@@ -708,7 +715,7 @@ sub test_mode() {
 
     if (-e $test_file and (-s $test_file != 0)) {
         print "[+] test_mode(): Successful decrypt of $test_file\n"
-            if $test_and_exit or $verbose;
+            if (($test_and_exit or $verbose) and not $quiet);
     } else {
         die "[*] test_mode(): Could not decrypt $test_file.gpg ",
             "(try adding -v).\n";
@@ -723,7 +730,7 @@ sub test_mode() {
         if ($line eq 'gpgdir test') {
             print "[+] test_mode(): Decrypted content matches original.\n",
                 "[+] test_mode(): Success!\n\n"
-                if $test_and_exit or $verbose;
+                if (($test_and_exit or $verbose) and not $quiet);
         } else {
             die "[*] test_mode(): Decrypted content does not match ",
                 "original (try adding -v).";
@@ -745,7 +752,7 @@ gpgdir
 Usage: gpgdir [-e <directory>] [-d <directory>] [-g <directory>] [-p] [-s]
               [--Exclude <pattern>] [--Exclude-from <file>] [--no-recurse]
               [--no-delete] [--no-preserve-times] [-K <id>] [-D] [-t] [-v]
-              [-V] [-h]
+              [-q] [-V] [-h]
 
 Options:
     -e, --encrypt <directory>   - Encrypt <directory> and all of its
@@ -772,6 +779,7 @@ Options:
                                   default (i.e. the key that is specified
                                   by the default-key option in
                                   ~/.gnupg/options).
+    -q, --quiet                 - Print as little to the screen as possible
     --no-recurse                - Don't recursively encrypt/decrypt
                                   subdirectories.
     --no-delete                 - Don't delete original unencrypted files.

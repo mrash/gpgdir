@@ -23,7 +23,7 @@
 .I file
 .B ] [-K
 .I Key-ID
-.B ] [-D] [--no-recurse] [--no-delete] [--no-preserve-times] [-t] [-s] [-V] [-v] [-h]
+.B ] [-D] [--no-recurse] [--no-delete] [--no-preserve-times] [-t] [-s] [-q] [-V] [-v] [-h]
 .SH DESCRIPTION
 .B gpgdir
 is a perl script that uses the CPAN GnuPG::Interface perl module to encrypt and decrypt
@@ -123,6 +123,10 @@ Skip encryption and decryption test.  This will allow
 to be used to encrypt a directory without specifying a password (which
 normally gets used in encryption mode to test to make sure decryption
 against a dummy file works properly).
+.TP
+.BR \-q ", " \-\^\-quiet
+Print as little as possible to the screen when encrypting or decrypting
+a directory.
 .TP
 .BR \-\^\-no-recurse
 Instruct gpgdir to not recurse through any subdirectories of the directory
