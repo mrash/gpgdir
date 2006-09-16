@@ -1,7 +1,7 @@
 %define name gpgdir
-%define version 1.0
+%define version 1.0.1
 %define release 1
-%define gpgdirlibdir /usr/lib/gpgdir
+%define gpgdirlibdir %_libdir/%name
 
 ### get the first @INC directory that includes the string "linux".
 ### This may be 'i386-linux', or 'i686-linux-thread-multi', etc.
@@ -16,7 +16,6 @@ Group: Applications/Cryptography
 Url: http://www.cipherdyne.org/gpgdir/
 Source: %name-%version.tar.gz
 BuildRoot: %_tmppath/%{name}-buildroot
-Requires: iptables
 #Prereq: rpm-helper
 
 %description
@@ -39,6 +38,10 @@ to be encrypted.
 [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
 
 %setup -q
+for i in $(grep -r "use lib" . | cut -d: -f1); do
+    awk '/use lib/ { sub("/usr/lib/gpgdir", "%_libdir/%name") } { print }' $i > $i.tmp
+    mv $i.tmp $i
+done
 
 cd Class-MethodMaker && perl Makefile.PL PREFIX=%gpgdirlibdir LIB=%gpgdirlibdir
 cd ..
@@ -103,6 +106,11 @@ install -m 444 TermReadKey/blib/arch/auto/Term/ReadKey/ReadKey.so $RPM_BUILD_ROO
 %_libdir/%name
 
 %changelog
+* Sun Sep 16 2006 Michael Rash <mbr@cipherdyne.org>
+- Added x86_64 RPM.
+- Removed iptables as a prerequisite.
+- gpgdir-1.0.1 release
+
 * Wed Sep 13 2006 Michael Rash <mbr@cipherdyne.org>
 - gpgdir-1.0 release
 
