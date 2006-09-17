@@ -8,7 +8,7 @@
 #
 # Author: Michael Rash (mbr@cipherdyne.com)
 #
-# Version: 1.0
+# Version: 1.0.2
 #
 # License (GNU General Public License):
 #
@@ -39,7 +39,7 @@ use Cwd;
 use strict;
 
 ### gpgdir version
-my $version = '1.0';
+my $version = '1.0.2';
 
 ### establish some defaults
 my $encrypt_user    = '';
