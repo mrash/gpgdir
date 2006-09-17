@@ -1,5 +1,5 @@
 %define name gpgdir
-%define version 1.0.1
+%define version 1.0.3
 %define release 1
 %define gpgdirlibdir %_libdir/%name
 
@@ -106,7 +106,10 @@ install -m 444 TermReadKey/blib/arch/auto/Term/ReadKey/ReadKey.so $RPM_BUILD_ROO
 %_libdir/%name
 
 %changelog
-* Sun Sep 16 2006 Michael Rash <mbr@cipherdyne.org>
+* Sun Sep 17 2006 Michael Rash <mbr@cipherdyne.org>
+- gpgdir-1.0.3 release (1.0.2 was skipped accidentally).
+
+* Sat Sep 16 2006 Michael Rash <mbr@cipherdyne.org>
 - Added x86_64 RPM.
 - Removed iptables as a prerequisite.
 - gpgdir-1.0.1 release
