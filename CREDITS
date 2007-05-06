@@ -17,3 +17,6 @@ Ian Scott
 Mate Wierdl
     - Contributed patch (originally for the psad project) for building the
       RPM on x86_64 platforms.
+
+pyllyukko
+    - Added the gpgdir.SlackBuild script (adapted from the psad project).
