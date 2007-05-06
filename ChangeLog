@@ -1,3 +1,18 @@
+gpgdir-1.1 (05//2007):
+    - Added the ability to securely delete the original versions of files with
+      the 'wipe' program (after they have been successfully encrypted).  Also
+      added --wipe-path to specify a path to the wipe binary (the default is
+      /usr/bin/wipe), --wipe-interactive to force the wipe program to prompt
+      the user before a file is deleted, and --wipe-cmdline to allow the user
+      to build a set of command line arguments that are passed to the wipe
+      program.
+    - Added --Force to have gpgdir skip over the error condition where a file
+      cannot be deleted (because of a permissions issue for example).
+    - Added --Trial-run to allow the user to see what actions gpgdir would
+      take to encrypt or decrypt files, but no files are actually modified.
+    - Added --Interactive to have gpgdir prompt the user before every file is
+      encrypted, decrypted.
+
 gpgdir-1.0.3 (09/17/2006):
     - Minor bugfix to correct 1.0.1 version number (which should have been set
       to 1.0.2) in the gpgdir RPM spec file.

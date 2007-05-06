@@ -4,11 +4,13 @@
 #
 # File: gpgdir
 #
+# URL: http://www.cipherdyne.org/gpgdir/
+#
 # Purpose:  To encrypt/decrypt whole directories
 #
 # Author: Michael Rash (mbr@cipherdyne.com)
 #
-# Version: 1.0.3
+# Version: 1.1
 #
 # License (GNU General Public License):
 #
@@ -38,8 +40,11 @@ use Getopt::Long;
 use Cwd;
 use strict;
 
-### gpgdir version
-my $version = '1.0.3';
+### set the current gpgdir version and file revision numbers
+my $version = '1.1';
+my $revision_svn = '$Revision$';
+my $rev_num = '1';
+($rev_num) = $revision_svn =~ m|\$Rev.*:\s+(\S+)|;
 
 ### establish some defaults
 my $encrypt_user    = '';
@@ -60,22 +65,35 @@ my $printver        = 0;
 my $no_delete       = 0;
 my $no_fs_times     = 0;
 my $test_and_exit   = 0;
+my $trial_run       = 0;
 my $skip_test_mode  = 0;
 my $verbose         = 0;
 my $quiet           = 0;
+my $force_mode      = 0;
 my $help            = 0;
+my $wipe_mode       = 0;
 my $encrypt         = 0;
 my $use_default_key = 0;
 my $pw_file         = '';
+my $wipe_cmd        = '/usr/bin/wipe';
+my $wipe_cmdline    = '';
+my $wipe_interactive = 0;
+my $interactive_mode = 0;
 my @exclude_patterns = ();
 my @include_patterns = ();
 my %files            = ();
+
+### for user answers
+my $ACCEPT_YES_DEFAULT = 1;
+my $ACCEPT_NO_DEFAULT  = 2;
 
 unless ($< == $>) {
     die "[*] Real and effective uid must be the same.  Make sure\n",
         "    gpgdir has not been installed as a SUID binary.\n",
         "Exiting.\n";
 }
+
+my @args_cp = @ARGV;
 
 ### make Getopts case sensitive
 Getopt::Long::Configure('no_ignore_case');
@@ -85,6 +103,11 @@ Getopt::Long::Configure('no_ignore_case');
     'decrypt=s'      => \$decrypt_dir,     # Decrypt files in this directory.
     'gnupg-dir=s'    => \$gpg_homedir,     # Path to /path/to/.gnupg directory.
     'pw-file=s'      => \$pw_file,         # Read password out of this file.
+    'Wipe'           => \$wipe_mode,       # Securely delete unencrypted files.
+    'wipe-path=s'    => \$wipe_cmd,        # Path to wipe command.
+    'wipe-interactive' => \$wipe_interactive, # Disable "wipe -I"
+    'wipe-cmdline=s' => \$wipe_cmdline,    # Specify wipe command line.
+    'Force'          => \$force_mode,      # Continue if files can't be deleted.
     'Exclude=s'      => \$exclude_pat,     # Exclude a pattern from encrypt/decrypt
                                            # cycle.
     'Exclude-from=s' => \$exclude_file,    # Exclude patterns in <file> from
@@ -96,8 +119,12 @@ Getopt::Long::Configure('no_ignore_case');
                                            # operations to.
     'test-mode'      => \$test_and_exit,   # Run encrypt -> decrypt test only and
                                            # exit.
+    'Trial-run'      => \$trial_run,       # Don't modify any files; just show what
+                                           # would have happened.
     'quiet'          => \$quiet,           # Print as little as possible to
                                            # stdout.
+    'Interactive'    => \$interactive_mode, # Query the user before encrypting/
+                                            # decrypting/deleting any files.
     'Key-id=s'       => \$encrypt_user,    # Specify encrypt/decrypt key
     'Default-key'    => \$use_default_key, # Assume that default-key is set within
                                            # ~/.gnupg/options.
@@ -116,6 +143,16 @@ Getopt::Long::Configure('no_ignore_case');
 
 print "[+] gpgdir version: $version by Michael Rash " .
     "<mbr\@cipherdyne.org>\n" and exit 0 if $printver;
+
+if ($wipe_mode) {
+    unless (-e $wipe_cmd) {
+        die "[*] Can't find wipe command at: $wipe_cmd,\n",
+            "    use --wipe-path to specify path.";
+    }
+    unless (-e $wipe_cmd) {
+        die "[*] Can't execute $wipe_cmd";
+    }
+}
 
 ### get the path to the user's home directory
 $homedir = &get_homedir() unless $homedir;
@@ -158,7 +195,7 @@ if ($exclude_file) {
     for my $line (@lines) {
         next unless $line =~ /\S/;
         chomp $line;
-        push @exclude_patterns, $line;
+        push @exclude_patterns, qr{$line};
     }
 }
 
@@ -172,7 +209,7 @@ if ($include_file) {
     for my $line (@lines) {
         next unless $line =~ /\S/;
         chomp $line;
-        push @include_patterns, $line;
+        push @include_patterns, qr{$line};
     }
 }
 
@@ -188,6 +225,10 @@ if ($dir) {
     die "[*] Directory does not exist: $dir" unless -e $dir;
     die "[*] Not a directory: $dir" unless -d $dir;
 }
+
+### don't need to test encrypt/decrypt ability if we are running
+### in --Trial-run mode.
+$skip_test_mode = 1 if $trial_run;
 
 my $initial_dir = cwd or die "[*] Could not get CWD: $!";
 
@@ -305,9 +346,10 @@ sub encrypt_file() {
     waitpid $pid, 0;
 
     if (-s $out_file == 0) {
-        unlink $out_file;
+        &delete_file($out_file);
+        &delete_file("$out_file.gpg");
         die "[*] Created zero-size file: $out_file\n",
-            "    deleting and exiting (try re-running with -v).";
+            "    Bad password? Try re-running with -v.";
     }
 
     return;
@@ -375,11 +417,51 @@ sub decrypt_file() {
     waitpid $pid, 0;
 
     if (-s $out_file == 0) {
-        unlink $out_file;
+        &delete_file($out_file);
+        &delete_file("$out_file.gpg");
         die "[*] Created zero-size file: $out_file\n",
-            "    deleting and exiting (try re-running with -v).";
+            "    Bad password? Try re-running with -v.";
+    }
+    return;
+}
+
+sub delete_file() {
+    my $file = shift;
+
+    return if $no_delete;
+    return unless -e $file;
+
+    if ($wipe_mode) {
+        my $cmd = $wipe_cmd;
+        if ($wipe_cmdline) {
+            $cmd .= " $wipe_cmdline ";
+        } else {
+            if ($wipe_interactive) {
+                $cmd .= ' -i ';
+            } else {
+                $cmd .= ' -I -s ';
+            }
+        }
+        $cmd .= $file;
+        if ($verbose) {
+            print "    Executing: $cmd\n";
+        }
+
+        ### wipe the file
+        system $cmd;
+
+    } else {
+        unlink $file;
     }
 
+    if (-e $file) {
+        my $msg = "[-] Could not delete file: $file\n";
+        if ($force_mode) {
+            print $msg unless $quiet;
+        } else {
+            die $msg unless $quiet;
+        }
+    }
     return;
 }
 
@@ -422,30 +504,47 @@ sub gpg_operation() {
                     "Skipping.\n" unless $quiet;
                 next FILE;
             }
-            print "[+] Encrypting:  $file\n" unless $quiet;
-            &encrypt_file($filename, "$filename.gpg");
 
-            if (-e "$filename.gpg" && -s "$filename.gpg" != 0) {
-                ### set the atime and mtime to be the same as the
-                ### original file.
-                unless ($no_fs_times) {
-                    if (defined $mtime and $mtime and
-                            defined $atime and $atime) {
-                        utime $atime, $mtime, "$filename.gpg";
-                    }
-                }
-                $total_encrypted++;
-                ### only delete the original file if
-                ### the encrypted one exists
-                unlink $filename unless $no_delete;
-            } else {
-                print "[-] Could not encrypt file: $file\n" unless $quiet;
-                next FILE;
+            my $do_encrypt = 1;
+            if ($interactive_mode) {
+                $do_encrypt = &query_yes_no("    Encrypt: $file ([y]/n)?  ",
+                    $ACCEPT_YES_DEFAULT);
             }
+
+            next FILE unless $do_encrypt;
+
+            print "[+] Encrypting:  $file\n" unless $quiet;
+
+            unless ($trial_run) {
+
+                &encrypt_file($filename, "$filename.gpg");
+
+                if (-e "$filename.gpg" && -s "$filename.gpg" != 0) {
+                    ### set the atime and mtime to be the same as the
+                    ### original file.
+                    unless ($no_fs_times) {
+                        if (defined $mtime and $mtime and
+                                defined $atime and $atime) {
+                            utime $atime, $mtime, "$filename.gpg";
+                        }
+                    }
+                    ### only delete the original file if
+                    ### the encrypted one exists
+                    &delete_file($filename);
+
+                    $total_encrypted++;
+
+                } else {
+                    print "[-] Could not encrypt file: $file\n" unless $quiet;
+                    next FILE;
+                }
+            }
+
         } else {
+
             ### allow filenames with spaces
             my ($decrypt_filename) = ($filename =~ /^(.+)\.gpg$/);
-            next unless $decrypt_filename;
+            next FILE unless $decrypt_filename;
             ### don't decrypt a file on top of a normal file of
             ### the same name
             if (-e $decrypt_filename) {
@@ -453,25 +552,39 @@ sub gpg_operation() {
                     "already exists. Skipping.\n" unless $quiet;
                 next FILE;
             }
-            print "[+] Decrypting:  $dir/$filename\n" unless $quiet;
-            &decrypt_file($filename, $decrypt_filename);
 
-            if (-e $decrypt_filename && -s $decrypt_filename != 0) {
-                ### set the atime and mtime to be the same as the
-                ### original file.
-                unless ($no_fs_times) {
-                    if (defined $mtime and $mtime and
-                            defined $atime and $atime) {
-                        utime $atime, $mtime, $decrypt_filename;
+            my $do_decrypt = 1;
+            if ($interactive_mode) {
+                $do_decrypt = &query_yes_no("    Decrypt: $file ([y]/n)?  ",
+                    $ACCEPT_YES_DEFAULT);
+            }
+
+            next FILE unless $do_decrypt;
+
+            unless ($trial_run) {
+
+                print "[+] Decrypting:  $dir/$filename\n" unless $quiet;
+                &decrypt_file($filename, $decrypt_filename);
+
+                if (-e $decrypt_filename && -s $decrypt_filename != 0) {
+                    ### set the atime and mtime to be the same as the
+                    ### original file.
+                    unless ($no_fs_times) {
+                        if (defined $mtime and $mtime and
+                                defined $atime and $atime) {
+                            utime $atime, $mtime, $decrypt_filename;
+                        }
                     }
+                    ### only delete the original encrypted
+                    ### file if the decrypted one exists
+                    &delete_file($filename);
+
+                    $total_decrypted++;
+
+                } else {
+                    print "[-] Could not decrypt file: $file\n" unless $quiet;
+                    next FILE;
                 }
-                ### only delete the original encrypted
-                ### file if the decrypted one exists
-                unlink $filename;
-                $total_decrypted++;
-            } else {
-                print "[-] Could not decrypt file: $file\n" unless $quiet;
-                next FILE;
             }
         }
     }
@@ -488,8 +601,10 @@ sub get_files() {
         opendir D, $dir or die "[*] Could not open $dir: $!";
         my @files = readdir D;
         closedir D;
-        shift @files; shift @files;
+
         for my $file (@files) {
+            next if $file eq '.';
+            next if $file eq '..';
             &check_file_criteria("$dir/$file");
         }
     } else {
@@ -611,8 +726,6 @@ sub check_file_criteria() {
     ### skip all links, zero size files, all hidden
     ### files (includes .gnupg files), etc.
     if (-d $file) {
-        print "[-] Skipping directory: $file\n"
-            if $verbose and not $quiet;
         return;
     }
     if (-e $file and not -l $file and -s $file != 0
@@ -645,16 +758,17 @@ sub get_password() {
         close PW;
         chomp $pw;
     } else {
+        print "[+] Executing: gpgdir @args_cp\n" unless $quiet;
         if ($use_default_key) {
-            print "[+] Using default GnuPG key.\n" unless $quiet;
+            print "    Using default GnuPG key.\n" unless $quiet;
         } else {
-            print "[+] Using GnuPG key: $encrypt_user\n" unless $quiet;
+            print "    Using GnuPG key: $encrypt_user\n" unless $quiet;
         }
         if ($test_and_exit) {
             print "    *** test_mode() ***\n" unless $quiet;
         }
         if ($encrypt) {
-            print '[+] Enter password (for initial ' .
+            print '    Enter password (for initial ' .
                 "encrypt/decrypt test)\n" unless $quiet;
         }
         my $msg = 'Password: ';
@@ -676,16 +790,18 @@ sub get_password() {
 }
 
 sub test_mode() {
-    my $test_file = "$dir/gpgdir_test";
+    chdir $dir or die "[*] Could not chdir($dir): $!";
+
+    my $test_file = "gpgdir_test.$$";
     print "[+] test_mode(): Encrypt/Decrypt test of $test_file\n"
         if (($test_and_exit or $verbose) and not $quiet);
 
     if (-e $test_file) {
-        unlink $test_file or
+        &delete_file($test_file) or
             die "[*] test_mode(): Could not remove $test_file: $!";
     }
     if (-e "$test_file.gpg") {
-        unlink "$test_file.gpg" or
+        &delete_file("$test_file.gpg") or
             die "[*] test_mode(): Could not remove $test_file.gpg: $!";
     }
 
@@ -706,7 +822,7 @@ sub test_mode() {
     if (-e "$test_file.gpg" and (-s $test_file != 0)) {
         print "[+] test_mode(): Successful encrypt of $test_file\n"
             if (($test_and_exit or $verbose) and not $quiet);
-        unlink $test_file if -e $test_file;
+        &delete_file($test_file) if -e $test_file;
     } else {
         die "[*] test_mode(): not encrypt $test_file (try adding -v).\n";
     }
@@ -738,21 +854,41 @@ sub test_mode() {
     } else {
         die "[*] test_mode(): Fail (try adding -v).\n";
     }
-    unlink $test_file if -e $test_file;
-    unlink "$test_file.gpg" if -e "$test_file.gpg";
+    &delete_file($test_file) if -e $test_file;
+    &delete_file("$test_file.gpg") if -e "$test_file.gpg";
+
+    chdir $initial_dir or die "[*] Could not chdir($initial_dir)";
 
     return 1;
 }
 
+sub query_yes_no() {
+    my ($msg, $style) = @_;
+    my $ans = '';
+    while ($ans ne 'y' and $ans ne 'n') {
+        &logr($msg);
+        $ans = lc(<STDIN>);
+        if ($style == $ACCEPT_YES_DEFAULT) {
+            return 1 if $ans eq "\n";
+        } elsif ($style == $ACCEPT_NO_DEFAULT) {
+            return 0 if $ans eq "\n";
+        }
+        chomp $ans;
+    }
+    return 1 if $ans eq 'y';
+    return 0;
+}
+
 sub usage_and_exit() {
     print <<_HELP_;
-gpgdir
-    version: $version, by Michael Rash (mbr\@cipherdyne.org)
 
-Usage: gpgdir [-e <directory>] [-d <directory>] [-g <directory>] [-p] [-s]
-              [--Exclude <pattern>] [--Exclude-from <file>] [--no-recurse]
-              [--no-delete] [--no-preserve-times] [-K <id>] [-D] [-t] [-v]
-              [-q] [-V] [-h]
+gpgdir; Recursive direction encryption and decryption with GnuPG
+
+[+] Version: $version (file revision: $rev_num)
+    By Michael Rash (mbr\@cipherdyne.org)
+    URL: http://www.cipherdyne.org/gpgdir/
+
+Usage: gpgdir [options]
 
 Options:
     -e, --encrypt <directory>   - Encrypt <directory> and all of its
@@ -765,6 +901,13 @@ Options:
     -p, --pw-file <file>        - Read password in from <file>.
     -s, --skip-test             - Skip encrypt -> decrypt test.
     -t, --test-mode             - Run encrypt -> decrypt test and exit.
+    -T, --Trial-run             - Show what filesystems actions would take
+                                  place without actually doing them.
+    --Interactive               - Query the user before encrypting,
+                                  decrypting, or deleting any files.
+    -F, --Force                 - Continue to run even if files cannot be
+                                  deleted (because of permissions problems
+                                  for example).
     --Exclude <pattern>         - Skip all filenames that match <pattern>.
     --Exclude-from <file>       - Skip all filenames that match any pattern
                                   contained within <file>.
@@ -780,6 +923,14 @@ Options:
                                   by the default-key option in
                                   ~/.gnupg/options).
     -q, --quiet                 - Print as little to the screen as possible
+    -W, --Wipe                  - Use the 'wipe' command to securely delete
+                                  unencrypted copies of files after they
+                                  have been encrypted.
+    --wipe-path <path>          - Specify path to the wipe command.
+    --wipe-interactive          - Force interactive mode with the wipe
+                                  command.
+    --wipe-cmdline <args>       - Manually specify command line arguments
+                                  to the wipe command.
     --no-recurse                - Don't recursively encrypt/decrypt
                                   subdirectories.
     --no-delete                 - Don't delete original unencrypted files.
