@@ -141,8 +141,9 @@ Getopt::Long::Configure('no_ignore_case');
 ));
 &usage_and_exit() if $help;
 
-print "[+] gpgdir version: $version by Michael Rash " .
-    "<mbr\@cipherdyne.org>\n" and exit 0 if $printver;
+print "[+] gpgdir v$version (file revision: $rev_num)\n",
+    "      by Michael Rash <mbr\@cipherdyne.org>\n"
+    and exit 0 if $printver;
 
 if ($wipe_mode) {
     unless (-e $wipe_cmd) {
