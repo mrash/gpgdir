@@ -1,4 +1,4 @@
-gpgdir-1.1 (05//2007):
+gpgdir-1.1 (05/12/2007):
     - Added the ability to securely delete the original versions of files with
       the 'wipe' program (after they have been successfully encrypted).  Also
       added --wipe-path to specify a path to the wipe binary (the default is
@@ -12,6 +12,8 @@ gpgdir-1.1 (05//2007):
       take to encrypt or decrypt files, but no files are actually modified.
     - Added --Interactive to have gpgdir prompt the user before every file is
       encrypted, decrypted.
+    - Added the gpgdir.SlackBuild script (contributed by pyllyukko originally
+      for the psad project) for building gpgdir on Slackware systems.
 
 gpgdir-1.0.3 (09/17/2006):
     - Minor bugfix to correct 1.0.1 version number (which should have been set
