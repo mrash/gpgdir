@@ -1,5 +1,5 @@
 %define name gpgdir
-%define version 1.0.3
+%define version 1.1
 %define release 1
 %define gpgdirlibdir %_libdir/%name
 
@@ -106,6 +106,9 @@ install -m 444 TermReadKey/blib/arch/auto/Term/ReadKey/ReadKey.so $RPM_BUILD_ROO
 %_libdir/%name
 
 %changelog
+* Sat May 12 2007 Michael Rash <mbr@cipherdyne.org>
+- gpgdir-1.1 release
+
 * Sun Sep 17 2006 Michael Rash <mbr@cipherdyne.org>
 - gpgdir-1.0.3 release (1.0.2 was skipped accidentally).
 
