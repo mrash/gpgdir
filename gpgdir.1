@@ -1,7 +1,7 @@
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH GPGDIR 1 "February, 2003" Linux
+.TH GPGDIR 1 "May, 2007" Linux
 .SH NAME
 .B gpgdir
 .SH SYNOPSIS
@@ -33,6 +33,17 @@ behavior).  Also, note that gpgdir is careful not encrypt hidden files and
 directories.  After all, you probably don't want your ~/.gnupg directory or
 ~/.bashrc file to be encrypted.
 
+Finally,
+.B gpgdir
+can use the
+.B wipe
+program with the
+.B --Wipe
+command line option to securely delete the original unencrypted files after they
+have been successfully encrypted.  This elevates the security stance of gpgdir
+since then it is more difficult to recover the unencrypted data associated with
+files after they are encrypted.
+
 .SH OPTIONS
 .TP
 .BR \-e ", " \-\^\-encrypt\ \<directory>
@@ -60,6 +71,22 @@ and
 .B --decrypt
 mode.
 .TP
+.BR \-T ", " \-\^\-Trial-run
+Show what encrypt/decrypt actions would take place without actually doing
+them.  The filesystem is not changed in any way in this mode.
+.TP
+.BR \-I ", " \-\^\-Interactive
+Prompt the user before actually encrypting or decrypting each file.  This
+is useful to have fine-grained control over
+.B gpgdir
+operations as it recurses through a directory structure.
+.TP
+.BR \-F ", " \-\^\-Force
+Tell
+.B gpgdir
+to ignore non-fatal error conditions, such as the inability to encrypt or
+decrypt individual files because of permissions errors.
+.TP
 .BR \-\^\-Exclude\ \<pattern>
 Instruct gpgdir to skip all files that match
 .B pattern
@@ -83,6 +110,11 @@ as a regex match against each filename.
 Instruct gpgdir to only include files matched by patterns listed in
 .B file.
 .TP
+.BR \-W ", " \-\^\-Wipe
+Use the
+.B wipe
+program to securely delete files after they have been successfully encrypted.
+.TP
 .BR \-K ", " \-\^\-Key-id\ \<id>
 Manually specify a GnuPG key ID from the command line.  Because GnuPG
 supports matching keys with a string,
@@ -99,7 +131,7 @@ within ~/.gnupg/options, then GnuPG tries to use the first suitable key on
 its key ring (the initial encrypt/decrypt test makes sure that the user
 knows the corresponding password for the key).
 .TP
-.BR " \-\^\-skip-test
+.BR \-s ", " " \-\^\-skip-test
 Skip encryption and decryption test.  This will allow
 .B gpgdir
 to be used to encrypt a directory without specifying a password (which
@@ -143,32 +175,37 @@ be supplied to gpgdir in a few situations:
 .PP
 To encrypt a directory:
 .PP
-.B $ gpgdir -e ~/testdir
+.B $ gpgdir -e /some/dir
+.PP
+To encrypt a directory, and use the wipe command to securely delete the original
+unencrypted files:
+.PP
+.B $ gpgdir -W -e /some/dir
 .PP
 To encrypt a directory with the default GnuPG key defined in ~/.gnupg/options:
 .PP
-.B $ gpgdir -e ~/testdir --Default-key
+.B $ gpgdir -e /some/dir --Default-key
 .PP
 To decrypt a directory with a key specified in ~/.gpgdirrc:
 .PP
-.B $ gpgdir -d ~/testdir
+.B $ gpgdir -d /some/dir
 .PP
 To encrypt a directory but skip all filenames that contain the string "host":
 .PP
-.B $ gpgdir -e ~/testdir --Exclude host
+.B $ gpgdir -e /some/dir --Exclude host
 .PP
 To encrypt a directory but only encrypt those files that contain the string "passwd":
 .PP
-.B $ gpgdir -e ~/testdir --Include passwd
+.B $ gpgdir -e /some/dir --Include passwd
 .PP
 To encrypt a directory but skip the encryption/decryption test (so you will
 not be prompted for a decryption password):
 .PP
-.B $ gpgdir -e ~/testdir -s
+.B $ gpgdir -e /some/dir -s
 .PP
 To encrypt a directory and no subdirectories:
 .PP
-.B $ gpgdir -e /home/user/testdir --no-recurse
+.B $ gpgdir -e /some/dir --no-recurse
 .PP
 To encrypt root's home directory, but use the GnuPG keys associated with the user "bob":
 .PP
