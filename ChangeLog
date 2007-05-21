@@ -1,4 +1,4 @@
-gpgdir-1.1 (05/12/2007):
+gpgdir-1.1 (05/21/2007):
     - Added the ability to securely delete the original versions of files with
       the 'wipe' program (after they have been successfully encrypted).  Also
       added --wipe-path to specify a path to the wipe binary (the default is
