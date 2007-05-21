@@ -8,7 +8,7 @@
 #
 # Author: Michael Rash (mbr@cipherdyne.org)
 #
-# Copyright (C) 2002-2006 Michael Rash (mbr@cipherdyne.org)
+# Copyright (C) 2002-2007 Michael Rash (mbr@cipherdyne.org)
 #
 # License (GNU Public License):
 #
@@ -315,7 +315,7 @@ sub usage() {
     my $exit_status = shift;
     print <<_HELP_;
 
-Usage: install.pl [-f] [-F] [-u] [-h]
+Usage: install.pl [options]
 
     -u,  --uninstall            - Uninstall gpgdir.
     -f, --force-mod-install     - Force all perl modules to be installed
@@ -323,6 +323,7 @@ Usage: install.pl [-f] [-F] [-u] [-h]
                                   /usr/lib/perl5 tree.
     -F, --Force-mod-regex <re>  - Specify a regex to match a module name
                                   and force the installation of such modules.
+    -S, --Skip-mod-install       - Do not install any perl modules.
     -h  --help                  - Prints this help message.
 
 _HELP_
