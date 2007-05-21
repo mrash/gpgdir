@@ -533,6 +533,9 @@ sub gpg_operation() {
                     }
                     ### only delete the original file if
                     ### the encrypted one exists
+                    if ($wipe_mode and not $quiet) {
+                        print "    Securely deleting file: $file\n";
+                    }
                     &delete_file($filename);
 
                     $total_encrypted++;
@@ -577,6 +580,9 @@ sub gpg_operation() {
                                 defined $atime and $atime) {
                             utime $atime, $mtime, $decrypt_filename;
                         }
+                    }
+                    if ($wipe_mode and not $quiet) {
+                        print "    Securely deleting file: $file\n";
                     }
                     ### only delete the original encrypted
                     ### file if the decrypted one exists
