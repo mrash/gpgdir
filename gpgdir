@@ -12,6 +12,8 @@
 #
 # Version: 1.1
 #
+# Copyright (C) 2002-2007 Michael Rash (mbr@cipherdyne.org)
+#
 # License (GNU General Public License):
 #
 #    This program is distributed in the hope that it will be useful,
@@ -867,7 +869,7 @@ sub query_yes_no() {
     my ($msg, $style) = @_;
     my $ans = '';
     while ($ans ne 'y' and $ans ne 'n') {
-        &logr($msg);
+        print $msg;
         $ans = lc(<STDIN>);
         if ($style == $ACCEPT_YES_DEFAULT) {
             return 1 if $ans eq "\n";
@@ -902,7 +904,7 @@ Options:
     -p, --pw-file <file>        - Read password in from <file>.
     -s, --skip-test             - Skip encrypt -> decrypt test.
     -t, --test-mode             - Run encrypt -> decrypt test and exit.
-    -T, --Trial-run             - Show what filesystems actions would take
+    -T, --Trial-run             - Show what filesystem actions would take
                                   place without actually doing them.
     --Interactive               - Query the user before encrypting,
                                   decrypting, or deleting any files.
