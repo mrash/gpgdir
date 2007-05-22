@@ -106,7 +106,7 @@ install -m 444 TermReadKey/blib/arch/auto/Term/ReadKey/ReadKey.so $RPM_BUILD_ROO
 %_libdir/%name
 
 %changelog
-* Sat May 12 2007 Michael Rash <mbr@cipherdyne.org>
+* Sat May 21 2007 Michael Rash <mbr@cipherdyne.org>
 - gpgdir-1.1 release
 
 * Sun Sep 17 2006 Michael Rash <mbr@cipherdyne.org>
