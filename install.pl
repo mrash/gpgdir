@@ -100,7 +100,7 @@ if (&is_cygwin()) {
     unless ($< == 0 && $> == 0) {
         print
 "[+] It looks like you are installing gpgdir as a non-root user, so gpgdir\n",
-"    will be installed in your local home directory.\n";
+"    will be installed in your local home directory.\n\n";
 
         $non_root_user = 1;
     }
@@ -119,10 +119,11 @@ if ($non_root_user) {
     }
 
     print
-"    Gpgdir will be installed at $homedir/bin/gpgdir, and a few\n",
+"    gpgdir will be installed at $homedir/bin/gpgdir, and a few\n",
 "    perl modules needed by gpgdir will be installed in $homedir/lib/gpgdir/.\n\n",
 
-    $libdir = "$homedir/lib/fwknop";
+    mkdir "$homedir/lib" unless -d "$homedir/lib";
+    $libdir = "$homedir/lib/gpgdir";
     $install_dir = "$homedir/bin";
 }
 
@@ -148,7 +149,7 @@ unless ($skip_module_install) {
 print "[+] Installing man page.\n";
 &install_manpage();
 
-print "[+] gpgdir installed!\n";
+print "[+] gpgdir has been installed!\n";
 
 exit 0;
 #===================== end main =======================
@@ -227,7 +228,7 @@ sub install_perl_module() {
             print "[+] Module $mod_name is already installed in the ",
                 "system perl tree, skipping.\n";
         } else {
-            ### install the module in the /usr/lib/fwknop directory because
+            ### install the module in the /usr/lib/gpgdir directory because
             ### it is not already installed.
             $install_module = 1;
         }
@@ -273,6 +274,14 @@ sub has_perl_module() {
 }
 
 sub install_manpage() {
+
+    if ($non_root_user) {
+        print
+"[+] Because this is a non-root install, the man page will not be installed\n",
+"    but you can download it here:  http://www.cipherdyne.org/gpgdir\n\n";
+        return;
+    }
+
     die "[*] man page: $manpage does not exist.  Download gpgdir " .
         "from http://www.cipherdyne.org/gpgdir" unless -e $manpage;
     ### default location to put the gpgdir man page, but check with
