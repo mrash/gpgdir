@@ -37,6 +37,9 @@ my $install_dir = '/usr/bin';
 my $libdir      = '/usr/lib/gpgdir';
 my $manpage     = 'gpgdir.1';
 
+### only used it $ENV{'HOME'} is not set for some reason
+my $config_homedir = '';
+
 ### system binaries
 my $gzipCmd = '/usr/bin/gzip';
 my $perlCmd = '/usr/bin/perl';
@@ -78,15 +81,50 @@ Getopt::Long::Configure('no_ignore_case');
     'force-mod-install' => \$cmdline_force_install,  ### force install of all modules
     'Force-mod-regex=s' => \$force_install_re,  ### force specific mod install with regex
     'Skip-mod-install'  => \$skip_module_install,
+    'home-dir=s'        => \$config_homedir, ### force a specific home dir
     'uninstall' => \$uninstall,      # Uninstall gpgdir.
     'help'      => \$print_help      # Display help.
 ));
 &usage(0) if $print_help;
 
-### Everthing after this point must be executed as root.
-$< == 0 && $> == 0 or
-    die "[*] You must be root (or equivalent " .
-        "UID 0 account) to install gpgdir!  Exiting.\n";
+### check to see if we are installing in a Cygwin environment
+my $non_root_user = 1;
+if (&is_cygwin()) {
+
+    print
+"[+] It looks like you are installing gpgdir in a Cygwin environment.\n";
+    $non_root_user = 1;
+
+} else {
+
+    unless ($< == 0 && $> == 0) {
+        print
+"[+] It looks like you are installing gpgdir as a non-root user, so gpgdir\n",
+"    will be installed in your local home directory.\n";
+
+        $non_root_user = 1;
+    }
+}
+
+if ($non_root_user) {
+
+    ### we are installing as a normal user instead of root, so see
+    ### if it is ok to install within the user's home directory
+    my $homedir = '';
+    if ($config_homedir) {
+        $homedir = $config_homedir;
+    } else {
+        $homedir = $ENV{'HOME'} or die '[*] Could not get home ',
+            "directory, set the $config_homedir var.";
+    }
+
+    print
+"    Gpgdir will be installed at $homedir/bin/gpgdir, and a few\n",
+"    perl modules needed by gpgdir will be installed in $homedir/lib/gpgdir/.\n\n",
+
+    $libdir = "$homedir/lib/fwknop";
+    $install_dir = "$homedir/bin";
+}
 
 ### make sure we can find the system binaries
 ### in the expected locations.
@@ -120,10 +158,35 @@ sub install_gpgdir() {
         "http://www.cipherdyne.org/gpgdir" unless -e 'gpgdir';
     copy 'gpgdir', "${install_dir}/gpgdir" or die "[*] Could not copy " .
         "gpgdir to $install_dir: $!";
-    chmod 0755, "${install_dir}/gpgdir" or die "[*] Could not set " .
-        "permissions on gpgdir to 0755";
-    chown 0, 0, "${install_dir}/gpgdir" or
-        die "[*] Could not chown 0,0,${install_dir}/gpgdir: $!";
+
+    if ($non_root_user) {
+        open F, "< ${install_dir}/gpgdir" or die "[*] Could not open ",
+            "${install_dir}/gpgdir: $!";
+        my @lines = <F>;
+        close F;
+        open P, "> ${install_dir}/gpgdir.tmp" or die "[*] Could not open ",
+            "${install_dir}/gpgdir.tmp: $!";
+        for my $line (@lines) {
+            ### change the lib dir to new homedir path
+            if ($line =~ m|^\s*use\s+lib\s+\'/usr/lib/gpgdir\';|) {
+                print P "use lib '", $libdir, "';\n";
+            } else {
+                print P $line;
+            }
+        }
+        close P;
+        move "${install_dir}/gpgdir.tmp", "${install_dir}/gpgdir" or
+            die "[*] Could not move ${install_dir}/gpgdir.tmp -> ",
+                "${install_dir}/gpgdir: $!";
+
+        chmod 0700, "${install_dir}/gpgdir" or die "[*] Could not set " .
+            "permissions on gpgdir to 0755";
+    } else {
+        chmod 0755, "${install_dir}/gpgdir" or die "[*] Could not set " .
+            "permissions on gpgdir to 0755";
+        chown 0, 0, "${install_dir}/gpgdir" or
+            die "[*] Could not chown 0,0,${install_dir}/gpgdir: $!";
+    }
     return;
 }
 
@@ -303,6 +366,21 @@ sub check_commands() {
     }
     return;
 }
+
+sub is_cygwin() {
+
+    my $rv = 0;
+
+    ### get OS output from uname
+    open UNAME, "uname -o |" or return $rv;
+    while (<UNAME>) {
+        $rv = 1 if /Cygwin/;
+    }
+    close UNAME;
+
+    return $rv;
+}
+
 
 sub setup() {
     unless (-d $libdir) {
