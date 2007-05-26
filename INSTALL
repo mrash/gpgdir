@@ -5,14 +5,10 @@ QUICK AND EASY INSTALLATION INSTRUCTIONS:
 Just run the gpgdir installation script "install.pl" from the gpgdir
 sources directory:
 
-
 # ./install.pl
 
-Note that you need to be root since gpgdir will need to install the
-GnuPG::Interface, Class::MethodMaker, and Term::ReadKey perl modules in
-/usr/lib/gpgdir.  Gpgdir makes use of perl modules from this directory
-so as to not pollute perl modules that are installed in the system perl
-lib tree.  Note that if any of the modules that are already needed by
-gpgdir are already installed in the system perl library tree, then gpgdir
-will preferentially use them instead of installing them within the
-/usr/lib/gpgdir/ directory.
+If you are not installing as root, the install.pl script will install gpgdir
+along with required perl modules within your home directory.  If you are
+installing as root, required perl modules will be installed in /usr/lib/gpgdir
+so as to not pollute the system perl library tree.  The required perl modules
+are GnuPG::Interface, Class::MethodMaker, and Term::ReadKey.
