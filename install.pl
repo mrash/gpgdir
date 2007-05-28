@@ -88,7 +88,7 @@ Getopt::Long::Configure('no_ignore_case');
 &usage(0) if $print_help;
 
 ### check to see if we are installing in a Cygwin environment
-my $non_root_user = 1;
+my $non_root_user = 0;
 if (&is_cygwin()) {
 
     print
