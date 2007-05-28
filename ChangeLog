@@ -1,4 +1,4 @@
-gpgdir-1.2 (05/26/2007):
+gpgdir-1.2 (05/28/2007):
     - Added support for installing gpgdir on Windows under Cygwin (via the
       install.pl script).
     - Added support for installing gpgdir within a user home directory without
