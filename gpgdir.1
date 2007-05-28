@@ -5,7 +5,7 @@
 .SH NAME
 .B gpgdir
 .SH SYNOPSIS
-.B gpgdir [options]
+.B gpgdir -e|-d <directory> [options]
 .SH DESCRIPTION
 .B gpgdir
 is a perl script that uses the CPAN GnuPG::Interface perl module to encrypt and decrypt
@@ -41,8 +41,9 @@ program with the
 .B --Wipe
 command line option to securely delete the original unencrypted files after they
 have been successfully encrypted.  This elevates the security stance of gpgdir
-since then it is more difficult to recover the unencrypted data associated with
-files after they are encrypted.
+since it is more difficult to recover the unencrypted data associated with
+files from the filesystem after they are encrypted (unlink() does not erase data
+blocks even though a file is removed).
 
 .SH OPTIONS
 .TP
@@ -131,6 +132,13 @@ within ~/.gnupg/options, then GnuPG tries to use the first suitable key on
 its key ring (the initial encrypt/decrypt test makes sure that the user
 knows the corresponding password for the key).
 .TP
+.BR \-a ", " " \-\^\-agent
+Instruct
+.B gpgdir
+to acquire gpg key password from a running
+.B gpg-agent
+instance.
+.TP
 .BR \-s ", " " \-\^\-skip-test
 Skip encryption and decryption test.  This will allow
 .B gpgdir
@@ -145,6 +153,10 @@ a directory.
 .BR \-\^\-no-recurse
 Instruct gpgdir to not recurse through any subdirectories of the directory
 that is being encrypted or decrypted.
+.TP
+.BR \-\^\-no-password
+Instruct gpgdir to not ask the user for a password.  This is only useful
+when a gpg key literally has no associated password (this is not common).
 .TP
 .BR \-\^\-no-delete
 Instruct gpgdir to not delete original files at encrypt time.

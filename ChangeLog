@@ -4,6 +4,11 @@ gpgdir-1.2 (05/26/2007):
     - Added support for installing gpgdir within a user home directory without
       the need for root access (this requires installing gpgdir with the
       install.pl script).
+    - Added --agent to have gpgdir acquire gpg key password from a running
+      gpg-agent instance.
+    - Added --no-password so gpgdir can use a gpg key with no associated
+      password (this is not common).  The user is not prompted for a password
+      in this case.
 
 gpgdir-1.1 (05/21/2007):
     - Added the ability to securely delete the original versions of files with

@@ -71,6 +71,7 @@ my $trial_run       = 0;
 my $skip_test_mode  = 0;
 my $verbose         = 0;
 my $quiet           = 0;
+my $use_gpg_agent   = 0;  ### use gpg-agent for passwords
 my $force_mode      = 0;
 my $help            = 0;
 my $wipe_mode       = 0;
@@ -84,6 +85,7 @@ my $interactive_mode = 0;
 my @exclude_patterns = ();
 my @include_patterns = ();
 my %files            = ();
+my $cmdline_no_password = 0;
 
 ### for user answers
 my $ACCEPT_YES_DEFAULT = 1;
@@ -105,6 +107,7 @@ Getopt::Long::Configure('no_ignore_case');
     'decrypt=s'      => \$decrypt_dir,     # Decrypt files in this directory.
     'gnupg-dir=s'    => \$gpg_homedir,     # Path to /path/to/.gnupg directory.
     'pw-file=s'      => \$pw_file,         # Read password out of this file.
+    'agent'          => \$use_gpg_agent,   # Use gpg-agent for passwords.
     'Wipe'           => \$wipe_mode,       # Securely delete unencrypted files.
     'wipe-path=s'    => \$wipe_cmd,        # Path to wipe command.
     'wipe-interactive' => \$wipe_interactive, # Disable "wipe -I"
@@ -135,6 +138,9 @@ Getopt::Long::Configure('no_ignore_case');
                                            # subdirectories.
     'no-delete'      => \$no_delete,       # Don't delete files once they have
                                            # been encrypted.
+    'no-password'    => \$cmdline_no_password, # Do not query for a password (only
+                                               # useful for when the gpg literally
+                                               # has no password).
     'user-homedir=s' => \$homedir,         # Path to home directory.
     'no-preserve-times' => \$no_fs_times,  # Don't preserve mtimes or atimes.
     'verbose'        => \$verbose,         # Verbose mode.
@@ -326,7 +332,14 @@ sub encrypt_file() {
     $handles->options('stdin')->{'direct'}  = 1;
     $handles->options('stdout')->{'direct'} = 1;
 
-    my $pid = $gpg->encrypt('handles' => $handles);
+    my $pid;
+
+    if ($use_gpg_agent) {
+        $pid = $gpg->encrypt('handles' => $handles,
+            'command_args' => [ qw( --use-agent ) ]);
+    } else {
+        $pid = $gpg->encrypt('handles' => $handles);
+    }
 
     print $pw_fh $pw;
     close $pw_fh;
@@ -397,7 +410,14 @@ sub decrypt_file() {
     $handles->options('stdin')->{'direct'}  = 1;
     $handles->options('stdout')->{'direct'} = 1;
 
-    my $pid = $gpg->decrypt('handles' => $handles);
+    my $pid;
+
+    if ($use_gpg_agent) {
+        $pid = $gpg->decrypt('handles' => $handles,
+            'command_args' => [ qw( --use-agent ) ]);
+    } else {
+        $pid = $gpg->decrypt('handles' => $handles);
+    }
 
     print $pw_fh $pw;
     close $pw_fh;
@@ -761,6 +781,15 @@ sub check_file_criteria() {
 }
 
 sub get_password() {
+
+    ### this is only useful if the gpg key literally has no password
+    ### (usually this is not the case, but gpgdir will support it if
+    ### so).
+    return if $cmdline_no_password;
+
+    ### if we are using gpg-agent for passwords, then return
+    return if $use_gpg_agent;
+
     if ($pw_file) {
         open PW, "< $pw_file" or die "[*] Could not open $pw_file: $!";
         $pw = <PW>;
@@ -897,13 +926,15 @@ gpgdir; Recursive direction encryption and decryption with GnuPG
     By Michael Rash (mbr\@cipherdyne.org)
     URL: http://www.cipherdyne.org/gpgdir/
 
-Usage: gpgdir [options]
+Usage: gpgdir -e|-d <directory> [options]
 
 Options:
     -e, --encrypt <directory>   - Encrypt <directory> and all of its
                                   subdirectories.
     -d, --decrypt <directory>   - Decrypt <directory> and all of its
                                   subdirectories.
+    -a, --agent                 - Acquire password information from a
+                                  running instance of gpg-agent.
     -g, --gnupg-dir <dir>       - Specify a path to a .gnupg directory for
                                   gpg keys (the default is ~/.gnupg if this
                                   option is not used).
@@ -945,6 +976,8 @@ Options:
     --no-delete                 - Don't delete original unencrypted files.
     --no-preserve-times         - Don't preserve original mtime and atime
                                   values on encrypted/decrypted files.
+    --no-password               - Assume the gpg key has no password at all
+                                  (this is not common).
     -u, --user-homedir <dir>    - Path to home directory.
     -v, --verbose               - Run in verbose mode.
     -V, --Version               - print version.
