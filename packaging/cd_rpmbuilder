@@ -89,7 +89,7 @@ if ($project) {
 }
 
 die "[*] $wgetCmd is not a valid path to wget, update the config section."
-    unless -x $rpmbuildCmd;
+    unless -x $wgetCmd;
 die "[*] $rpmbuildCmd is not a valid path to rpmbuild, update the config " .
     "section." unless -x $rpmbuildCmd;
 
