@@ -10,7 +10,7 @@
 #
 # Author: Michael Rash (mbr@cipherdyne.com)
 #
-# Version: 1.2
+# Version: 1.3
 #
 # Copyright (C) 2002-2007 Michael Rash (mbr@cipherdyne.org)
 #
@@ -72,6 +72,7 @@ my $skip_test_mode  = 0;
 my $verbose         = 0;
 my $quiet           = 0;
 my $use_gpg_agent   = 0;  ### use gpg-agent for passwords
+my $gpg_agent_info  = '';
 my $force_mode      = 0;
 my $help            = 0;
 my $wipe_mode       = 0;
@@ -108,6 +109,8 @@ Getopt::Long::Configure('no_ignore_case');
     'gnupg-dir=s'    => \$gpg_homedir,     # Path to /path/to/.gnupg directory.
     'pw-file=s'      => \$pw_file,         # Read password out of this file.
     'agent'          => \$use_gpg_agent,   # Use gpg-agent for passwords.
+    'Agent-info=s'   => \$gpg_agent_info,  # Specify GnuPG agent connection
+                                           # information.
     'Wipe'           => \$wipe_mode,       # Securely delete unencrypted files.
     'wipe-path=s'    => \$wipe_cmd,        # Path to wipe command.
     'wipe-interactive' => \$wipe_interactive, # Disable "wipe -I"
@@ -334,9 +337,16 @@ sub encrypt_file() {
 
     my $pid;
 
-    if ($use_gpg_agent) {
+    if ($use_gpg_agent or $gpg_agent_info) {
+
+        ### set environment explicitly if --Agent was specified
+        if ($gpg_agent_info) {
+            $ENV{'GPG_AGENT_INFO'} = $gpg_agent_info;
+        }
+
         $pid = $gpg->encrypt('handles' => $handles,
             'command_args' => [ qw( --use-agent ) ]);
+
     } else {
         $pid = $gpg->encrypt('handles' => $handles);
     }
@@ -947,6 +957,9 @@ Options:
                                   subdirectories.
     -a, --agent                 - Acquire password information from a
                                   running instance of gpg-agent.
+    -A, --Agent-info <info>     - Specify the value for the GPG_AGENT_INFO
+                                  environment variable as returned by
+                                  'gpg-agent --daemon'.
     -g, --gnupg-dir <dir>       - Specify a path to a .gnupg directory for
                                   gpg keys (the default is ~/.gnupg if this
                                   option is not used).

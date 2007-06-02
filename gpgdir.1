@@ -139,6 +139,17 @@ to acquire gpg key password from a running
 .B gpg-agent
 instance.
 .TP
+.BR \-A ", " \-\^\-Agent-info\ \<connection info>
+Specify the value of the GPG_AGENT_INFO environment variable as returned
+by the
+.B gpg-agent --daemon
+command. If the
+.B gpgdir --agent
+command line argument is used instead of
+.B --Agent-info,
+then gpgdir assumes that the GPG_AGENT_INFO environment variable has already
+been set in the current shell.
+.TP
 .BR \-s ", " " \-\^\-skip-test
 Skip encryption and decryption test.  This will allow
 .B gpgdir
@@ -208,6 +219,11 @@ To encrypt a directory but skip all filenames that contain the string "host":
 To encrypt a directory but only encrypt those files that contain the string "passwd":
 .PP
 .B $ gpgdir -e /some/dir --Include passwd
+.PP
+To acquire the GnuPG key password from a running gpg-agent daemon in order to decrypt
+a directory (this requires that gpg-agent has the password):
+.PP
+.B $ gpgdir -A /tmp/gpg-H4DBhc/S.gpg-agent:7046:1 -d /some/dir
 .PP
 To encrypt a directory but skip the encryption/decryption test (so you will
 not be prompted for a decryption password):

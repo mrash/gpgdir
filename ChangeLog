@@ -1,3 +1,8 @@
+gpgdir-1.3 (06//2007):
+    - Added the --Agent-info command line argument so that the value of the
+      GPG_AGENT_INFO environment variable can be specified on the gpgdir
+      command line.
+
 gpgdir-1.2 (05/28/2007):
     - Added support for installing gpgdir on Windows under Cygwin (via the
       install.pl script). Installing gpgdir on FreeBSD systems also works.
