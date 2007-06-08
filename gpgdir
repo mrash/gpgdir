@@ -76,7 +76,7 @@ my $gpg_agent_info  = '';
 my $force_mode      = 0;
 my $help            = 0;
 my $wipe_mode       = 0;
-my $encrypt         = 0;
+my $encrypt_mode    = 0;
 my $use_default_key = 0;
 my $pw_file         = '';
 my $wipe_cmd        = '/usr/bin/wipe';
@@ -86,7 +86,11 @@ my $interactive_mode = 0;
 my @exclude_patterns = ();
 my @include_patterns = ();
 my %files            = ();
+my %obfuscate_ctrs   = ();
+my %obfuscated_dirs  = ();
 my $cmdline_no_password = 0;
+my $obfuscate_mode = 0;
+my $obfuscate_map_filename  = '.gpgdir_map_file';
 
 ### for user answers
 my $ACCEPT_YES_DEFAULT = 1;
@@ -95,7 +99,7 @@ my $ACCEPT_NO_DEFAULT  = 2;
 unless ($< == $>) {
     die "[*] Real and effective uid must be the same.  Make sure\n",
         "    gpgdir has not been installed as a SUID binary.\n",
-        "Exiting.\n";
+        "Exiting.";
 }
 
 my @args_cp = @ARGV;
@@ -115,6 +119,9 @@ Getopt::Long::Configure('no_ignore_case');
     'wipe-path=s'    => \$wipe_cmd,        # Path to wipe command.
     'wipe-interactive' => \$wipe_interactive, # Disable "wipe -I"
     'wipe-cmdline=s' => \$wipe_cmdline,    # Specify wipe command line.
+    'Obfuscate-filenames' => \$obfuscate_mode, # substitute real filenames
+                                           # with manufactured ones.
+    'obfuscate-map-file=s' => \$obfuscate_map_filename, # path to mapping file.
     'Force'          => \$force_mode,      # Continue if files can't be deleted.
     'Exclude=s'      => \$exclude_pat,     # Exclude a pattern from encrypt/decrypt
                                            # cycle.
@@ -187,12 +194,12 @@ unless (-d $gpg_homedir) {
 ### get the key identifier from ~/.gnupg
 $encrypt_user = &get_key() unless $encrypt_user or $use_default_key;
 
-if ($decrypt_dir && $encrypt_dir) {
+if ($decrypt_dir and $encrypt_dir) {
     die "[*] You cannot encrypt and decrypt the same directory.\n";
     &usage_and_exit();
 }
 
-unless ($decrypt_dir || $encrypt_dir || $test_and_exit) {
+unless ($decrypt_dir or $encrypt_dir or $test_and_exit) {
     print "[*] Please specify -e <dir>, -d <dir>, or --test-mode\n";
     &usage_and_exit();
 }
@@ -227,10 +234,10 @@ if ($include_file) {
 
 if ($encrypt_dir) {
     $dir = $encrypt_dir;
-    $encrypt = 1;
+    $encrypt_mode = 1;
 } elsif ($decrypt_dir) {
     $dir = $decrypt_dir;
-    $encrypt = 0;
+    $encrypt_mode = 0;
 }
 
 if ($dir) {
@@ -244,7 +251,7 @@ $skip_test_mode = 1 if $trial_run;
 
 my $initial_dir = cwd or die "[*] Could not get CWD: $!";
 
-&get_password() unless $encrypt and $skip_test_mode;
+&get_password() unless $encrypt_mode and $skip_test_mode;
 
 if ($dir eq '.') {
     $dir = $initial_dir;
@@ -259,7 +266,7 @@ unless ($skip_test_mode) {
     exit $rv if $test_and_exit;
 }
 
-if ($encrypt) {
+if ($encrypt_mode) {
     print "[+] Encrypting directory: $dir\n" unless $quiet;
 } else {
     print "[+] Decrypting directory: $dir\n" unless $quiet;
@@ -285,7 +292,9 @@ die "[*] Could not create new GnuPG::Interface object with ",
 ### perform the gpg operation (encrypt/decrypt)
 &gpg_operation();
 
-if ($encrypt) {
+&obfuscated_mapping_files() if $obfuscate_mode;
+
+if ($encrypt_mode) {
     print "[+] Total number of files encrypted: " .
         "$total_encrypted\n" unless $quiet;
 } else {
@@ -543,34 +552,52 @@ sub gpg_operation() {
         my $mtime = $files{$file}{'mtime'};
         my $atime = $files{$file}{'atime'};
 
-        if ($encrypt) {
-            if (-e "$filename.gpg") {
-                print "[-] Encrypted file $file.gpg already exists. ",
-                    "Skipping.\n" unless $quiet;
+        if ($encrypt_mode) {
+
+            my $encrypt_filename = "$filename.gpg";
+
+            if ($obfuscate_mode) {
+
+                unless (defined $obfuscate_ctrs{$dir}) {
+
+                    ### create a new gpgdir mapping file for obfuscated file
+                    ### names, but preserve any previously encrypted file
+                    ### name mappings
+                    &handle_old_obfuscated_map_file();
+
+                    ### make obfuscated file names start at 1 for each
+                    ### directory
+                    $obfuscate_ctrs{$dir} = 1;
+                }
+
+                $encrypt_filename = 'gpgdir_' . $$ . '_'
+                        . $obfuscate_ctrs{$dir} . '.gpg';
+            }
+
+            if (-e $encrypt_filename) {
+                print "[-] Encrypted file $dir/$encrypt_filename already ",
+                    "exists, skipping.\n" unless $quiet;
                 next FILE;
             }
 
-            my $do_encrypt = 1;
             if ($interactive_mode) {
-                $do_encrypt = &query_yes_no("    Encrypt: $file ([y]/n)?  ",
-                    $ACCEPT_YES_DEFAULT);
+                next FILE unless (&query_yes_no(
+                    "    Encrypt: $file ([y]/n)?  ", $ACCEPT_YES_DEFAULT));
             }
-
-            next FILE unless $do_encrypt;
 
             print "[+] Encrypting:  $file\n" unless $quiet;
 
             unless ($trial_run) {
 
-                &encrypt_file($filename, "$filename.gpg");
+                &encrypt_file($filename, $encrypt_filename);
 
-                if (-e "$filename.gpg" && -s "$filename.gpg" != 0) {
+                if (-e $encrypt_filename && -s $encrypt_filename != 0) {
                     ### set the atime and mtime to be the same as the
                     ### original file.
                     unless ($no_fs_times) {
                         if (defined $mtime and $mtime and
                                 defined $atime and $atime) {
-                            utime $atime, $mtime, "$filename.gpg";
+                            utime $atime, $mtime, $encrypt_filename;
                         }
                     }
                     ### only delete the original file if
@@ -579,6 +606,15 @@ sub gpg_operation() {
                         print "    Securely deleting file: $file\n";
                     }
                     &delete_file($filename);
+
+                    if ($obfuscate_mode) {
+
+                        ### record the original file name mapping
+                        &append_obfuscated_mapping($filename,
+                            $encrypt_filename);
+
+                        $obfuscate_ctrs{$dir}++;
+                    }
 
                     $total_encrypted++;
 
@@ -592,7 +628,33 @@ sub gpg_operation() {
 
             ### allow filenames with spaces
             my ($decrypt_filename) = ($filename =~ /^(.+)\.gpg$/);
+
+            if ($obfuscate_mode) {
+
+                &import_obfuscated_file_map($dir)
+                    unless defined $obfuscated_dirs{$dir};
+
+                if (defined $obfuscated_dirs{$dir}{$filename}) {
+                    $decrypt_filename = $obfuscated_dirs{$dir}{$filename};
+                } else {
+                    ###
+                    print "[-] Obfuscated file map does not exist for $filename in\n",
+                        "    $obfuscate_map_filename, skipping.\n";
+                    next FILE;
+                }
+
+            } else {
+                if (not $force_mode and $file =~ /gpgdir_\d+_\d+.gpg/) {
+                    ### be careful not to decrypt obfuscated file unless we
+                    ### are running in -O mode.  This ensures that the
+                    ### original file names will be acquired from the
+                    ### /some/dir/.gpgdir_map_file
+                    next FILE;
+                }
+            }
+
             next FILE unless $decrypt_filename;
+
             ### don't decrypt a file on top of a normal file of
             ### the same name
             if (-e $decrypt_filename) {
@@ -601,13 +663,10 @@ sub gpg_operation() {
                 next FILE;
             }
 
-            my $do_decrypt = 1;
             if ($interactive_mode) {
-                $do_decrypt = &query_yes_no("    Decrypt: $file ([y]/n)?  ",
-                    $ACCEPT_YES_DEFAULT);
+                next FILE unless (&query_yes_no(
+                    "    Decrypt: $file ([y]/n)?  ", $ACCEPT_YES_DEFAULT));
             }
-
-            next FILE unless $do_decrypt;
 
             unless ($trial_run) {
 
@@ -687,6 +746,109 @@ sub include_file() {
         }
     }
     return 0;
+}
+
+sub obfuscated_mapping_files() {
+    my $dirs_href;
+
+    if ($encrypt_mode) {
+        $dirs_href = \%obfuscate_ctrs;
+    } else {
+        $dirs_href = \%obfuscated_dirs;
+    }
+
+    DIR: for my $dir (keys %$dirs_href) {
+        unless (chdir($dir)) {
+            print "[-] Could not chdir $dir, skipping.\n" unless $quiet;
+            next DIR;
+        }
+
+        if ($encrypt_mode) {
+            next DIR unless -e $obfuscate_map_filename;
+            ### encrypt the map file now that we have encrypted
+            ### the directory
+            print "[+] Encrypting mapping file:  ",
+                "$dir/$obfuscate_map_filename\n" unless $quiet;
+            unless ($trial_run) {
+                &encrypt_file($obfuscate_map_filename,
+                    "$obfuscate_map_filename.gpg");
+
+                unlink $obfuscate_map_filename;
+            }
+        } else {
+            next DIR unless -e "$obfuscate_map_filename.gpg";
+            ### delete the map file since we have decrypted
+            ### the directory
+            print "[+] Decrypting mapping file:  ",
+                "$dir/$obfuscate_map_filename.gpg\n" unless $quiet;
+            unless ($trial_run) {
+                &decrypt_file("$obfuscate_map_filename.gpg",
+                    $obfuscate_map_filename);
+
+                unlink "$obfuscate_map_filename.gpg";
+            }
+        }
+    }
+    return;
+}
+
+sub handle_old_obfuscated_map_file() {
+    return unless -e $obfuscate_map_filename;
+
+    my @existing_obfuscated_files = ();
+
+    open F, "< $obfuscate_map_filename" or die "[*] Could not open ",
+        "$obfuscate_map_filename: $!";
+    while (<F>) {
+        if (/^\s*.*\s+(gpgdir_\d+_\d+.gpg)/) {
+            push @existing_obfuscated_files, $_
+                if -e $1;
+        }
+    }
+    close F;
+
+    unlink $obfuscate_map_filename;
+
+    if (@existing_obfuscated_files) {
+        ### there are some obfuscated files from a previous gpgdir
+        ### execution
+        open G, "> $obfuscate_map_filename" or die "[*] Could not open ",
+            "$obfuscate_map_filename: $!";
+        print G for @existing_obfuscated_files;
+        close G;
+    }
+    return;
+}
+
+sub append_obfuscated_mapping() {
+    my ($filename, $encrypt_filename) = @_;
+
+    open G, ">> $obfuscate_map_filename" or die "[*] Could not open ",
+        "$obfuscate_map_filename: $!";
+    print G "$filename $encrypt_filename\n";
+    close G;
+    return;
+}
+
+sub import_obfuscated_file_map() {
+    my $dir = shift;
+
+    $obfuscated_dirs{$dir} = {};
+
+    return unless -e "$obfuscate_map_filename.gpg";
+
+    &decrypt_file("$obfuscate_map_filename.gpg", $obfuscate_map_filename);
+
+    open G, "< $obfuscate_map_filename" or die "[*] Could not open ",
+        "$obfuscate_map_filename: $!";
+    while (<G>) {
+        if (/^\s*(.*)\s+(gpgdir_\d+_\d+.gpg)/) {
+            $obfuscated_dirs{$dir}{$2} = $1;
+        }
+    }
+    close G;
+
+    return;
 }
 
 sub get_homedir() {
@@ -781,7 +943,7 @@ sub check_file_criteria() {
     }
     if (-e $file and not -l $file and -s $file != 0
             and $file !~ m|/\.|) {
-        if ($encrypt) {
+        if ($encrypt_mode) {
             if ($file =~ m|\.gpg|) {
                 print "[-] Skipping encrypted file: $file\n" unless $quiet;
                 return;
@@ -827,7 +989,7 @@ sub get_password() {
         if ($test_and_exit) {
             print "    *** test_mode() ***\n" unless $quiet;
         }
-        if ($encrypt) {
+        if ($encrypt_mode) {
             print '    Enter password (for initial ' .
                 "encrypt/decrypt test)\n" unless $quiet;
         }
