@@ -1,4 +1,9 @@
-gpgdir-1.3 (06//2007):
+gpgdir-1.3 (06/09/2007):
+    - Added --Obfuscate mode so that the files within a directory can be
+      altered into unrecognizable names (which are stored within the file
+      .gpgdir_map_file within each sub-directory, and this file is itself
+      encrypted).  The obfuscated file names are reversed when a directory
+      is decrypted.
     - Added the --Agent-info command line argument so that the value of the
       GPG_AGENT_INFO environment variable can be specified on the gpgdir
       command line.

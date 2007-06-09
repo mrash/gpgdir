@@ -116,6 +116,15 @@ Use the
 .B wipe
 program to securely delete files after they have been successfully encrypted.
 .TP
+.BR \-O ", " \-\^\-Obfuscate-filename
+Tell
+.B gpgdir
+to obfuscate the file names of files that it encrypts (in -e mode).  The
+names of each file are stored within the file .gpgdir_map_file for every
+sub-directory, and this file is itself encrypted.  In decryption mode (-d),
+the -O argument reverses the process so that the original files are
+restored.
+.TP
 .BR \-K ", " \-\^\-Key-id\ \<id>
 Manually specify a GnuPG key ID from the command line.  Because GnuPG
 supports matching keys with a string,
