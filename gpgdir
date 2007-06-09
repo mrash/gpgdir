@@ -32,6 +32,7 @@
 #
 
 use lib '/usr/lib/gpgdir';
+use Data::Dumper;
 use File::Find;
 use File::Copy;
 use Term::ReadKey;
@@ -88,6 +89,7 @@ my @include_patterns = ();
 my %files            = ();
 my %obfuscate_ctrs   = ();
 my %obfuscated_dirs  = ();
+my $have_obfuscated_file = 0;
 my $cmdline_no_password = 0;
 my $obfuscate_mode = 0;
 my $obfuscate_map_filename  = '.gpgdir_map_file';
@@ -293,6 +295,13 @@ die "[*] Could not create new GnuPG::Interface object with ",
 &gpg_operation();
 
 &obfuscated_mapping_files() if $obfuscate_mode;
+
+unless ($obfuscate_mode) {
+    if ($have_obfuscated_file) {
+        print "[-] Obfuscated filenames detected, try decrypting with -O.\n"
+            unless $quiet;
+    }
+}
 
 if ($encrypt_mode) {
     print "[+] Total number of files encrypted: " .
@@ -649,6 +658,7 @@ sub gpg_operation() {
                     ### are running in -O mode.  This ensures that the
                     ### original file names will be acquired from the
                     ### /some/dir/.gpgdir_map_file
+                    $have_obfuscated_file = 1;
                     next FILE;
                 }
             }
@@ -793,7 +803,11 @@ sub obfuscated_mapping_files() {
 }
 
 sub handle_old_obfuscated_map_file() {
-    return unless -e $obfuscate_map_filename;
+    return unless -e "$obfuscate_map_filename.gpg";
+
+    &decrypt_file("$obfuscate_map_filename.gpg", $obfuscate_map_filename);
+
+    unlink "$obfuscate_map_filename.gpg";
 
     my @existing_obfuscated_files = ();
 
@@ -801,13 +815,12 @@ sub handle_old_obfuscated_map_file() {
         "$obfuscate_map_filename: $!";
     while (<F>) {
         if (/^\s*.*\s+(gpgdir_\d+_\d+.gpg)/) {
-            push @existing_obfuscated_files, $_
-                if -e $1;
+            if (-e $1) {
+                push @existing_obfuscated_files, $_;
+            }
         }
     }
     close F;
-
-    unlink $obfuscate_map_filename;
 
     if (@existing_obfuscated_files) {
         ### there are some obfuscated files from a previous gpgdir
