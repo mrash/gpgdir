@@ -1163,6 +1163,13 @@ Options:
                                   default (i.e. the key that is specified
                                   by the default-key option in
                                   ~/.gnupg/options).
+    -O, --Obfuscate-filenames   - Substitute all real filenames in a
+                                  directory with manufactured ones (the
+                                  original filenames are preserved in a
+                                  mapping file and restored when the
+                                  directory is decrypted).
+    --obfuscate-map_file <file> - Specify path to obfuscated mapping file
+                                  (in -O mode).
     -q, --quiet                 - Print as little to the screen as possible
     -W, --Wipe                  - Use the 'wipe' command to securely delete
                                   unencrypted copies of files after they
