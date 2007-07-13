@@ -24,3 +24,7 @@ pyllyukko
 Anthony Chivetta
     - Submitted patch to fix a bug where files named "0.gpg" could not be
       decrypted.
+    - Submitted patch to implement the --overwrite-encrypted command line
+      argument to allow previously encrypted files to be overwritten. This
+      is useful for updating an encrypted directory with new versions of
+      the previously encrypted files.

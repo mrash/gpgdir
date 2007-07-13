@@ -1,3 +1,14 @@
+gpgdir-1.4 (07//2007):
+    - (Anthony Chivetta) Submitted patch to implement the
+      --overwrite-encrypted command line argument to allow previously
+      encrypted files to be overwritten. This is useful for updating an
+      encrypted directory with new versions of the previously encrypted files.
+      Also added the --overwrite-decrypted command line argument to perform
+      the same function for previously decrypted files.
+    - (Anthony Chivetta) Submitted patch to fix a bug where a filename of
+      "0.gpg" could not be decrypted because "0" does not evaluate to a true
+      value.
+
 gpgdir-1.3 (06/09/2007):
     - Added --Obfuscate mode so that the files within a directory can be
       altered into unrecognizable names (which are stored within the file

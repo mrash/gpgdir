@@ -93,6 +93,8 @@ my $have_obfuscated_file = 0;
 my $cmdline_no_password = 0;
 my $obfuscate_mode = 0;
 my $obfuscate_map_filename  = '.gpgdir_map_file';
+my $overwrite_encrypted = 0;
+my $overwrite_decrypted = 0;
 
 ### for user answers
 my $ACCEPT_YES_DEFAULT = 1;
@@ -125,6 +127,10 @@ Getopt::Long::Configure('no_ignore_case');
                                            # with manufactured ones.
     'obfuscate-map-file=s' => \$obfuscate_map_filename, # path to mapping file.
     'Force'          => \$force_mode,      # Continue if files can't be deleted.
+    'overwrite-encrypted' => \$overwrite_encrypted, # Overwrite encrypted files
+                                                    # even if they exist.
+    'overwrite-decrypted' => \$overwrite_decrypted, # Overwrite decrypted files
+                                                    # even if they exist.
     'Exclude=s'      => \$exclude_pat,     # Exclude a pattern from encrypt/decrypt
                                            # cycle.
     'Exclude-from=s' => \$exclude_file,    # Exclude patterns in <file> from
@@ -164,6 +170,13 @@ Getopt::Long::Configure('no_ignore_case');
 print "[+] gpgdir v$version (file revision: $rev_num)\n",
     "      by Michael Rash <mbr\@cipherdyne.org>\n"
     and exit 0 if $printver;
+
+if ($encrypt_dir and $overwrite_decrypted) {
+    die "[*] The -e and --overwrite-decrypted options are incompatible.";
+}
+if ($decrypt_dir and $overwrite_encrypted) {
+    die "[*] The -d and --overwrite-encrypted options are incompatible.";
+}
 
 if ($wipe_mode) {
     unless (-e $wipe_cmd) {
@@ -583,7 +596,7 @@ sub gpg_operation() {
                         . $obfuscate_ctrs{$dir} . '.gpg';
             }
 
-            if (-e $encrypt_filename) {
+            if (-e $encrypt_filename and not $overwrite_encrypted) {
                 print "[-] Encrypted file $dir/$encrypt_filename already ",
                     "exists, skipping.\n" unless $quiet;
                 next FILE;
@@ -668,7 +681,7 @@ sub gpg_operation() {
 
             ### don't decrypt a file on top of a normal file of
             ### the same name
-            if (-e $decrypt_filename) {
+            if (-e $decrypt_filename and not $overwrite_decrypted) {
                 print "[-] Decrypted file $dir/$decrypt_filename ",
                     "already exists. Skipping.\n" unless $quiet;
                 next FILE;
@@ -1146,9 +1159,6 @@ Options:
                                   place without actually doing them.
     --Interactive               - Query the user before encrypting,
                                   decrypting, or deleting any files.
-    -F, --Force                 - Continue to run even if files cannot be
-                                  deleted (because of permissions problems
-                                  for example).
     --Exclude <pattern>         - Skip all filenames that match <pattern>.
     --Exclude-from <file>       - Skip all filenames that match any pattern
                                   contained within <file>.
@@ -1170,6 +1180,13 @@ Options:
                                   directory is decrypted).
     --obfuscate-map_file <file> - Specify path to obfuscated mapping file
                                   (in -O mode).
+    -F, --Force                 - Continue to run even if files cannot be
+                                  deleted (because of permissions problems
+                                  for example).
+    --overwrite-encrypted       - Overwrite encrypted files even if a
+                                  previous <file>.gpg file already exists.
+    --overwrite-decrypted       - Overwrite decrypted files even if the
+                                  previous unencrypted file already exists.
     -q, --quiet                 - Print as little to the screen as possible
     -W, --Wipe                  - Use the 'wipe' command to securely delete
                                   unencrypted copies of files after they
