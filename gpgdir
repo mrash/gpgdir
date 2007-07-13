@@ -663,7 +663,8 @@ sub gpg_operation() {
                 }
             }
 
-            next FILE unless $decrypt_filename;
+            ### length() allows files named "0"
+            next FILE unless length($decrypt_filename) > 0;
 
             ### don't decrypt a file on top of a normal file of
             ### the same name

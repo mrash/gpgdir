@@ -20,3 +20,7 @@ Mate Wierdl
 
 pyllyukko
     - Added the gpgdir.SlackBuild script (adapted from the psad project).
+
+Anthony Chivetta
+    - Submitted patch to fix a bug where files named "0.gpg" could not be
+      decrypted.
