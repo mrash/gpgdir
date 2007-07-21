@@ -1,4 +1,4 @@
-gpgdir-1.4 (07//2007):
+gpgdir-1.4 (07/20/2007):
     - (Anthony Chivetta) Submitted patch to implement the
       --overwrite-encrypted command line argument to allow previously
       encrypted files to be overwritten. This is useful for updating an
