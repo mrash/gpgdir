@@ -125,6 +125,13 @@ sub-directory, and this file is itself encrypted.  In decryption mode (-d),
 the -O argument reverses the process so that the original files are
 restored.
 .TP
+.BR \-\^\-overwrite-encrypted
+Overwrite encrypted files even if a previous <file>.gpg file
+already exists.
+.TP
+.BR \-\^\-overwrite-decrypted
+Overwrite decrypted files even if the previous unencrypted file already exists.
+.TP
 .BR \-K ", " \-\^\-Key-id\ \<id>
 Manually specify a GnuPG key ID from the command line.  Because GnuPG
 supports matching keys with a string,
