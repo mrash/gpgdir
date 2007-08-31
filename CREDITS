@@ -28,3 +28,7 @@ Anthony Chivetta
       argument to allow previously encrypted files to be overwritten. This
       is useful for updating an encrypted directory with new versions of
       the previously encrypted files.
+
+Fermin Manzanedo
+    - Suggested the --Symmetric option so that files can be encrypted/
+      decrypted via a symmetric cipher (GnuPG supports CAST5 by default).
