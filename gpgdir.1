@@ -72,6 +72,13 @@ and
 .B --decrypt
 mode.
 .TP
+.BR \-S ", " \-\^\-Symmetric
+Instruct
+.B gpgdir
+to encrypt to decrypt files using a symmetric cipher supported by GnuPG
+(CAST5 is commonly used).  This results in a significant speed up for the
+encryption/decryption process.
+.TP
 .BR \-T ", " \-\^\-Trial-run
 Show what encrypt/decrypt actions would take place without actually doing
 them.  The filesystem is not changed in any way in this mode.
