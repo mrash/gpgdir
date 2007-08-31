@@ -32,7 +32,6 @@
 #
 
 use lib '/usr/lib/gpgdir';
-use Data::Dumper;
 use File::Find;
 use File::Copy;
 use Term::ReadKey;
@@ -84,9 +83,11 @@ my $wipe_cmd        = '/usr/bin/wipe';
 my $wipe_cmdline    = '';
 my $wipe_interactive = 0;
 my $interactive_mode = 0;
+my $ascii_armor_mode = 0;
 my @exclude_patterns = ();
 my @include_patterns = ();
 my %files            = ();
+my %options          = ();
 my %obfuscate_ctrs   = ();
 my %obfuscated_dirs  = ();
 my $have_obfuscated_file = 0;
@@ -95,6 +96,7 @@ my $obfuscate_mode = 0;
 my $obfuscate_map_filename  = '.gpgdir_map_file';
 my $overwrite_encrypted = 0;
 my $overwrite_decrypted = 0;
+my $symmetric_mode = 0;
 
 ### for user answers
 my $ACCEPT_YES_DEFAULT = 1;
@@ -151,6 +153,12 @@ Getopt::Long::Configure('no_ignore_case');
     'Key-id=s'       => \$encrypt_user,    # Specify encrypt/decrypt key
     'Default-key'    => \$use_default_key, # Assume that default-key is set within
                                            # ~/.gnupg/options.
+    'Symmetric'      => \$symmetric_mode, # encrypt using symmetric cipher.
+                                                  # (this option is not required to
+                                                  # also decrypt, GnuPG handles
+                                                  # that automatically).
+    'Plain-ascii'    => \$ascii_armor_mode, # Ascii armor mode (creates non-binary
+                                            # encrypted files).
     'skip-test'      => \$skip_test_mode,  # Skip encrypt -> decrypt test.
     'no-recurse'     => \$norecurse,       # Don't encrypt/decrypt files in
                                            # subdirectories.
@@ -171,6 +179,10 @@ print "[+] gpgdir v$version (file revision: $rev_num)\n",
     "      by Michael Rash <mbr\@cipherdyne.org>\n"
     and exit 0 if $printver;
 
+if ($symmetric_mode and ($use_gpg_agent or $gpg_agent_info)) {
+    die "[*] gpg-agent incompatible with --Symmetric mode";
+}
+
 if ($encrypt_dir and $overwrite_decrypted) {
     die "[*] The -e and --overwrite-decrypted options are incompatible.";
 }
@@ -188,26 +200,40 @@ if ($wipe_mode) {
     }
 }
 
+### build up GnuPG options hash
+if ($verbose) {
+    %options = ('homedir' => $gpg_homedir);
+} else {
+    %options = (
+        'batch'   => 1,
+        'homedir' => $gpg_homedir
+    );
+}
+
+$options{'armor'} = 1 if $ascii_armor_mode;
+
 ### get the path to the user's home directory
 $homedir = &get_homedir() unless $homedir;
 
-if ($gpg_homedir) {  ### it was specified on the command line with --gnupg-dir
-    unless ($gpg_homedir =~ /\.gnupg$/) {
-        die "[*] Must specify the path to a user .gnupg directory ",
-            "e.g. /home/username/.gnupg\n";
+unless ($symmetric_mode) {
+    if ($gpg_homedir) {  ### specified on the command line with --gnupg-dir
+        unless ($gpg_homedir =~ /\.gnupg$/) {
+            die "[*] Must specify the path to a user .gnupg directory ",
+                "e.g. /home/username/.gnupg\n";
+        }
+    } else {
+        if (-d "${homedir}/.gnupg") {
+            $gpg_homedir = "${homedir}/.gnupg";
+        }
     }
-} else {
-    if (-d "${homedir}/.gnupg") {
-        $gpg_homedir = "${homedir}/.gnupg";
+    unless (-d $gpg_homedir) {
+        die "[*] GnuPG directory: ${homedir}/.gnupg does not exist. Please\n",
+            "    create it by executing: \"gpg --gen-key\".  Exiting.\n";
     }
-}
-unless (-d $gpg_homedir) {
-    die "[*] GnuPG directory: ${homedir}/.gnupg does not exist.  Please\n",
-        "    create it by executing: \"gpg --gen-key\".  Exiting.\n";
-}
 
-### get the key identifier from ~/.gnupg
-$encrypt_user = &get_key() unless $encrypt_user or $use_default_key;
+    ### get the key identifier from ~/.gnupg
+    $encrypt_user = &get_key() unless $encrypt_user or $use_default_key;
+}
 
 if ($decrypt_dir and $encrypt_dir) {
     die "[*] You cannot encrypt and decrypt the same directory.\n";
@@ -266,7 +292,11 @@ $skip_test_mode = 1 if $trial_run;
 
 my $initial_dir = cwd or die "[*] Could not get CWD: $!";
 
-&get_password() unless $encrypt_mode and $skip_test_mode;
+if ($symmetric_mode) {
+    &get_password();
+} else {
+    &get_password() unless $encrypt_mode and $skip_test_mode;
+}
 
 if ($dir eq '.') {
     $dir = $initial_dir;
@@ -286,20 +316,6 @@ if ($encrypt_mode) {
 } else {
     print "[+] Decrypting directory: $dir\n" unless $quiet;
 }
-
-my $gpg = GnuPG::Interface->new();
-
-if ($verbose) {
-    $gpg->options->hash_init(
-        'homedir' => $gpg_homedir);
-} else {
-    $gpg->options->hash_init(
-        'batch' => 1,
-        'homedir' => $gpg_homedir);
-}
-
-die "[*] Could not create new GnuPG::Interface object with ",
-    "homedir: $gpg_homedir" unless $gpg;
 
 ### build a hash of file paths to work against
 &get_files($dir);
@@ -331,20 +347,12 @@ sub encrypt_file() {
     my ($in_file, $out_file) = @_;
 
     my $gpg = GnuPG::Interface->new();
-
-    if ($verbose) {
-        $gpg->options->hash_init(
-            'homedir' => $gpg_homedir);
-    } else {
-        $gpg->options->hash_init(
-            'batch' => 1,
-            'homedir' => $gpg_homedir);
-    }
+    $gpg->options->hash_init(%options);
 
     die "[*] Could not create new gpg object with ",
         "homedir: $gpg_homedir" unless $gpg;
 
-    unless ($use_default_key) {
+    unless ($symmetric_mode or $use_default_key) {
         $gpg->options->default_key($encrypt_user);
         $gpg->options->push_recipients($encrypt_user);
     }
@@ -379,7 +387,11 @@ sub encrypt_file() {
             'command_args' => [ qw( --use-agent ) ]);
 
     } else {
-        $pid = $gpg->encrypt('handles' => $handles);
+        if ($symmetric_mode) {
+            $pid = $gpg->encrypt_symmetrically('handles' => $handles);
+        } else {
+            $pid = $gpg->encrypt('handles' => $handles);
+        }
     }
 
     print $pw_fh $pw;
@@ -403,8 +415,6 @@ sub encrypt_file() {
     waitpid $pid, 0;
 
     if (-s $out_file == 0) {
-        &delete_file($out_file);
-        &delete_file("$out_file.gpg");
         if ($use_gpg_agent) {
             die "[*] Created zero-size file: $out_file\n",
 "    Maybe gpg-agent does not yet have the password for that key?\n",
@@ -413,6 +423,8 @@ sub encrypt_file() {
             die "[*] Created zero-size file: $out_file\n",
                 "    Bad password? Try re-running with -v.";
         }
+        &delete_file($out_file);
+        &delete_file("$out_file.gpg");
     }
 
     return;
@@ -422,20 +434,12 @@ sub decrypt_file() {
     my ($in_file, $out_file) = @_;
 
     my $gpg = GnuPG::Interface->new();
-
-    if ($verbose) {
-        $gpg->options->hash_init(
-            'homedir' => $gpg_homedir);
-    } else {
-        $gpg->options->hash_init(
-            'batch' => 1,
-            'homedir' => $gpg_homedir);
-    }
+    $gpg->options->hash_init(%options);
 
     die "[*] Could not create new gpg object with ",
         "homedir: $gpg_homedir" unless $gpg;
 
-    unless ($use_default_key) {
+    unless ($symmetric_mode or $use_default_key) {
         $gpg->options->default_key($encrypt_user);
         $gpg->options->push_recipients($encrypt_user);
     }
@@ -487,8 +491,6 @@ sub decrypt_file() {
     waitpid $pid, 0;
 
     if (-s $out_file == 0) {
-        &delete_file($out_file);
-        &delete_file("$out_file.gpg");
         if ($use_gpg_agent) {
             die "[*] Created zero-size file: $out_file\n",
 "    Maybe gpg-agent does not yet have the password for that key?\n",
@@ -497,6 +499,8 @@ sub decrypt_file() {
             die "[*] Created zero-size file: $out_file\n",
                 "    Bad password? Try re-running with -v.";
         }
+        &delete_file($out_file);
+        &delete_file("$out_file.gpg");
     }
     return;
 }
@@ -971,12 +975,12 @@ sub check_file_criteria() {
     if (-e $file and not -l $file and -s $file != 0
             and $file !~ m|/\.|) {
         if ($encrypt_mode) {
-            if ($file =~ m|\.gpg|) {
+            if ($file =~ m|\.gpg| and $file =~ m|\.asc|) {
                 print "[-] Skipping encrypted file: $file\n" unless $quiet;
                 return;
             }
         } else {
-            if ($file !~ m|\.gpg|) {
+            if ($file !~ m|\.gpg| and $file !~ m|\.asc|) {
                 print "[-] Skipping unencrypted file: $file\n" unless $quiet;
                 return;
             }
@@ -1008,10 +1012,14 @@ sub get_password() {
         chomp $pw;
     } else {
         print "[+] Executing: gpgdir @args_cp\n" unless $quiet;
-        if ($use_default_key) {
-            print "    Using default GnuPG key.\n" unless $quiet;
+        if ($symmetric_mode) {
+            print "    [Symmetric mode]\n" unless $quiet;
         } else {
-            print "    Using GnuPG key: $encrypt_user\n" unless $quiet;
+            if ($use_default_key) {
+                print "    Using default GnuPG key.\n" unless $quiet;
+            } else {
+                print "    Using GnuPG key: $encrypt_user\n" unless $quiet;
+            }
         }
         if ($test_and_exit) {
             print "    *** test_mode() ***\n" unless $quiet;
