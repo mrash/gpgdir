@@ -1,4 +1,4 @@
-gpgdir-1.5 (08//2007):
+gpgdir-1.5 (08/31/2007):
     - Added the --Symmetric option so that files can be encrypted/decrypted
       via a symmetric encryption algorithm (GnuPG commonly uses CAST5 for
       this). Using this option drastically speeds up the encryption/decryption
@@ -10,6 +10,7 @@ gpgdir-1.5 (08//2007):
       given (gpgdir now just throws a warning and exits in this case).
     - Minor code enhancements to provide a consistent hash_init() invocation
       with the same options hash.
+    - Updated to exclude .asc files from the encryption/decryption process.
 
 gpgdir-1.4 (07/20/2007):
     - (Anthony Chivetta) Submitted patch to implement the
