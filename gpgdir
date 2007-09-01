@@ -96,7 +96,9 @@ my $obfuscate_mode = 0;
 my $obfuscate_map_filename  = '.gpgdir_map_file';
 my $overwrite_encrypted = 0;
 my $overwrite_decrypted = 0;
-my $symmetric_mode = 0;
+my $symmetric_mode  = 0;
+my $DEL_SOURCE_FILE = 1;
+my $NO_DEL_SOURCE_FILE = 0;
 
 ### for user answers
 my $ACCEPT_YES_DEFAULT = 1;
@@ -344,7 +346,7 @@ exit 0;
 #==================== end main =====================
 
 sub encrypt_file() {
-    my ($in_file, $out_file) = @_;
+    my ($in_file, $out_file, $del_flag) = @_;
 
     my $gpg = GnuPG::Interface->new();
     $gpg->options->hash_init(%options);
@@ -416,6 +418,7 @@ sub encrypt_file() {
 
     if (-s $out_file == 0) {
         &delete_file($out_file);
+        &delete_file($in_file) if $del_flag == $DEL_SOURCE_FILE;
         if ($use_gpg_agent) {
             die "[*] Created zero-size file: $out_file\n",
 "    Maybe gpg-agent does not yet have the password for that key?\n",
@@ -430,7 +433,7 @@ sub encrypt_file() {
 }
 
 sub decrypt_file() {
-    my ($in_file, $out_file) = @_;
+    my ($in_file, $out_file, $del_flag) = @_;
 
     my $gpg = GnuPG::Interface->new();
     $gpg->options->hash_init(%options);
@@ -491,6 +494,7 @@ sub decrypt_file() {
 
     if (-s $out_file == 0) {
         &delete_file($out_file);
+        &delete_file($in_file) if $del_flag == $DEL_SOURCE_FILE;
         if ($use_gpg_agent) {
             die "[*] Created zero-size file: $out_file\n",
 "    Maybe gpg-agent does not yet have the password for that key?\n",
@@ -613,7 +617,8 @@ sub gpg_operation() {
 
             unless ($trial_run) {
 
-                &encrypt_file($filename, $encrypt_filename);
+                &encrypt_file($filename, $encrypt_filename,
+                        $NO_DEL_SOURCE_FILE);
 
                 if (-e $encrypt_filename && -s $encrypt_filename != 0) {
                     ### set the atime and mtime to be the same as the
@@ -697,7 +702,8 @@ sub gpg_operation() {
             unless ($trial_run) {
 
                 print "[+] Decrypting:  $dir/$filename\n" unless $quiet;
-                &decrypt_file($filename, $decrypt_filename);
+                &decrypt_file($filename, $decrypt_filename,
+                        $NO_DEL_SOURCE_FILE);
 
                 if (-e $decrypt_filename && -s $decrypt_filename != 0) {
                     ### set the atime and mtime to be the same as the
@@ -797,7 +803,7 @@ sub obfuscated_mapping_files() {
                 "$dir/$obfuscate_map_filename\n" unless $quiet;
             unless ($trial_run) {
                 &encrypt_file($obfuscate_map_filename,
-                    "$obfuscate_map_filename.gpg");
+                    "$obfuscate_map_filename.gpg", $NO_DEL_SOURCE_FILE);
 
                 unlink $obfuscate_map_filename;
             }
@@ -809,7 +815,7 @@ sub obfuscated_mapping_files() {
                 "$dir/$obfuscate_map_filename.gpg\n" unless $quiet;
             unless ($trial_run) {
                 &decrypt_file("$obfuscate_map_filename.gpg",
-                    $obfuscate_map_filename);
+                    $obfuscate_map_filename, $NO_DEL_SOURCE_FILE);
 
                 unlink "$obfuscate_map_filename.gpg";
             }
@@ -821,7 +827,8 @@ sub obfuscated_mapping_files() {
 sub handle_old_obfuscated_map_file() {
     return unless -e "$obfuscate_map_filename.gpg";
 
-    &decrypt_file("$obfuscate_map_filename.gpg", $obfuscate_map_filename);
+    &decrypt_file("$obfuscate_map_filename.gpg",
+            $obfuscate_map_filename, $NO_DEL_SOURCE_FILE);
 
     unlink "$obfuscate_map_filename.gpg";
 
@@ -866,7 +873,8 @@ sub import_obfuscated_file_map() {
 
     return unless -e "$obfuscate_map_filename.gpg";
 
-    &decrypt_file("$obfuscate_map_filename.gpg", $obfuscate_map_filename);
+    &decrypt_file("$obfuscate_map_filename.gpg",
+            $obfuscate_map_filename, $NO_DEL_SOURCE_FILE);
 
     open G, "< $obfuscate_map_filename" or die "[*] Could not open ",
         "$obfuscate_map_filename: $!";
@@ -1072,7 +1080,7 @@ sub test_mode() {
         die "[*] test_mode(): Could not create $test_file\n";
     }
 
-    &encrypt_file($test_file, "${test_file}.gpg");
+    &encrypt_file($test_file, "${test_file}.gpg", $DEL_SOURCE_FILE);
 
     if (-e "$test_file.gpg" and (-s $test_file != 0)) {
         print "[+] test_mode(): Successful encrypt of $test_file\n"
@@ -1082,7 +1090,7 @@ sub test_mode() {
         die "[*] test_mode(): not encrypt $test_file (try adding -v).\n";
     }
 
-    &decrypt_file("${test_file}.gpg", $test_file);
+    &decrypt_file("${test_file}.gpg", $test_file, $DEL_SOURCE_FILE);
 
     if (-e $test_file and (-s $test_file != 0)) {
         print "[+] test_mode(): Successful decrypt of $test_file\n"
