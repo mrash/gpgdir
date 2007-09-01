@@ -415,6 +415,7 @@ sub encrypt_file() {
     waitpid $pid, 0;
 
     if (-s $out_file == 0) {
+        &delete_file($out_file);
         if ($use_gpg_agent) {
             die "[*] Created zero-size file: $out_file\n",
 "    Maybe gpg-agent does not yet have the password for that key?\n",
@@ -423,8 +424,6 @@ sub encrypt_file() {
             die "[*] Created zero-size file: $out_file\n",
                 "    Bad password? Try re-running with -v.";
         }
-        &delete_file($out_file);
-        &delete_file("$out_file.gpg");
     }
 
     return;
@@ -491,6 +490,7 @@ sub decrypt_file() {
     waitpid $pid, 0;
 
     if (-s $out_file == 0) {
+        &delete_file($out_file);
         if ($use_gpg_agent) {
             die "[*] Created zero-size file: $out_file\n",
 "    Maybe gpg-agent does not yet have the password for that key?\n",
@@ -499,8 +499,6 @@ sub decrypt_file() {
             die "[*] Created zero-size file: $out_file\n",
                 "    Bad password? Try re-running with -v.";
         }
-        &delete_file($out_file);
-        &delete_file("$out_file.gpg");
     }
     return;
 }
