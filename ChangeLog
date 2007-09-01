@@ -1,8 +1,7 @@
 gpgdir-1.5 (08/31/2007):
     - Added the --Symmetric option so that files can be encrypted/decrypted
       via a symmetric encryption algorithm (GnuPG commonly uses CAST5 for
-      this). Using this option drastically speeds up the encryption/decryption
-      process.
+      this).
     - Added the --Plain-ascii option so that GnuPG is invoked with the -a
       option so that encrypted files are ascii armored instead of encrypted in
       binary form.
