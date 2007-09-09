@@ -8,8 +8,8 @@
 .B gpgdir -e|-d <directory> [options]
 .SH DESCRIPTION
 .B gpgdir
-is a perl script that uses the CPAN GnuPG::Interface perl module to encrypt and decrypt
-directories using a gpg key specified in ~/.gpgdirrc.
+is a perl script that uses the CPAN GnuPG::Interface perl module to recursively
+encrypt and decrypt directories using gpg.
 .B gpgdir
 recursively descends through a directory in order to make sure it encrypts or
 decrypts every file in a directory and all of its subdirectories.  By default
@@ -31,7 +31,9 @@ specify a password (this is consistent with
 .B gpg
 behavior).  Also, note that gpgdir is careful not encrypt hidden files and
 directories.  After all, you probably don't want your ~/.gnupg directory or
-~/.bashrc file to be encrypted.
+~/.bashrc file to be encrypted.  The key
+.B gpgdir
+uses to encrypt/decrypt a directory is specified in ~/.gpgdirrc.
 
 Finally,
 .B gpgdir
