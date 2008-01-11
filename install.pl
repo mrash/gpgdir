@@ -8,7 +8,7 @@
 #
 # Author: Michael Rash (mbr@cipherdyne.org)
 #
-# Copyright (C) 2002-2007 Michael Rash (mbr@cipherdyne.org)
+# Copyright (C) 2002-2008 Michael Rash (mbr@cipherdyne.org)
 #
 # License (GNU Public License):
 #
@@ -48,9 +48,12 @@ my $makeCmd = '/usr/bin/make';
 
 my $print_help = 0;
 my $uninstall  = 0;
-my $force_install_re  = '';
+my $force_mod_re  = '';
+my $exclude_mod_re  = '';
 my $skip_module_install   = 0;
 my $cmdline_force_install = 0;
+my $locale = 'C';  ### default LC_ALL env variable
+my $no_locale = 0;
 
 my %cmds = (
     'gzip' => $gzipCmd,
@@ -79,13 +82,22 @@ Getopt::Long::Configure('no_ignore_case');
 
 &usage(1) unless (GetOptions(
     'force-mod-install' => \$cmdline_force_install,  ### force install of all modules
-    'Force-mod-regex=s' => \$force_install_re,  ### force specific mod install with regex
+    'Force-mod-regex=s' => \$force_mod_re,  ### force specific mod install with regex
+    'Exclude-mod-regex=s' => \$exclude_mod_re, ### exclude a particular perl module
     'Skip-mod-install'  => \$skip_module_install,
     'home-dir=s'        => \$config_homedir, ### force a specific home dir
+    'LC_ALL=s'          => \$locale,
+    'no-LC_ALL'         => \$no_locale,
     'uninstall' => \$uninstall,      # Uninstall gpgdir.
     'help'      => \$print_help      # Display help.
 ));
 &usage(0) if $print_help;
+
+### set LC_ALL env variable
+$ENV{'LC_ALL'} = $locale unless $no_locale;
+
+$force_mod_re = qr|$force_mod_re| if $force_mod_re;
+$exclude_mod_re = qr|$exclude_mod_re| if $exclude_mod_re;
 
 ### check to see if we are installing in a Cygwin environment
 my $non_root_user = 0;
@@ -199,6 +211,11 @@ sub install_perl_module() {
     die '[*] Missing mod-dir key in required_perl_modules hash.'
         unless defined $required_perl_modules{$mod_name}{'mod-dir'};
 
+    if ($exclude_mod_re and $exclude_mod_re =~ /$mod_name/) {
+        print "[+] Excluding installation of $mod_name module.\n";
+        return;
+    }
+
     my $version = '(NA)';
 
     my $mod_dir = $required_perl_modules{$mod_name}{'mod-dir'};
@@ -220,7 +237,7 @@ sub install_perl_module() {
         ### install regardless of whether the module may already be
         ### installed
         $install_module = 1;
-    } elsif ($force_install_re and $force_install_re =~ /$mod_name/) {
+    } elsif ($force_mod_re and $force_mod_re =~ /$mod_name/) {
         print "[+] Forcing installation of $mod_name module.\n";
         $install_module = 1;
     } else {
@@ -404,14 +421,19 @@ sub usage() {
 
 Usage: install.pl [options]
 
-    -u,  --uninstall            - Uninstall gpgdir.
-    -f, --force-mod-install     - Force all perl modules to be installed
-                                  even if some already exist in the system
-                                  /usr/lib/perl5 tree.
-    -F, --Force-mod-regex <re>  - Specify a regex to match a module name
-                                  and force the installation of such modules.
+    -u,  --uninstall             - Uninstall gpgdir.
+    -f, --force-mod-install      - Force all perl modules to be installed
+                                   even if some already exist in the system
+                                   /usr/lib/perl5 tree.
+    -F, --Force-mod-regex <re>   - Specify a regex to match a module name
+                                   and force the installation of such modules.
+    -E, --Exclude-mod-regex <re> - Exclude a perl module that matches this
+                                   regular expression.
     -S, --Skip-mod-install       - Do not install any perl modules.
-    -h  --help                  - Prints this help message.
+
+    -L, --LANG <locale>          - Specify LANG env variable (actually the
+                                   LC_ALL variable).
+    -h  --help                   - Prints this help message.
 
 _HELP_
     exit $exit_status;
