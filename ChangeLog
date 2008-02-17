@@ -1,3 +1,20 @@
+gpgdir-1.6 (02//2008):
+    - Bugfix to not include previously encrypted files (i.e. those with a .gpg
+      extension) in the encryption/decryption file list.  This bug was
+      introduced in gpgdir-1.5 when a change was made to ignore ascii-armored
+      files.
+    - Added added LC_ALL=C locale setting for the install.pl script (this
+      should help to ensure gpgdir is properly installed on most systems). Two
+      new command line arguments --LC_ALL and --no-LC_ALL also allow the
+      locale setting to be changed or not used at all.
+    - Added --Exclude-mod-regex option to the install.pl script so that it is
+      possible to force the exclusion of perl modules that gpgdir would
+      normally install. This is useful for ensuring that gpgdir references
+      perl modules that are already installed in the system perl library tree
+      instead of using those that are installed in /usr/lib/gpgdir.
+    - Updated to display command line usage warnings without automatically
+      displaying the entire usage() page (which is quite long).
+
 gpgdir-1.5 (08/31/2007):
     - Added the --Symmetric option so that files can be encrypted/decrypted
       via a symmetric encryption algorithm (GnuPG commonly uses CAST5 for

@@ -115,7 +115,7 @@ my @args_cp = @ARGV;
 ### make Getopts case sensitive
 Getopt::Long::Configure('no_ignore_case');
 
-&usage_and_exit() unless(GetOptions (
+die "[-] Use --help for usage information.\n" unless(GetOptions (
     'encrypt=s'      => \$encrypt_dir,     # Encrypt files in this directory.
     'decrypt=s'      => \$decrypt_dir,     # Decrypt files in this directory.
     'gnupg-dir=s'    => \$gpg_homedir,     # Path to /path/to/.gnupg directory.
@@ -975,22 +975,17 @@ sub check_file_criteria() {
     my $file = shift;
     ### skip all links, zero size files, all hidden
     ### files (includes .gnupg files), etc.
-    if (-d $file) {
-        return;
-    }
+    return if -d $file;
     if (-e $file and not -l $file and -s $file != 0
             and $file !~ m|/\.|) {
-        if ($encrypt_mode) {
-            if ($file =~ m|\.gpg| and $file =~ m|\.asc|) {
+        if ($file =~ m|\.gpg| or $file =~ m|\.asc|) {
+            if ($encrypt_mode) {
                 print "[-] Skipping encrypted file: $file\n" unless $quiet;
-                return;
-            }
-        } else {
-            if ($file !~ m|\.gpg| and $file !~ m|\.asc|) {
+            } else {
                 print "[-] Skipping unencrypted file: $file\n" unless $quiet;
-                return;
             }
-        }
+            return;
+        } 
         my ($atime, $mtime) = (stat($file))[8,9];
         $files{$file}{'atime'} = $atime;
         $files{$file}{'mtime'} = $mtime;
