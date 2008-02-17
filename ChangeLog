@@ -1,4 +1,4 @@
-gpgdir-1.6 (02//2008):
+gpgdir-1.6 (02/17/2008):
     - Bugfix to not include previously encrypted files (i.e. those with a .gpg
       extension) in the encryption/decryption file list.  This bug was
       introduced in gpgdir-1.5 when a change was made to ignore ascii-armored

@@ -10,7 +10,7 @@
 #
 # Author: Michael Rash (mbr@cipherdyne.com)
 #
-# Version: 1.5
+# Version: 1.6
 #
 # Copyright (C) 2002-2007 Michael Rash (mbr@cipherdyne.org)
 #
@@ -43,7 +43,7 @@ use Cwd;
 use strict;
 
 ### set the current gpgdir version and file revision numbers
-my $version = '1.5';
+my $version = '1.6';
 my $revision_svn = '$Revision$';
 my $rev_num = '1';
 ($rev_num) = $revision_svn =~ m|\$Rev.*:\s+(\S+)|;
