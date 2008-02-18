@@ -29,6 +29,7 @@
 #
 
 use File::Find;
+use Getopt::Long;
 use strict;
 
 #=================== config defaults ==============
@@ -43,10 +44,19 @@ my $cmd_stdout = "$output_dir/cmd.stdout";
 my $cmd_stderr = "$output_dir/cmd.stderr";
 #==================== end config ==================
 
+my $help = 0;
 my $test_num  = 0;
 my $PRINT_LEN = 68;
 my $failed_tests = 0;
+my $prepare_results = 0;
 my $successful_tests = 0;
+
+exit 1 unless GetOptions(
+    'Prepare-results' => \$prepare_results,
+    'help'            => \$help
+);
+
+exit &prepare_results() if $prepare_results;
 
 ### execute the tests
 &test_driver('(Setup) gpgdir program compilation', \&perl_compilation);
@@ -103,6 +113,54 @@ sub run_cmd() {
         return 1;
     }
     return 0;
+}
+
+sub prepare_results() {
+    my $rv = 0;
+    die "[*] $output_dir does not exist" unless -d $output_dir;
+    die "[*] $logfile does not exist, has fwknop_test.pl been executed?"
+        unless -e $logfile;
+    if (-e $tarfile) {
+        unlink $tarfile or die "[*] Could not unlink $tarfile: $!";
+    }
+
+    ### create tarball
+    system "tar cvfz $tarfile $logfile $output_dir";
+    print "[+] Test results file: $tarfile\n";
+    if (-e $tarfile) {
+        $rv = 1;
+    }
+    return $rv;
+}
+
+sub setup() {
+
+    $|++; ### turn off buffering
+
+    die "[*] $conf_dir directory does not exist." unless -d $conf_dir;
+    unless (-d $output_dir) {
+        mkdir $output_dir or die "[*] Could not mkdir $output_dir: $!";
+    }
+
+    for my $file (glob("$output_dir/cmd*")) {
+        unlink $file or die "[*] Could not unlink($file)";
+    }
+
+    for my $file (glob("$output_dir/*.warn")) {
+        unlink $file or die "[*] Could not unlink($file)";
+    }
+
+    for my $file (glob("$output_dir/*.die")) {
+        unlink $file or die "[*] Could not unlink($file)";
+    }
+
+    die "[*] $gpgdirCmd does not exist" unless -e $gpgdirCmd;
+    die "[*] $gpgdirCmd not executable" unless -x $gpgdirCmd;
+
+    if (-e $logfile) {
+        unlink $logfile or die $!;
+    }
+    return;
 }
 
 sub pass() {
