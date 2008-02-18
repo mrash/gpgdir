@@ -1,0 +1,11 @@
+This directory is used by the gpgdir test suite to store test output (both
+stdout and stderr) from various tests against gpgdir.  The gpgdir test suite
+creates files in this directory with a ".N" extension according to each test
+number.
+
+The files in this directory are useful for debugging purposes, and if there is
+a problem running gpgdir on a particular system then the information in this
+directory along with the output of the test suite may provide a clues as to
+why.  If gpgdir appears to not be working properly and you want additional
+help to diagnose the problem, you can tar up the output/ directory and send it
+to Michael Rash at the following email address: mbr@cipherdyne.org.
