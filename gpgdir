@@ -10,7 +10,7 @@
 #
 # Author: Michael Rash (mbr@cipherdyne.com)
 #
-# Version: 1.6
+# Version: 1.7
 #
 # Copyright (C) 2002-2007 Michael Rash (mbr@cipherdyne.org)
 #
@@ -43,7 +43,7 @@ use Cwd;
 use strict;
 
 ### set the current gpgdir version and file revision numbers
-my $version = '1.6';
+my $version = '1.7';
 my $revision_svn = '$Revision$';
 my $rev_num = '1';
 ($rev_num) = $revision_svn =~ m|\$Rev.*:\s+(\S+)|;
@@ -602,6 +602,10 @@ sub gpg_operation() {
                         . $obfuscate_ctrs{$dir} . '.gpg';
             }
 
+            if ($ascii_armor_mode) {
+                $encrypt_filename = "$filename.asc";
+            }
+
             if (-e $encrypt_filename and not $overwrite_encrypted) {
                 print "[-] Encrypted file $dir/$encrypt_filename already ",
                     "exists, skipping.\n" unless $quiet;
@@ -656,7 +660,12 @@ sub gpg_operation() {
         } else {
 
             ### allow filenames with spaces
-            my ($decrypt_filename) = ($filename =~ /^(.+)\.gpg$/);
+            my $decrypt_filename = '';
+            if ($filename =~ /^(.+)\.gpg$/) {
+                $decrypt_filename = $1;
+            } elsif ($filename =~ /^(.+)\.asc$/) {
+                $decrypt_filename = $1;
+            }
 
             if ($obfuscate_mode) {
 
@@ -978,14 +987,17 @@ sub check_file_criteria() {
     return if -d $file;
     if (-e $file and not -l $file and -s $file != 0
             and $file !~ m|/\.|) {
-        if ($file =~ m|\.gpg| or $file =~ m|\.asc|) {
-            if ($encrypt_mode) {
+        if ($encrypt_mode) {
+            if ($file =~ m|\.gpg| or $file =~ m|\.asc|) {
                 print "[-] Skipping encrypted file: $file\n" unless $quiet;
-            } else {
-                print "[-] Skipping unencrypted file: $file\n" unless $quiet;
+                return;
             }
-            return;
-        } 
+        } else {
+            unless ($file =~ m|\.gpg| or $file =~ m|\.asc|) {
+                print "[-] Skipping unencrypted file: $file\n" unless $quiet;
+                return;
+            }
+        }
         my ($atime, $mtime) = (stat($file))[8,9];
         $files{$file}{'atime'} = $atime;
         $files{$file}{'mtime'} = $mtime;
@@ -1166,6 +1178,8 @@ Options:
     -t, --test-mode             - Run encrypt -> decrypt test and exit.
     -T, --Trial-run             - Show what filesystem actions would take
                                   place without actually doing them.
+    -P, --Plain-ascii           - Ascii armor mode (creates non-binary
+                                  encrypted files).
     --Interactive               - Query the user before encrypting,
                                   decrypting, or deleting any files.
     --Exclude <pattern>         - Skip all filenames that match <pattern>.
