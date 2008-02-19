@@ -66,6 +66,8 @@ die "[*] Use --help" unless GetOptions(
 
 exit &prepare_results() if $prepare_results;
 
+&setup();
+
 &collect_md5sums();
 
 &logr("\n[+] ==> Running gpgdir test suite <==\n\n");
