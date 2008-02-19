@@ -40,6 +40,10 @@ my $output_dir = 'output';
 my $logfile    = 'test.log';
 my $tarfile    = 'gpgdir_test.tar.gz';
 
+my $gpg_dir = "$conf_dir/test-gpg";
+my $pw_file = "$conf_dir/test.pw";
+my $key_id  = '375D7DB9';
+
 my $cmd_stdout = "$output_dir/cmd.stdout";
 my $cmd_stderr = "$output_dir/cmd.stderr";
 #==================== end config ==================
@@ -51,16 +55,30 @@ my $failed_tests = 0;
 my $prepare_results = 0;
 my $successful_tests = 0;
 
-exit 1 unless GetOptions(
+die "[*] Use --help" unless GetOptions(
     'Prepare-results' => \$prepare_results,
     'help'            => \$help
 );
 
 exit &prepare_results() if $prepare_results;
 
+&logr("\n[+] ==> Running gpgdir test suite <==\n\n");
+
 ### execute the tests
 &test_driver('(Setup) gpgdir program compilation', \&perl_compilation);
 &test_driver('(Setup) Command line argument processing', \&getopt_test);
+&test_driver('(Test mode) gpgdir basic test mode', \&test_mode);
+
+&logr("\n");
+if ($successful_tests) {
+    &logr("[+] ==> Passed $successful_tests/$test_num tests " .
+        "against gpgdir. <==\n");
+}
+if ($failed_tests) {
+    &logr("[+] ==> Failed $failed_tests/$test_num tests " .
+        "against gpgdir. <==\n");
+}
+&logr("[+] This console output has been stored in: $logfile\n\n");
 
 exit 0;
 #======================== end main =========================
@@ -76,6 +94,25 @@ sub test_driver() {
     }
     $test_num++;
     return;
+}
+
+sub test_mode() {
+    if (&run_cmd("$gpgdirCmd --test --gnupg-dir $gpg_dir " .
+            " --pw-file $pw_file --Key-id $key_id")) {
+        my $found = 0;
+        open F, "< ${cmd_stdout}.$test_num"
+            or die "[*] Could not open ${cmd_stderr}.$test_num: $!";
+        while (<F>) {
+            if (/Decrypted\s+content\s+matches\s+original/i) {
+                $found = 1;
+                last;
+            }
+        }
+        close F;
+        return 1 if $found;
+    }
+    return &print_errors("fail ($test_num)\n[*] " .
+        "Encrypt/decrypt basic --test mode");
 }
 
 sub perl_compilation() {
@@ -105,6 +142,20 @@ sub dots_print() {
     return;
 }
 
+sub print_errors() {
+    my $msg = shift;
+    &logr("$msg\n");
+    if (-e "${cmd_stderr}.$test_num") {
+        &logr("    STDOUT available in: " .
+            "${cmd_stdout}.$test_num file.\n");
+    }
+    if (-e "${cmd_stderr}.$test_num") {
+        &logr("    STDERR available in: " .
+            "${cmd_stderr}.$test_num file.\n");
+    }
+    return 0;
+}
+
 sub run_cmd() {
     my $cmd = shift;
     my $rv = ((system "$cmd > ${cmd_stdout}.$test_num " .
@@ -118,7 +169,7 @@ sub run_cmd() {
 sub prepare_results() {
     my $rv = 0;
     die "[*] $output_dir does not exist" unless -d $output_dir;
-    die "[*] $logfile does not exist, has fwknop_test.pl been executed?"
+    die "[*] $logfile does not exist, has gpgdir_test.pl been executed?"
         unless -e $logfile;
     if (-e $tarfile) {
         unlink $tarfile or die "[*] Could not unlink $tarfile: $!";
