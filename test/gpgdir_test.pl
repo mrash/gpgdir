@@ -28,6 +28,7 @@
 # $Id: gpgdir_test.pl 1004 2008-02-10 04:49:04Z mbr $
 #
 
+use Digest::MD5 'md5_base64';
 use File::Find;
 use Getopt::Long;
 use strict;
@@ -39,6 +40,7 @@ my $conf_dir   = 'conf';
 my $output_dir = 'output';
 my $logfile    = 'test.log';
 my $tarfile    = 'gpgdir_test.tar.gz';
+my $data_dir   = 'data-dir';
 
 my $gpg_dir = "$conf_dir/test-gpg";
 my $pw_file = "$conf_dir/test.pw";
@@ -54,6 +56,8 @@ my $PRINT_LEN = 68;
 my $failed_tests = 0;
 my $prepare_results = 0;
 my $successful_tests = 0;
+my @data_dir_files = ();
+my %md5sums = ();
 
 die "[*] Use --help" unless GetOptions(
     'Prepare-results' => \$prepare_results,
@@ -62,12 +66,20 @@ die "[*] Use --help" unless GetOptions(
 
 exit &prepare_results() if $prepare_results;
 
+&collect_md5sums();
+
 &logr("\n[+] ==> Running gpgdir test suite <==\n\n");
 
 ### execute the tests
 &test_driver('(Setup) gpgdir program compilation', \&perl_compilation);
 &test_driver('(Setup) Command line argument processing', \&getopt_test);
 &test_driver('(Test mode) gpgdir basic test mode', \&test_mode);
+&test_driver('(Encrypt dir) gpgdir directory encryption', \&encrypt);
+&test_driver('(Encrypt dir) Excluded hidden files/dirs',
+    \&skipped_hidden_files_dirs);
+&test_driver('(Decrypt dir) gpgdir directory decryption', \&decrypt);
+&test_driver('(MD5 digest) match across encrypt/decrypt cycle',
+    \&md5sum_validation);
 
 &logr("\n");
 if ($successful_tests) {
@@ -94,6 +106,71 @@ sub test_driver() {
     }
     $test_num++;
     return;
+}
+
+sub encrypt() {
+    if (&run_cmd("$gpgdirCmd --test --gnupg-dir $gpg_dir " .
+            " --pw-file $pw_file --Key-id $key_id -e $data_dir")) {
+        return 1;
+    }
+    return &print_errors("fail ($test_num)\n[*] " .
+        "Directory encryption");
+}
+
+sub decrypt() {
+    if (&run_cmd("$gpgdirCmd --test --gnupg-dir $gpg_dir " .
+            " --pw-file $pw_file --Key-id $key_id -d $data_dir")) {
+        return 1;
+    }
+    return &print_errors("fail ($test_num)\n[*] " .
+        "Directory decryption");
+}
+
+sub skipped_hidden_files_dirs() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if ($file =~ m|^\.| or $file =~ m|/\.|) {
+            ### check for any .gpg or .asc extensions
+            if ($file =~ m|\.gpg$| or $file =~ m|\.asc$|) {
+                return &print_errors("fail ($test_num)\n[*] " .
+                    "Encrypted hidden file");
+            }
+        }
+    }
+    return 1;
+}
+
+sub find_files() {
+    my $file = $File::Find::name;
+    push @data_dir_files, $file;
+    return;
+}
+
+sub collect_md5sums() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if (-f $file) {
+            $md5sums{$file} = md5_base64($file);
+        }
+    }
+    return 1;
+}
+
+sub md5sum_validation() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if (-f $file) {
+            if (not defined $md5sums{$file}
+                    or $md5sums{$file} ne md5_base64($file)) {
+                return &print_errors("fail ($test_num)\n[*] " .
+                        "MD5 sum mis-match for $file");
+            }
+        }
+    }
+    return 1;
 }
 
 sub test_mode() {
