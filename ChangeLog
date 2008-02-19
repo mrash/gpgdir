@@ -1,7 +1,11 @@
 gpgdir-1.7 (02/18/2008):
     - Bugfix to ensure that encrypted directories can actually be decrypted.
+      This bug was reported by Per Ronny Westin.
     - Updated to use the ".asc" extension for encrypted files in --Plain-ascii
       mode.
+    - Added gpgdir test suite.  All future gpgdir releases (and including this
+      1.7 release) require that all gpgdir tests pass on the systems where
+      gpgdir is developed.
 
 gpgdir-1.6 (02/17/2008):
     - Bugfix to not include previously encrypted files (i.e. those with a .gpg
