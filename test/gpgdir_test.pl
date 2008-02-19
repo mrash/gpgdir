@@ -74,10 +74,29 @@ exit &prepare_results() if $prepare_results;
 &test_driver('(Setup) gpgdir program compilation', \&perl_compilation);
 &test_driver('(Setup) Command line argument processing', \&getopt_test);
 &test_driver('(Test mode) gpgdir basic test mode', \&test_mode);
+
+### encrypt/decrypt
 &test_driver('(Encrypt dir) gpgdir directory encryption', \&encrypt);
+&test_driver('(Encrypt dir) Files recursively encrypted',
+    \&recursively_encrypted);
 &test_driver('(Encrypt dir) Excluded hidden files/dirs',
     \&skipped_hidden_files_dirs);
 &test_driver('(Decrypt dir) gpgdir directory decryption', \&decrypt);
+&test_driver('(Decrypt dir) Files recursively decrypted',
+    \&recursively_decrypted);
+&test_driver('(MD5 digest) match across encrypt/decrypt cycle',
+    \&md5sum_validation);
+
+### ascii encrypt/decrypt
+&test_driver('(Ascii-armor dir) gpgdir directory encryption',
+    \&ascii_encrypt);
+&test_driver('(Ascii-armor dir) Files recursively encrypted',
+    \&ascii_recursively_encrypted);
+&test_driver('(Ascii-armor dir) Excluded hidden files/dirs',
+    \&skipped_hidden_files_dirs);
+&test_driver('(Decrypt dir) gpgdir directory decryption', \&decrypt);
+&test_driver('(Decrypt dir) Files recursively decrypted',
+    \&ascii_recursively_decrypted);
 &test_driver('(MD5 digest) match across encrypt/decrypt cycle',
     \&md5sum_validation);
 
@@ -109,7 +128,16 @@ sub test_driver() {
 }
 
 sub encrypt() {
-    if (&run_cmd("$gpgdirCmd --test --gnupg-dir $gpg_dir " .
+    if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
+            " --pw-file $pw_file --Key-id $key_id -e $data_dir")) {
+        return 1;
+    }
+    return &print_errors("fail ($test_num)\n[*] " .
+        "Directory encryption");
+}
+
+sub ascii_encrypt() {
+    if (&run_cmd("$gpgdirCmd --Plain-ascii --gnupg-dir $gpg_dir " .
             " --pw-file $pw_file --Key-id $key_id -e $data_dir")) {
         return 1;
     }
@@ -118,12 +146,68 @@ sub encrypt() {
 }
 
 sub decrypt() {
-    if (&run_cmd("$gpgdirCmd --test --gnupg-dir $gpg_dir " .
+    if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
             " --pw-file $pw_file --Key-id $key_id -d $data_dir")) {
         return 1;
     }
     return &print_errors("fail ($test_num)\n[*] " .
         "Directory decryption");
+}
+
+sub recursively_encrypted() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            unless ($file =~ m|\.gpg$|) {
+                return &print_errors("fail ($test_num)\n[*] " .
+                    "File $file not encrypted");
+            }
+        }
+    }
+    return 1;
+}
+
+sub recursively_decrypted() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            if ($file =~ m|\.gpg$|) {
+                return &print_errors("fail ($test_num)\n[*] " .
+                    "File $file not encrypted");
+            }
+        }
+    }
+    return 1;
+}
+
+sub ascii_recursively_encrypted() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            unless ($file =~ m|\.asc$|) {
+                return &print_errors("fail ($test_num)\n[*] " .
+                    "File $file not encrypted");
+            }
+        }
+    }
+    return 1;
+}
+
+sub ascii_recursively_decrypted() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            if ($file =~ m|\.asc$|) {
+                return &print_errors("fail ($test_num)\n[*] " .
+                    "File $file not encrypted");
+            }
+        }
+    }
+    return 1;
 }
 
 sub skipped_hidden_files_dirs() {
