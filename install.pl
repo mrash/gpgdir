@@ -161,7 +161,9 @@ unless ($skip_module_install) {
 print "[+] Installing man page.\n";
 &install_manpage();
 
-print "[+] gpgdir has been installed!\n";
+print "\n    It is highly recommended to run the test suite in the test/\n",
+    "    directory to ensure proper gpgdir operation.\n",
+    "\n[+] gpgdir has been installed!\n";
 
 exit 0;
 #===================== end main =======================
