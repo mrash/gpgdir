@@ -12,7 +12,7 @@ By default the mtime and atime values of all files will be preserved upon
 encryption and decryption (this can be disabled with the --no-preserve-times
 option).  Note that in --encrypt mode, gpgdir will delete the original files
 that it successfully encrypts (unless the --no-delete option is given).
-However, upon startup gpgdir first asks for a the decryption password to be
+However, upon startup gpgdir first asks for the decryption password to be
 sure that a dummy file can successfully be encrypted and decrypted.  The
 initial test can be disabled with the --skip-test option so that a directory
 can easily be encrypted without having to also specify a password (this is
