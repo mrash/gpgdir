@@ -9,7 +9,7 @@
 #
 # Author: Michael Rash (mbr@cipherdyne.org)
 #
-# Copyright (C) 2007 Michael Rash (mbr@cipherdyne.org)
+# Copyright (C) 2008 Michael Rash (mbr@cipherdyne.org)
 #
 # License (GNU Public License):
 #
@@ -25,7 +25,7 @@
 #
 #############################################################################
 #
-# $Id: gpgdir_test.pl 1004 2008-02-10 04:49:04Z mbr $
+# $Id$
 #
 
 use Digest::MD5 'md5_base64';
@@ -102,6 +102,20 @@ exit &prepare_results() if $prepare_results;
 &test_driver('(MD5 digest) match across encrypt/decrypt cycle',
     \&md5sum_validation);
 
+### obfuscate filenames encrypt/decrypt cycle
+&test_driver('(Obfuscate filenames) gpgdir directory encryption',
+    \&obf_encrypt);
+&test_driver('(Obfuscate filenames) Files recursively encrypted',
+    \&obf_recursively_encrypted);
+&test_driver('(Obfuscate filenames) Excluded hidden files/dirs',
+    \&obf_skipped_hidden_files_dirs);
+&test_driver('(Decrypt dir) gpgdir directory decryption',
+    \&obf_decrypt);
+&test_driver('(Decrypt dir) Files recursively decrypted',
+    \&obf_recursively_decrypted);  ### same as ascii_recursively_decrypted()
+&test_driver('(MD5 digest) match across encrypt/decrypt cycle',
+    \&md5sum_validation);
+
 &logr("\n");
 if ($successful_tests) {
     &logr("[+] ==> Passed $successful_tests/$test_num tests " .
@@ -147,8 +161,26 @@ sub ascii_encrypt() {
         "Directory encryption");
 }
 
+sub obf_encrypt() {
+    if (&run_cmd("$gpgdirCmd -O --gnupg-dir $gpg_dir " .
+            " --pw-file $pw_file --Key-id $key_id -e $data_dir")) {
+        return 1;
+    }
+    return &print_errors("fail ($test_num)\n[*] " .
+        "Directory encryption");
+}
+
 sub decrypt() {
     if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
+            " --pw-file $pw_file --Key-id $key_id -d $data_dir")) {
+        return 1;
+    }
+    return &print_errors("fail ($test_num)\n[*] " .
+        "Directory decryption");
+}
+
+sub obf_decrypt() {
+    if (&run_cmd("$gpgdirCmd -O --gnupg-dir $gpg_dir " .
             " --pw-file $pw_file --Key-id $key_id -d $data_dir")) {
         return 1;
     }
@@ -198,7 +230,36 @@ sub ascii_recursively_encrypted() {
     return 1;
 }
 
+sub obf_recursively_encrypted() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            ### gpgdir_20089_1.gpg
+            unless ($file =~ m|gpgdir_\d+_\d+\.gpg$|) {
+                return &print_errors("fail ($test_num)\n[*] " .
+                    "File $file not encrypted and obfuscated");
+            }
+        }
+    }
+    return 1;
+}
+
 sub ascii_recursively_decrypted() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            if ($file =~ m|\.asc$|) {
+                return &print_errors("fail ($test_num)\n[*] " .
+                    "File $file not encrypted");
+            }
+        }
+    }
+    return 1;
+}
+
+sub obf_recursively_decrypted() {
     @data_dir_files = ();
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
@@ -217,7 +278,8 @@ sub skipped_hidden_files_dirs() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if ($file =~ m|^\.| or $file =~ m|/\.|) {
-            ### check for any .gpg or .asc extensions
+            ### check for any .gpg or .asc extensions except
+            ### for the gpgdir_map_file
             if ($file =~ m|\.gpg$| or $file =~ m|\.asc$|) {
                 return &print_errors("fail ($test_num)\n[*] " .
                     "Encrypted hidden file");
@@ -226,6 +288,24 @@ sub skipped_hidden_files_dirs() {
     }
     return 1;
 }
+
+sub obf_skipped_hidden_files_dirs() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if ($file =~ m|^\.| or $file =~ m|/\.|) {
+            ### check for any .gpg or .asc extensions except
+            ### for the gpgdir_map_file
+            if ($file !~ m|gpgdir_map_file| and ($file =~ m|\.gpg$|
+                    or $file =~ m|\.asc$|)) {
+                return &print_errors("fail ($test_num)\n[*] " .
+                    "Encrypted hidden file");
+            }
+        }
+    }
+    return 1;
+}
+
 
 sub find_files() {
     my $file = $File::Find::name;

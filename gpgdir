@@ -90,6 +90,7 @@ my %files            = ();
 my %options          = ();
 my %obfuscate_ctrs   = ();
 my %obfuscated_dirs  = ();
+my $total_mapped_files = 0;
 my $have_obfuscated_file = 0;
 my $cmdline_no_password = 0;
 my $obfuscate_mode = 0;
@@ -677,8 +678,9 @@ sub gpg_operation() {
                     $decrypt_filename = $obfuscated_dirs{$dir}{$filename};
                 } else {
                     ###
-                    print "[-] Obfuscated file map does not exist for $filename in\n",
-                        "    $obfuscate_map_filename, skipping.\n";
+                    print "[-] Obfuscated file map does not exist for ",
+                        "$filename in\n    $obfuscate_map_filename, ",
+                        "skipping.\n" unless $quiet;
                     next FILE;
                 }
 
@@ -791,7 +793,8 @@ sub include_file() {
 }
 
 sub obfuscated_mapping_files() {
-    my $dirs_href;
+
+    my $dirs_href = {};
 
     if ($encrypt_mode) {
         $dirs_href = \%obfuscate_ctrs;
@@ -828,6 +831,11 @@ sub obfuscated_mapping_files() {
                     $obfuscate_map_filename, $NO_DEL_SOURCE_FILE);
 
                 unlink "$obfuscate_map_filename.gpg";
+                if ($total_mapped_files == $total_decrypted) {
+                    ### we are confident that we decrypted all of them,
+                    ### so delete the mapping file.
+                    unlink $obfuscate_map_filename;
+                }
             }
         }
     }
@@ -891,6 +899,7 @@ sub import_obfuscated_file_map() {
     while (<G>) {
         if (/^\s*(.*)\s+(gpgdir_\d+_\d+.gpg)/) {
             $obfuscated_dirs{$dir}{$2} = $1;
+            $total_mapped_files++;
         }
     }
     close G;
