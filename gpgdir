@@ -242,13 +242,11 @@ unless ($symmetric_mode) {
 }
 
 if ($decrypt_dir and $encrypt_dir) {
-    die "[*] You cannot encrypt and decrypt the same directory.\n";
-    &usage_and_exit();
+    die "[*] You cannot encrypt and decrypt the same directory, see --help\n";
 }
 
 unless ($decrypt_dir or $encrypt_dir or $test_and_exit) {
-    print "[*] Please specify -e <dir>, -d <dir>, or --test-mode\n";
-    &usage_and_exit();
+    print "[*] Please specify -e <dir>, -d <dir>, or --test-mode, see --help\n";
 }
 
 ### exclude file pattern
