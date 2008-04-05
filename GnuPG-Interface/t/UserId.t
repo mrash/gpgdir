@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: UserId.t 389 2005-12-11 22:46:36Z mbr $
+# $Id: UserId.t,v 1.1 2001/04/30 01:36:12 ftobin Exp $
 #
 
 use strict;

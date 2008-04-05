@@ -1,4 +1,4 @@
-#  Interface.pm
+#  Jnterface.pm
 #    - providing an object-oriented approach to interacting with GnuPG
 #
 #  Copyright (C) 2000 Frank J. Tobin <ftobin@cpan.org>
@@ -10,13 +10,11 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-#  $Id: Interface.pm 389 2005-12-11 22:46:36Z mbr $
-#
 
 package GnuPG::Interface;
 
 use strict;
-use English;
+use English qw( -no_match_vars );
 use Carp;
 use Fcntl;
 use vars qw( $VERSION );
@@ -28,7 +26,7 @@ use IO::Handle;
 use GnuPG::Options;
 use GnuPG::Handles;
 
-$VERSION = '0.34';
+$VERSION = '0.36';
 
 use Class::MethodMaker
   get_set         => [ qw( call  passphrase ) ],
@@ -543,7 +541,7 @@ sub get_keys
 	    
 	    $current_key->push_subkeys( $current_signed_item );
 	}
-	else
+	elsif ( $record_type ne 'tru' )
 	{
 	    warn "unknown record type $record_type"; 
 	}
@@ -1284,12 +1282,8 @@ L<perlipc/"Bidirectional Communication with Another Process">
 
 =head1 AUTHOR
 
-Frank J. Tobin, ftobin@cpan.org
+GnuPg::Interface is currently maintained by Jesse Vincent <jesse@cpan.org>.  
 
-=head1 PACKAGE UPDATES
-
-Package updates may be found on
-http://GnuPG-Interface.sourceforge.net/
-or CPAN, http://www.cpan.org/.
+Frank J. Tobin, ftobin@cpan.org was the original author of the package.
 
 =cut

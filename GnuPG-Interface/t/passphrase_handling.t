@@ -1,10 +1,10 @@
 #!/usr/bin/perl -w
 #
-# $Id: passphrase_handling.t 389 2005-12-11 22:46:36Z mbr $
+# $Id: passphrase_handling.t,v 1.6 2001/05/03 06:02:39 ftobin Exp $
 #
 
 use strict;
-use English;
+use English qw( -no_match_vars );
 use Symbol;
 use IO::File;
 

@@ -1,3 +1,4 @@
+SIGNATURE
 COPYING
 ChangeLog
 MANIFEST
@@ -64,3 +65,4 @@ test/secret-keys/1.0.test
 test/secret-keys/2.0.test
 test/secring.gpg
 test/signed.1.asc
+META.yml                                 Module meta-data (added by MakeMaker)

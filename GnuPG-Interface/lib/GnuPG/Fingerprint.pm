@@ -10,7 +10,7 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-#  $Id: Fingerprint.pm 389 2005-12-11 22:46:36Z mbr $
+#  $Id: Fingerprint.pm,v 1.8 2001/08/21 13:31:50 ftobin Exp $
 #
 
 package GnuPG::Fingerprint;

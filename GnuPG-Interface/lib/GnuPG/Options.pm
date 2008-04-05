@@ -10,7 +10,7 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-#  $Id: Options.pm 389 2005-12-11 22:46:36Z mbr $
+#  $Id: Options.pm,v 1.14 2001/08/21 13:31:50 ftobin Exp $
 #
 
 package GnuPG::Options;

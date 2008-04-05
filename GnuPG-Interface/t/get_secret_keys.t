@@ -1,10 +1,10 @@
 #!/usr/bin/perl -w
 #
-# $Id: get_secret_keys.t 389 2005-12-11 22:46:36Z mbr $
+# $Id: get_secret_keys.t,v 1.9 2001/05/03 06:00:06 ftobin Exp $
 #
 
 use strict;
-use English;
+use English qw( -no_match_vars );
 
 use lib './t';
 use MyTest;

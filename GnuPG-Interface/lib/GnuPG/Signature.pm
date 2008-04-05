@@ -10,7 +10,7 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-#  $Id: Signature.pm 389 2005-12-11 22:46:36Z mbr $
+#  $Id: Signature.pm,v 1.4 2001/08/21 13:31:50 ftobin Exp $
 #
 
 package GnuPG::Signature;

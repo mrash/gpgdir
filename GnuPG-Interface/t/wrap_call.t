@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-#  $Id: wrap_call.t 389 2005-12-11 22:46:36Z mbr $
+#  $Id: wrap_call.t,v 1.1 2001/05/03 07:32:34 ftobin Exp $
 #
 
 use strict;

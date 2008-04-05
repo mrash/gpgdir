@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: Interface.t 389 2005-12-11 22:46:36Z mbr $
+# $Id: Interface.t,v 1.1 2001/04/30 02:04:25 ftobin Exp $
 #
 
 use strict;

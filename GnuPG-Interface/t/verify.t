@@ -1,10 +1,10 @@
 #!/usr/bin/perl -w
 #
-# $Id: verify.t 389 2005-12-11 22:46:36Z mbr $
+# $Id: verify.t,v 1.4 2001/05/03 06:00:06 ftobin Exp $
 #
 
 use strict;
-use English;
+use English qw( -no_match_vars );
 
 use lib './t';
 use MyTest;

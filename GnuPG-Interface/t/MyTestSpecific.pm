@@ -10,11 +10,11 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-#  $Id: MyTestSpecific.pm 389 2005-12-11 22:46:36Z mbr $
+#  $Id: MyTestSpecific.pm,v 1.7 2001/08/21 13:31:50 ftobin Exp $
 #
 
 use strict;
-use English;
+use English qw( -no_match_vars );
 use Fatal qw/ open close /;
 use IO::File;
 use IO::Handle;

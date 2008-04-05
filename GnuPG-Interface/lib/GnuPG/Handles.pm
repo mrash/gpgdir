@@ -10,7 +10,7 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-#  $Id: Handles.pm 389 2005-12-11 22:46:36Z mbr $
+#  $Id: Handles.pm,v 1.8 2001/12/09 02:24:10 ftobin Exp $
 #
 
 

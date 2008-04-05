@@ -10,13 +10,13 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-#  $Id: MyTest.pm 389 2005-12-11 22:46:36Z mbr $
+#  $Id: MyTest.pm,v 1.3 2001/08/21 13:31:50 ftobin Exp $
 #
 
 package MyTest;
 
 use strict;
-use English;
+use English qw( -no_match_vars );
 use Exporter;
 use IO::File;
 use vars qw( @ISA @EXPORT );

@@ -10,7 +10,7 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-#  $Id: ComparablePrimaryKey.pm 389 2005-12-11 22:46:36Z mbr $
+#  $Id: ComparablePrimaryKey.pm,v 1.3 2001/09/14 12:34:36 ftobin Exp $
 #
 
 package GnuPG::ComparablePrimaryKey;

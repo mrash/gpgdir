@@ -10,7 +10,7 @@
 #  but WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 #
-#  $Id: Key.pm 389 2005-12-11 22:46:36Z mbr $
+#  $Id: Key.pm,v 1.10 2001/12/10 01:29:27 ftobin Exp $
 #
 
 package GnuPG::Key;

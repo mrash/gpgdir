@@ -1,7 +1,7 @@
 use 5.005;
 
 use strict;
-use English;
+use English qw( -no_match_vars );
 use ExtUtils::MakeMaker;
 
 use File::Find;
