@@ -1,3 +1,9 @@
+gpgdir-1.8 (03//2008):
+    - Updated the test suite to validate the gpgdir --Obfuscate-filenames
+      mode to ensure that files are encrypted as "gpgdir_<pid>_<num>.gpg".
+    - Minor bug fix to remove the .gpgdir_map_file in --Obfuscate-filenames
+      mode after a successful decryption cycle.
+
 gpgdir-1.7 (02/18/2008):
     - Bugfix to ensure that encrypted directories can actually be decrypted.
       This bug was reported by Per Ronny Westin.
