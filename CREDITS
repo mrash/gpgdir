@@ -1,5 +1,7 @@
 Per Ronny Westin
     - Found PLAINTEXT vs. DECRYPTION_OKAY return code bug for GnuPG 1.2.6.
+    - Reported directory decryption bug in gpgdir-1.6.  The result was the
+      addition of the gpgdir test suite.
 
 Kai Raven
     - Bugfix in man page for file compression/decompression wording.
@@ -37,7 +39,3 @@ Franck Joncourt
     - Performed analysis of locale settings for fwknop installer and suggested
       using the LC_ALL environmental variable instead of the LANG variable
       (which is superseded by LC_* vars).
-
-Per Ronny Westin
-    - Reported directory decryption bug in gpgdir-1.6.  The result was the
-      addition of the gpgdir test suite.
