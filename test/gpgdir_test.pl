@@ -235,8 +235,8 @@ sub obf_recursively_encrypted() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
-            ### gpgdir_20089_1.gpg
-            unless ($file =~ m|gpgdir_\d+_\d+\.gpg$|) {
+            ### gpgdir_1.gpg
+            unless ($file =~ m|gpgdir_\d+\.gpg$|) {
                 return &print_errors("fail ($test_num)\n[*] " .
                     "File $file not encrypted and obfuscated");
             }

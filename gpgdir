@@ -12,7 +12,7 @@
 #
 # Version: 1.8
 #
-# Copyright (C) 2002-2007 Michael Rash (mbr@cipherdyne.org)
+# Copyright (C) 2002-2008 Michael Rash (mbr@cipherdyne.org)
 #
 # License (GNU General Public License):
 #
@@ -60,6 +60,7 @@ my $exclude_pat     = '';
 my $exclude_file    = '';
 my $include_pat     = '';
 my $include_file    = '';
+my $pid_file        = '';
 my $total_encrypted = 0;
 my $total_decrypted = 0;
 my $norecurse       = 0;
@@ -294,18 +295,24 @@ if ($dir) {
 ### in --Trial-run mode.
 $skip_test_mode = 1 if $trial_run;
 
-if ($symmetric_mode) {
-    &get_password();
-} else {
-    &get_password() unless $encrypt_mode and $skip_test_mode;
-}
-
 if ($dir eq '.') {
     $dir = $initial_dir;
 } elsif ($dir !~ m|^/|) {
     $dir = $initial_dir . '/' . $dir;
 }
 $dir =~ s|/$||;  ### remove any trailing slash
+
+### make sure another gpgdir process is not trying to operate
+### on the same directory
+$pid_file = "$dir/.gpgdir.pid";
+&unique_pid();
+&write_pid();
+
+if ($symmetric_mode) {
+    &get_password();
+} else {
+    &get_password() unless $encrypt_mode and $skip_test_mode;
+}
 
 ### run a test to make sure gpgdir and encrypt and decrypt a file
 unless ($skip_test_mode) {
@@ -329,7 +336,7 @@ if ($encrypt_mode) {
 
 unless ($obfuscate_mode) {
     if ($have_obfuscated_file) {
-        print "[-] Obfuscated filenames detected, try decrypting with -O.\n"
+        print "[-] Obfuscated filenames detected, try decrypting with -O\n"
             unless $quiet;
     }
 }
@@ -340,6 +347,10 @@ if ($encrypt_mode) {
 } else {
     print "[+] Total number of files decrypted: " .
         "$total_decrypted\n" unless $quiet;
+}
+
+if (-e $pid_file) {
+    unlink $pid_file or die "[*] Could not remove pid file $pid_file: $!";
 }
 
 exit 0;
@@ -598,8 +609,7 @@ sub gpg_operation() {
                     $obfuscate_ctrs{$dir} = 1;
                 }
 
-                $encrypt_filename = 'gpgdir_' . $$ . '_'
-                        . $obfuscate_ctrs{$dir} . '.gpg';
+                $encrypt_filename = 'gpgdir_' . $obfuscate_ctrs{$dir} . '.gpg';
             }
 
             if ($ascii_armor_mode) {
@@ -683,7 +693,8 @@ sub gpg_operation() {
                 }
 
             } else {
-                if (not $force_mode and $file =~ /gpgdir_\d+_\d+.gpg/) {
+                if (not $force_mode and ($file =~ /gpgdir_\d+_\d+\.gpg/
+                        or $file =~ /gpgdir_\d+\.gpg/)) {
                     ### be careful not to decrypt obfuscated file unless we
                     ### are running in -O mode.  This ensures that the
                     ### original file names will be acquired from the
@@ -853,7 +864,11 @@ sub handle_old_obfuscated_map_file() {
     open F, "< $obfuscate_map_filename" or die "[*] Could not open ",
         "$obfuscate_map_filename: $!";
     while (<F>) {
-        if (/^\s*.*\s+(gpgdir_\d+_\d+.gpg)/) {
+        if (/^\s*.*\s+(gpgdir_\d+_\d+\.gpg)/) {
+            if (-e $1) {
+                push @existing_obfuscated_files, $_;
+            }
+        } elsif (/^\s*.*\s+(gpgdir_\d+\.gpg)/) {
             if (-e $1) {
                 push @existing_obfuscated_files, $_;
             }
@@ -895,7 +910,10 @@ sub import_obfuscated_file_map() {
     open G, "< $obfuscate_map_filename" or die "[*] Could not open ",
         "$obfuscate_map_filename: $!";
     while (<G>) {
-        if (/^\s*(.*)\s+(gpgdir_\d+_\d+.gpg)/) {
+        if (/^\s*(.*)\s+(gpgdir_\d+_\d+\.gpg)/) {
+            $obfuscated_dirs{$dir}{$2} = $1;
+            $total_mapped_files++;
+        } elsif (/^\s*(.*)\s+(gpgdir_\d+\.gpg)/) {
             $obfuscated_dirs{$dir}{$2} = $1;
             $total_mapped_files++;
         }
@@ -1155,6 +1173,26 @@ sub query_yes_no() {
     }
     return 1 if $ans eq 'y';
     return 0;
+}
+
+sub unique_pid() {
+    return unless -e $pid_file;
+    open P, "< $pid_file" or die "[*] Could not open $pid_file: $!";
+    my $pid = <P>;
+    chomp $pid;
+    close P;
+    if (kill 0, $pid) {
+        die "[*] Another gpgdir process (pid: $pid) is already ",
+            "running against\n    $dir";
+    }
+    return;
+}
+
+sub write_pid() {
+    open P, "> $pid_file" or die "[*] Could not open $pid_file: $!";
+    print P $$, "\n";
+    close P;
+    return;
 }
 
 sub usage_and_exit() {
