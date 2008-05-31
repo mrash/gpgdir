@@ -1,4 +1,4 @@
-gpgdir-1.9 (05//2008):
+gpgdir-1.9 (05/31/2008):
     - Changed --Obfuscate-filenames format to not include the gpgdir PID.
       This allows directories to be encrypted/decrypted under -O multiple
       times without creating new filenames (which would pollute encrypted
