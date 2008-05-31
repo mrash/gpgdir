@@ -6,6 +6,8 @@ gpgdir-1.9 (05//2008):
       filename format is just "gpgdir_<num>.gpg".
     - Added PID locking against directories so that multiple gpgdir processes
       cannot operate against the same top-level directory simultaneously.
+      This is useful for users that typically operate with multiple shells
+      and might launch gpgdir from any of them.
 
 gpgdir-1.8 (04/04/2008):
     - Updated the test suite to validate the gpgdir --Obfuscate-filenames
