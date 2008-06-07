@@ -1,3 +1,7 @@
+gpgdir-1.9.1 (06//2008):
+    - Updated to Class::MethodMaker 2.11 from CPAN.  This helps with systems
+      running perl-5.10.0 and greater (such as Fedora 9).
+
 gpgdir-1.9 (05/31/2008):
     - Changed --Obfuscate-filenames format to not include the gpgdir PID.
       This allows directories to be encrypted/decrypted under -O multiple
