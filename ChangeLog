@@ -1,4 +1,4 @@
-gpgdir-1.9.1 (06//2008):
+gpgdir-1.9.1 (06/07/2008):
     - Updated to Class::MethodMaker 2.11 from CPAN.  This helps with systems
       running perl-5.10.0 and greater (such as Fedora 9).
 
