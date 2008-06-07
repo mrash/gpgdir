@@ -56,7 +56,6 @@ t/diffclass.t
 INSTALL
 t/v1_boolean.t
 t/redefine-warnings.t
-Build.PL
 generate.PL
 META.yml
 Generate.pm

@@ -19,7 +19,7 @@ data-structure methods.
 
 # Pragmas -----------------------------
 
-use 5.005_62;
+use 5.006;
 use strict;
 use warnings;
 
@@ -57,7 +57,7 @@ BEGIN {
 # -------------------------------------
 
 our $PACKAGE = 'Class-MethodMaker';
-our $VERSION = '2.08';
+our $VERSION = '2.11';
 
 # -------------------------------------
 # CLASS CONSTRUCTION

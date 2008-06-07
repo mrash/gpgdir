@@ -1,5 +1,16 @@
 Revision History for Class::MethodMaker (versions 2)
 
+2.11	Mar 24 2008
+	- Drop Module::Build support
+	  (which was broken anyway for a long time, #19167, #16241, #17059, #15987, #13755)
+	- Correct "use version" statements (#19585)
+
+2.10	Apr 27 09:24:30 CEST 2007
+	- Fixed SIGNATURE
+
+2.09	Dec  5  0:31AM GMT 2006
+	- Fixed compile problems with 5.9.4 upwards (rt.cpan.org #22413)
+
 2.07	Apr 10 10:13PM GMT 2005
 	- Fixed case error in Build.PL (rt.cpan.org #12107)
 	- Re-jiggle INSTALL* settings in Makefile.PL

@@ -1,7 +1,7 @@
 package test_v1;
 
 #
-# $Id: test_v1.pm 386 2005-12-11 22:38:17Z mbr $
+# $Id: test_v1.pm,v 1.2 2003/11/24 11:29:34 fluffy Exp $
 #
 
 # COPYRIGHT NOTICE

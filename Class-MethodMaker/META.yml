@@ -1,21 +1,13 @@
 --- #YAML:1.0
-name: Class-MethodMaker
-version: 2.08
-author:
-  - Martyn J. Pearce <fluffy@cpan.org>
-abstract: create generic class accessor methods
-license: perl
-provides:
-  Class::MethodMaker:
-    file: lib/Class/MethodMaker.pm
-    version: 2.08
-  Class::MethodMaker::Constants:
-    file: lib/Class/MethodMaker/Constants.pm
-  Class::MethodMaker::Engine:
-    file: lib/Class/MethodMaker/Engine.pm
-    version: 2.08
-  Class::MethodMaker::OptExt:
-    file: lib/Class/MethodMaker/OptExt.pm
-  Class::MethodMaker::V1Compat:
-    file: lib/Class/MethodMaker/V1Compat.pm
-generated_by: Module::Build version 0.2611
+name:                Class-MethodMaker
+version:             2.11
+abstract:            a module for creating generic methods
+license:             ~
+author:              
+    - Martyn J. Pearce 
+generated_by:        ExtUtils::MakeMaker version 6.44
+distribution_type:   module
+requires:     
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3

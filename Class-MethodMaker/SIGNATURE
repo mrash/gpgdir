@@ -1,12 +1,12 @@
 This file contains message digests of all files listed in MANIFEST,
-signed via the Module::Signature module, version 0.38.
+signed via the Module::Signature module, version 0.55.
 
 To verify the content in this distribution, first make sure you have
 Module::Signature installed, then type:
 
     % cpansign -v
 
-It would check each file's integrity, as well as the signature's
+It will check each file's integrity, as well as the signature's
 validity.  If "==> Signature verified OK! <==" is not displayed,
 the distribution may already have been compromised, and you should
 not run its Makefile.PL or Build.PL.
@@ -14,15 +14,14 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 1a930e0f60f4a74a59a8658c22ebcd250fb7aa5f Build.PL
-SHA1 56043b2a3d18b80669493b2ecc9b95aae70b0f67 Changes
+SHA1 bc631a3da6c71db69930001f906ef88d43551e3a Changes
 SHA1 b684a759c6fcf6378506173aec3dedec843a3696 Generate.pm
 SHA1 efa8cb615886410be8de15f5a6925697f624d278 INSTALL
-SHA1 570de32b38e410a8ad34861fc8fc4fb0ad04b295 MANIFEST
-SHA1 e75a9e81f4c0f9448ab0111300867ff33de8f3f3 MANIFEST.SKIP
-SHA1 4b0c98dcf1272e362fa9015d79ac4337bd9a1f07 META.yml
-SHA1 75f83e92f604630435d77239d71ef11317549245 Makefile.PL
-SHA1 eab8b99dac756ea96224f3358f5442840f123a07 MethodMaker.xs
+SHA1 a9a33407fec2fc091f98179005334f08ab526242 MANIFEST
+SHA1 6a32646da8206c7b9c4fe7f10275e833ddbae77d MANIFEST.SKIP
+SHA1 369f047e8363b0c2f971e1b7cee3bf4e376e325f META.yml
+SHA1 5b84cdcaf0907a26e7b637eb8818b038b6a02007 Makefile.PL
+SHA1 da6df21dd8f9b0be2a93a888f944177c3231561d MethodMaker.xs
 SHA1 d56038cc296a6d4d1f73d776d4f933c7120fc883 README
 SHA1 bf8192c64eff9a9356b0e45ef812457c7d672883 TODO
 SHA1 c1fa07c05e01abd3456a21972ef20b5e0880bc4c benchmark/lexical.pl
@@ -36,9 +35,9 @@ SHA1 ff41a37084f5f8f73f34da34c07ec5ff499c4343 end.pod
 SHA1 d39160a9f9faf6a3036888015958afd5e6360dab examples/simple1
 SHA1 76e80cf28137e0d2e623c5ae740f62fc2e7eb83e generate.PL
 SHA1 da39a3ee5e6b4b0d3255bfef95601890afd80709 lib/Class/.placeholder
-SHA1 a5e34522eb7cfef36d67ffd77b4af0005da072a3 lib/Class/MethodMaker.pm
+SHA1 d82440f5dda23670fc77fb67856172c64b868953 lib/Class/MethodMaker.pm
 SHA1 e9cb30df1d39b6bf81a3eae841bba358220ae5b6 lib/Class/MethodMaker/Constants.pm
-SHA1 3371f78511bd3acaba23052fbadc92d6afb18407 lib/Class/MethodMaker/Engine.pm
+SHA1 11b8bbde960d6e0695bbb8e1fb679bbed2b390f1 lib/Class/MethodMaker/Engine.pm
 SHA1 58dba4e3ee75fda97d12a1dbd83cc5525f410c75 lib/Class/MethodMaker/OptExt.pm
 SHA1 350e418e58d45880b9767d9deb41f37e2b1a9ce9 lib/Class/MethodMaker/V1Compat.pm
 SHA1 c4ed60e219b8582ae5f9d4c2d4e5c63da90a1346 t/0-signature.t
@@ -49,7 +48,7 @@ SHA1 e4a4a3eb109145be7e8323476acc1f79af702786 t/hash.t
 SHA1 c1c5c7bc50fd8c72d33ecd3470a2217edd0241ab t/new.t
 SHA1 91e1bca16495461ea447c44f17f3d19b756e946a t/redefine-warnings.t
 SHA1 46332dbc223396c9fa80e57eefaca61f163471c6 t/scalar.t
-SHA1 15982417c01cf68495c17068f799a24c89168ef5 t/test.pm
+SHA1 77682285d4d29db2c49b7fc40485a1209067925b t/test.pm
 SHA1 732e5dd8fbc6e826bbc55f7366e74715fe8f8a47 t/test_v1.pm
 SHA1 de96e569ca75f94ba14b8c8f9036d1a6aaa47855 t/v1_abstract.t
 SHA1 aec7169b86abf57a80331f1012f09cef74d7e2f9 t/v1_boolean.t
@@ -80,9 +79,9 @@ SHA1 4fd4d465539698a0f8b5e320a72bbcdf7a37dbe8 t/v1_tie_hash.t
 SHA1 efdde2ef3a7c3192b2a8449fe047e2d2bd57581c t/v1_tie_list.t
 SHA1 c9105cb7d439b524207ddbfdd5804c5ef7332790 t/v1_tie_scalar.t
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.2.2 (Darwin)
+Version: GnuPG v1.4.6 (GNU/Linux)
 
-iD8DBQFDiC6EV6eZRcV4WK0RAg2LAJ9uUlwl+gGg5mJh5GRsnGY6xzqN8ACeOfbz
-SqTV52bOB4YTXAtK5d00wrk=
-=kw/e
+iD8DBQFH6B5nrQV5awgKugcRAjLfAKC/b1LyP11NwWSHWXd9Ir8iQKF5twCg1p3C
+2isgniBHAlP4BjFoNfQ1lAE=
+=MrFT
 -----END PGP SIGNATURE-----

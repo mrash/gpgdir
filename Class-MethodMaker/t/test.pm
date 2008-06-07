@@ -73,7 +73,7 @@ Unless TEST_DEBUG is set in the environment.
 
 # Pragmas -----------------------------
 
-use 5.00503;
+use 5.006;
 use strict;
 use vars qw( @EXPORT_OK );
 

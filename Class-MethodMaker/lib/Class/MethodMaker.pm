@@ -6,7 +6,7 @@ use Class::MethodMaker::Constants qw( );
 use Class::MethodMaker::Engine    qw();
 
 # Make this line self-contained so MakeMaker can eval() it.
-our $VERSION = '2.08';
+our $VERSION = '2.11';
 our $PACKAGE = 'Class-MethodMaker';
 
 use XSLoader qw();
