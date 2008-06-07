@@ -102,6 +102,9 @@ my $symmetric_mode  = 0;
 my $DEL_SOURCE_FILE = 1;
 my $NO_DEL_SOURCE_FILE = 0;
 
+my $locale = 'C';  ### default LC_ALL env variable
+my $no_locale = 0;
+
 ### for user answers
 my $ACCEPT_YES_DEFAULT = 1;
 my $ACCEPT_NO_DEFAULT  = 2;
@@ -117,7 +120,7 @@ my @args_cp = @ARGV;
 ### make Getopts case sensitive
 Getopt::Long::Configure('no_ignore_case');
 
-die "[-] Use --help for usage information.\n" unless(GetOptions (
+die "[*] Use --help for usage information.\n" unless(GetOptions (
     'encrypt=s'      => \$encrypt_dir,     # Encrypt files in this directory.
     'decrypt=s'      => \$decrypt_dir,     # Decrypt files in this directory.
     'gnupg-dir=s'    => \$gpg_homedir,     # Path to /path/to/.gnupg directory.
@@ -173,11 +176,18 @@ die "[-] Use --help for usage information.\n" unless(GetOptions (
                                                # has no password).
     'user-homedir=s' => \$homedir,         # Path to home directory.
     'no-preserve-times' => \$no_fs_times,  # Don't preserve mtimes or atimes.
+    'LC_ALL=s'       => \$locale,
+    'locale=s'       => \$locale,          # synonym
+    'no-LC_ALL'      => \$no_locale,
+    'no-locale'      => \$no_locale,       # synonym
     'verbose'        => \$verbose,         # Verbose mode.
     'Version'        => \$printver,        # Print version
     'help'           => \$help             # Print help
 ));
 &usage_and_exit() if $help;
+
+### set LC_ALL env variable
+$ENV{'LC_ALL'} = $locale unless $no_locale;
 
 print "[+] gpgdir v$version (file revision: $rev_num)\n",
     "      by Michael Rash <mbr\@cipherdyne.org>\n"
@@ -1273,6 +1283,9 @@ Options:
     --no-password               - Assume the gpg key has no password at all
                                   (this is not common).
     -u, --user-homedir <dir>    - Path to home directory.
+    -l, --locale <locale>       - Manually define a locale setting.
+    --no-locale                 - Don't set the locale to anything (the
+                                  default is the "C" locale).
     -v, --verbose               - Run in verbose mode.
     -V, --Version               - print version.
     -h, --help                  - print help.

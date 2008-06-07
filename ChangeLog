@@ -1,6 +1,9 @@
 gpgdir-1.9.1 (06/07/2008):
     - Updated to Class::MethodMaker 2.11 from CPAN.  This helps with systems
       running perl-5.10.0 and greater (such as Fedora 9).
+    - Updated to always set the LC_ALL environmental variable to the "C"
+      locale.  This can be set to other locales with a new argument --locale,
+      or the default locale can be used by using --no-locale argument.
 
 gpgdir-1.9 (05/31/2008):
     - Changed --Obfuscate-filenames format to not include the gpgdir PID.

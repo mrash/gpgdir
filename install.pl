@@ -87,7 +87,9 @@ Getopt::Long::Configure('no_ignore_case');
     'Skip-mod-install'  => \$skip_module_install,
     'home-dir=s'        => \$config_homedir, ### force a specific home dir
     'LC_ALL=s'          => \$locale,
+    'locale=s'          => \$locale,
     'no-LC_ALL'         => \$no_locale,
+    'no-locale'         => \$no_locale,  ### synonym
     'uninstall' => \$uninstall,      # Uninstall gpgdir.
     'help'      => \$print_help      # Display help.
 ));
