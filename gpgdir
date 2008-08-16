@@ -31,11 +31,8 @@
 # $Id$
 #
 
-use lib '/usr/lib/gpgdir';
 use File::Find;
 use File::Copy;
-use Term::ReadKey;
-use GnuPG::Interface;
 use IO::File;
 use IO::Handle;
 use Getopt::Long;
@@ -60,6 +57,7 @@ my $exclude_pat     = '';
 my $exclude_file    = '';
 my $include_pat     = '';
 my $include_file    = '';
+my $lib_dir         = '/usr/lib/gpgdir';
 my $pid_file        = '';
 my $total_encrypted = 0;
 my $total_decrypted = 0;
@@ -180,6 +178,7 @@ die "[*] Use --help for usage information.\n" unless(GetOptions (
     'locale=s'       => \$locale,          # synonym
     'no-LC_ALL'      => \$no_locale,
     'no-locale'      => \$no_locale,       # synonym
+    'Lib-dir=s'      => \$lib_dir,         # Path to perl module path
     'verbose'        => \$verbose,         # Verbose mode.
     'Version'        => \$printver,        # Print version
     'help'           => \$help             # Print help
@@ -203,6 +202,9 @@ if ($encrypt_dir and $overwrite_decrypted) {
 if ($decrypt_dir and $overwrite_encrypted) {
     die "[*] The -d and --overwrite-encrypted options are incompatible.";
 }
+
+### import perl modules (GnuPG::Interface, etc.)
+&import_perl_modules();
 
 if ($wipe_mode) {
     unless (-e $wipe_cmd) {
@@ -1079,13 +1081,13 @@ sub get_password() {
         }
         my $msg = 'Password: ';
         ### get the password without echoing the chars back to the screen
-        ReadMode 'noecho';
+        ReadMode('noecho');
         while (! $pw) {
             print $msg;
-            $pw = ReadLine 0;
+            $pw = ReadLine(0);
             chomp $pw;
         }
-        ReadMode 'normal';
+        ReadMode('normal');
         if ($quiet) {
             print "\n";
         } else {
@@ -1205,6 +1207,57 @@ sub write_pid() {
     return;
 }
 
+sub import_perl_modules() {
+
+    my $mod_paths_ar = &get_mod_paths();
+
+    if ($#$mod_paths_ar > -1) {  ### /usr/lib/gpgdir/ exists
+        push @$mod_paths_ar, @INC;
+        splice @INC, 0, $#$mod_paths_ar+1, @$mod_paths_ar;
+    }
+
+    if ($verbose) {
+        print "[+] import_perl_modules(): The \@INC array:\n";
+        print "$_\n" for @INC;
+    }
+
+    require GnuPG::Interface;
+    require Term::ReadKey;
+
+    Term::ReadKey->import(qw/ReadMode ReadLine/);
+
+    return;
+}
+
+sub get_mod_paths() {
+
+    my @paths = ();
+
+    unless (-d $lib_dir) {
+        my $dir_tmp = $lib_dir;
+        $dir_tmp =~ s|lib/|lib64/|;
+        if (-d $dir_tmp) {
+            $lib_dir = $dir_tmp;
+        } else {
+            return [];
+        }
+    }
+
+    opendir D, $lib_dir or die "[*] Could not open $lib_dir: $!";
+    my @dirs = readdir D;
+    closedir D;
+
+    push @paths, $lib_dir;
+
+    for my $dir (@dirs) {
+        ### get directories like "/usr/lib/gpgdir/x86_64-linux"
+        next unless -d "$lib_dir/$dir";
+        push @paths, "$lib_dir/$dir"
+            if $dir =~ m|linux| or $dir =~ m|thread|;
+    }
+    return \@paths;
+}
+
 sub usage_and_exit() {
     print <<_HELP_;
 
@@ -1284,6 +1337,8 @@ Options:
                                   (this is not common).
     -u, --user-homedir <dir>    - Path to home directory.
     -l, --locale <locale>       - Manually define a locale setting.
+    --Lib-dir <path>            - Path to the perl modules directory (not
+                                  usually necessary).
     --no-locale                 - Don't set the locale to anything (the
                                   default is the "C" locale).
     -v, --verbose               - Run in verbose mode.
