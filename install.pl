@@ -159,6 +159,7 @@ unless ($skip_module_install) {
         &install_perl_module($module);
     }
 }
+chdir $src_dir or die "[*] Could not chdir $src_dir: $!";
 
 print "[+] Installing man page.\n";
 &install_manpage();
@@ -209,6 +210,9 @@ sub install_gpgdir() {
 
 sub install_perl_module() {
     my $mod_name = shift;
+
+    chdir $src_dir or die "[*] Could not chdir $src_dir: $!";
+    chdir $deps_dir or die "[*] Could not chdir($deps_dir): $!";
 
     die '[*] Missing force-install key in required_perl_modules hash.'
         unless defined $required_perl_modules{$mod_name}{'force-install'};
@@ -279,6 +283,7 @@ sub install_perl_module() {
 
         print "\n\n";
     }
+    chdir $src_dir or die "[*] Could not chdir $src_dir: $!";
     return;
 }
 

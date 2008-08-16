@@ -43,21 +43,27 @@ for i in $(grep -r "use lib" . | cut -d: -f1); do
     mv $i.tmp $i
 done
 
+cd deps
 cd Class-MethodMaker && perl Makefile.PL PREFIX=%gpgdirlibdir LIB=%gpgdirlibdir
 cd ..
 cd GnuPG-Interface && perl Makefile.PL PREFIX=%gpgdirlibdir LIB=%gpgdirlibdir
 cd ..
 cd TermReadKey && perl Makefile.PL PREFIX=%gpgdirlibdir LIB=%gpgdirlibdir
-cd ..
+cd ../..
 
 %build
+
 ### build perl modules used by gpgdir
+cd deps
 make OPTS="$RPM_OPT_FLAGS" -C Class-MethodMaker
 make OPTS="$RPM_OPT_FLAGS" -C GnuPG-Interface
 make OPTS="$RPM_OPT_FLAGS" -C TermReadKey
+cd ..
 
 %install
+
 ### gpgdir module dirs
+cd deps
 mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Term/ReadKey
 mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Class/MethodMaker/array
 mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Class/MethodMaker/Engine
@@ -70,11 +76,13 @@ mkdir -p $RPM_BUILD_ROOT%gpgdirlibdir/GnuPG
 mkdir -p $RPM_BUILD_ROOT%_bindir
 mkdir -p $RPM_BUILD_ROOT%{_mandir}/man1
 mkdir -p $RPM_BUILD_ROOT%_sbindir
+cd ..
 
 install -m 755 gpgdir $RPM_BUILD_ROOT%_bindir/
 install -m 644 gpgdir.1 $RPM_BUILD_ROOT%{_mandir}/man1/
 
 ### install perl modules used by gpgdir
+cd deps
 install -m 444 Class-MethodMaker/blib/lib/auto/Class/MethodMaker/array/*.* $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Class/MethodMaker/array/
 install -m 444 Class-MethodMaker/blib/lib/auto/Class/MethodMaker/scalar/*.* $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Class/MethodMaker/scalar/
 install -m 444 Class-MethodMaker/blib/lib/auto/Class/MethodMaker/hash/*.* $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Class/MethodMaker/hash/
@@ -89,6 +97,7 @@ install -m 444 TermReadKey/blib/lib/Term/ReadKey.pm $RPM_BUILD_ROOT%gpgdirlibdir
 install -m 444 TermReadKey/blib/lib/auto/Term/ReadKey/autosplit.ix $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Term/ReadKey/autosplit.ix
 install -m 444 TermReadKey/blib/arch/auto/Term/ReadKey/ReadKey.bs $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Term/ReadKey/ReadKey.bs
 install -m 444 TermReadKey/blib/arch/auto/Term/ReadKey/ReadKey.so $RPM_BUILD_ROOT%gpgdirlibdir/%gpgdirmoddir/auto/Term/ReadKey/ReadKey.so
+cd ..
 
 %clean
 [ "$RPM_BUILD_ROOT" != "/" ] && rm -rf $RPM_BUILD_ROOT
