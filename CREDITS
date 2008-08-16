@@ -39,3 +39,5 @@ Franck Joncourt
     - Performed analysis of locale settings for fwknop installer and suggested
       using the LC_ALL environmental variable instead of the LANG variable
       (which is superseded by LC_* vars).
+    - Suggested moving perl modules to the deps/ directory.  This is to
+      support the integration of the Cipherdyne projects with Debian.

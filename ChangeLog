@@ -1,7 +1,8 @@
 gpgdir-1.9.2 (08//2008):
     - Moved the GnuPG::Interface, Class::MethodMaker, and Term::ReadKey
       modules to the deps/ directory, and updated the installer and RPM spec
-      file to account for the path change.
+      file to account for the path change.  This change was suggested by
+      Franck Joncourt for the other cipherdyne.org projects.
     - Added the gpgdir-nodeps.spec file to allow an RPM to be built that does
       not contain any perl modules dependencies.
     - Updated gpgdir to import perl modules via 'require' statements instead
