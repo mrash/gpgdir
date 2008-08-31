@@ -54,6 +54,7 @@ my $skip_module_install   = 0;
 my $cmdline_force_install = 0;
 my $locale = 'C';  ### default LC_ALL env variable
 my $no_locale = 0;
+my $deps_dir  = 'deps';
 
 my %cmds = (
     'gzip' => $gzipCmd,
