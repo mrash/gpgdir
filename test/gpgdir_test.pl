@@ -118,6 +118,17 @@ exit &prepare_results() if $prepare_results;
 &test_driver('(MD5 digest) match across encrypt/decrypt cycle',
     \&md5sum_validation);
 
+### sign/verify cycle
+&test_driver('(Sign/verify dir) gpgdir directory signing', \&sign);
+&test_driver('(Sign/verify dir) Files recursively signed',
+    \&recursively_signed);
+&test_driver('(Sign/verify dir) Excluded hidden files/dirs',
+    \&skipped_hidden_files_dirs);
+&test_driver('(Sign/verify dir) gpgdir directory verification', \&verify);
+&test_driver('(Sign/verify dir) Files recursively verified',
+    \&recursively_verified);
+### remove all .asc files now
+
 &logr("\n");
 if ($successful_tests) {
     &logr("[+] ==> Passed $successful_tests/$test_num tests " .
@@ -172,6 +183,15 @@ sub obf_encrypt() {
         "Directory encryption");
 }
 
+sub sign() {
+    if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
+            " --pw-file $pw_file --Key-id $key_id --sign $data_dir")) {
+        return 1;
+    }
+    return &print_errors("fail ($test_num)\n[*] " .
+        "Directory signing");
+}
+
 sub decrypt() {
     if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
             " --pw-file $pw_file --Key-id $key_id -d $data_dir")) {
@@ -190,6 +210,15 @@ sub obf_decrypt() {
         "Directory decryption");
 }
 
+sub verify() {
+    if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
+            " --pw-file $pw_file --Key-id $key_id --verify $data_dir")) {
+        return 1;
+    }
+    return &print_errors("fail ($test_num)\n[*] " .
+        "Directory verification");
+}
+
 sub recursively_encrypted() {
     @data_dir_files = ();
     find(\&find_files, $data_dir);
@@ -198,6 +227,22 @@ sub recursively_encrypted() {
             unless ($file =~ m|\.gpg$|) {
                 return &print_errors("fail ($test_num)\n[*] " .
                     "File $file not encrypted");
+            }
+        }
+    }
+    return 1;
+}
+
+sub recursively_signed() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            if ($file !~ m|\.asc$|) {
+                unless (-e "$file.asc") {
+                    return &print_errors("fail ($test_num)\n[*] " .
+                        "File $file not signed");
+                }
             }
         }
     }
@@ -213,6 +258,20 @@ sub recursively_decrypted() {
                 return &print_errors("fail ($test_num)\n[*] " .
                     "File $file not encrypted");
             }
+        }
+    }
+    return 1;
+}
+
+sub recursively_verified() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+    for my $file (@data_dir_files) {
+        if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+#            if ($file =~ m|\.gpg$|) {
+#                return &print_errors("fail ($test_num)\n[*] " .
+#                    "File $file not encrypted");
+#            }
         }
     }
     return 1;
