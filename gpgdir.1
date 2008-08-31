@@ -5,7 +5,7 @@
 .SH NAME
 .B gpgdir
 .SH SYNOPSIS
-.B gpgdir -e|-d <directory> [options]
+.B gpgdir \-e|\-d <directory> [options]
 .SH DESCRIPTION
 .B gpgdir
 is a perl script that uses the CPAN GnuPG::Interface perl module to recursively
@@ -15,17 +15,17 @@ recursively descends through a directory in order to make sure it encrypts or
 decrypts every file in a directory and all of its subdirectories.  By default
 the mtime and atime values of all files will be preserved upon encryption and
 decryption (this can be disabled with the
-.B --no-preserve-times
+.B \-\-no-preserve-times
 option).  Note that in
-.B --encrypt
+.B \-\-encrypt
 mode, gpgdir will delete the original files that
 it successfully encrypts (unless the
-.B --no-delete
+.B \-\-no-delete
 option is given).  However,
 upon startup gpgdir first asks for a the decryption password to be sure that a
 dummy file can successfully be encrypted and decrypted.  The initial test can
 be disabled with the
-.B --skip-test
+.B \-\-skip-test
 option so that a directory can easily be encrypted without having to also
 specify a password (this is consistent with
 .B gpg
@@ -40,7 +40,7 @@ Finally,
 can use the
 .B wipe
 program with the
-.B --Wipe
+.B \-\-Wipe
 command line option to securely delete the original unencrypted files after they
 have been successfully encrypted.  This elevates the security stance of gpgdir
 since it is more difficult to recover the unencrypted data associated with
@@ -50,10 +50,22 @@ blocks even though a file is removed).
 .SH OPTIONS
 .TP
 .BR \-e ", " \-\^\-encrypt\ \<directory>
-Encrypt the directory specified on the command line.
+Recursively encrypt all files in the directory specified on the command line.
+All original files will be deleted (a password check is performed first to make
+sure that the correct password to unlock the private GnuPG key is known to the
+user).
 .TP
 .BR \-d ", " \-\^\-decrypt\ \<directory>
-Decrypt the directory specified on the command line.
+Recursively decrypt all files in the directory specified on the command line.
+The encrypted .gpg version of each file will be deleted.
+.TP
+.BR \-\^\-sign\ \<directory>
+Recursively sign all files in the directory specified on the command line.  For
+each file, a detached .asc signature will be created.
+.TP
+.BR \-\^\-verify\ \<directory>
+Recursively verify all .asc signatures for files in the directory specified on the
+command line.
 .TP
 .BR \-g ", " \-\^\-gnupg-dir\ \<directory>
 Specify which .gnupg directory will be used to find GnuPG keys.  The default
@@ -69,9 +81,9 @@ instead of typing it on the command line.
 .BR \-t ", " \-\^\-test-mode
 Run an encryption and decryption test against a dummy file and exit.  This
 test is always run by default in both
-.B --encrypt
+.B \-\-encrypt
 and
-.B --decrypt
+.B \-\-decrypt
 mode.
 .TP
 .BR \-S ", " \-\^\-Symmetric
@@ -101,14 +113,14 @@ decrypt individual files because of permissions errors.
 Instruct gpgdir to skip all files that match
 .B pattern
 as a regex match against each filename.  This is similar to the
-.B --exclude
+.B \-\-exclude
 option in the standard GNU tar command.
 .TP
 .BR \-\^\-Exclude-from\ \<file>
 Instruct gpgdir to exclude all files matched by patterns listed in
 .B file.
 This is similar to the
-.B --exclude-from
+.B \-\-exclude-from
 the GNU tar command.
 .TP
 .BR \-\^\-Include\ \<pattern>
@@ -128,10 +140,10 @@ program to securely delete files after they have been successfully encrypted.
 .BR \-O ", " \-\^\-Obfuscate-filename
 Tell
 .B gpgdir
-to obfuscate the file names of files that it encrypts (in -e mode).  The
+to obfuscate the file names of files that it encrypts (in \-e mode).  The
 names of each file are stored within the file .gpgdir_map_file for every
-sub-directory, and this file is itself encrypted.  In decryption mode (-d),
-the -O argument reverses the process so that the original files are
+sub-directory, and this file is itself encrypted.  In decryption mode (\-d),
+the \-O argument reverses the process so that the original files are
 restored.
 .TP
 .BR \-\^\-overwrite-encrypted
@@ -167,11 +179,11 @@ instance.
 .BR \-A ", " \-\^\-Agent-info\ \<connection\ \info>
 Specify the value of the GPG_AGENT_INFO environment variable as returned
 by the
-.B gpg-agent --daemon
+.B gpg-agent \-\-daemon
 command. If the
-.B gpgdir --agent
+.B gpgdir \-\-agent
 command line argument is used instead of
-.B --Agent-info,
+.B \-\-Agent-info,
 then gpgdir assumes that the GPG_AGENT_INFO environment variable has already
 been set in the current shell.
 .TP
@@ -228,46 +240,46 @@ be supplied to gpgdir in a few situations:
 .PP
 To encrypt a directory:
 .PP
-.B $ gpgdir -e /some/dir
+.B $ gpgdir \-e /some/dir
 .PP
 To encrypt a directory, and use the wipe command to securely delete the original
 unencrypted files:
 .PP
-.B $ gpgdir -W -e /some/dir
+.B $ gpgdir \-W \-e /some/dir
 .PP
 To encrypt a directory with the default GnuPG key defined in ~/.gnupg/options:
 .PP
-.B $ gpgdir -e /some/dir --Default-key
+.B $ gpgdir \-e /some/dir \-\-Default-key
 .PP
 To decrypt a directory with a key specified in ~/.gpgdirrc:
 .PP
-.B $ gpgdir -d /some/dir
+.B $ gpgdir \-d /some/dir
 .PP
 To encrypt a directory but skip all filenames that contain the string "host":
 .PP
-.B $ gpgdir -e /some/dir --Exclude host
+.B $ gpgdir \-e /some/dir \-\-Exclude host
 .PP
 To encrypt a directory but only encrypt those files that contain the string "passwd":
 .PP
-.B $ gpgdir -e /some/dir --Include passwd
+.B $ gpgdir \-e /some/dir \-\-Include passwd
 .PP
 To acquire the GnuPG key password from a running gpg-agent daemon in order to decrypt
 a directory (this requires that gpg-agent has the password):
 .PP
-.B $ gpgdir -A /tmp/gpg-H4DBhc/S.gpg-agent:7046:1 -d /some/dir
+.B $ gpgdir \-A /tmp/gpg-H4DBhc/S.gpg-agent:7046:1 \-d /some/dir
 .PP
 To encrypt a directory but skip the encryption/decryption test (so you will
 not be prompted for a decryption password):
 .PP
-.B $ gpgdir -e /some/dir -s
+.B $ gpgdir \-e /some/dir \-s
 .PP
 To encrypt a directory and no subdirectories:
 .PP
-.B $ gpgdir -e /some/dir --no-recurse
+.B $ gpgdir \-e /some/dir \-\-no-recurse
 .PP
 To encrypt root's home directory, but use the GnuPG keys associated with the user "bob":
 .PP
-.B # gpgdir -e /root -g /home/bob/.gnupg
+.B # gpgdir \-e /root \-g /home/bob/.gnupg
 .PP
 .SH DEPENDENCIES
 .B gpgdir
