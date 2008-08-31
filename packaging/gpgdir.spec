@@ -115,7 +115,7 @@ cd ..
 %_libdir/%name
 
 %changelog
-* Fri Aug 29 2008 Michael Rash <mbr@cipherdyne.org>
+* Sun Aug 31 2008 Michael Rash <mbr@cipherdyne.org>
 - Updated to use the deps/ directory for all perl module sources.
 - gpgdir-1.9.2 release
 

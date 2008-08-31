@@ -1,4 +1,4 @@
-gpgdir-1.9.2 (08//2008):
+gpgdir-1.9.2 (08/31/2008):
     - Added new modes '--sign <dir>' and '--verify <dir>' to allow all files
       in the specified directory to be signed or verified instead of encrypted
       or decrypted.  All GnuPG signatures are created as "<file>.asc", and the
