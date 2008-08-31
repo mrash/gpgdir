@@ -1,13 +1,40 @@
 gpgdir-1.9.2 (08//2008):
+    - Added new modes '--sign <dir>' and '--verify <dir>' to allow all files
+      in the specified directory to be signed or verified instead of encrypted
+      or decrypted.  All GnuPG signatures are created as "<file>.asc", and the
+      original file is not removed in --sign mode.  In --verify mode, if any
+      file does not match the expected .asc signature, then a warning like the
+      following will be generated:
+
+        [+] Verifying:  /home/mbr/src/gpgdir/test/data-dir/multi-line-ascii.asc
+        [GNUPG:] BADSIG 9EDEEEEBA742EEEF Some User <someuser@domain.org>
+
+    - Bugfix to not die() when files that are encrypted with a different GnuPG
+      key are encountered in a directory that is being decrypted. A warning
+      message (see below) is now generated and the file is skipped:
+
+      [+] Decrypting:  /home/mbr/tmp/gpgdir/a.gpg
+      [GNUPG:] BAD_PASSPHRASE CF16F0FCFFF3FF4F
+      [-] Skipping file encrypted with different GnuPG key: a.gpg
+
+    - Updated to use the status output from GnuPG::Interface to detect a bad
+      passphrase and whether a file is encrypted with the expected GnuPG key.
     - Moved the GnuPG::Interface, Class::MethodMaker, and Term::ReadKey
       modules to the deps/ directory, and updated the installer and RPM spec
       file to account for the path change.  This change was suggested by
       Franck Joncourt for the other cipherdyne.org projects.
+    - Updated the test suite to generate files in the output/ directory
+      according to test number and append the result of each test within each
+      file.  This makes it easy to tell which tests have failed with a simple
+      'grep fail output/*test'.
     - Added the gpgdir-nodeps.spec file to allow an RPM to be built that does
       not contain any perl modules dependencies.
     - Updated gpgdir to import perl modules via 'require' statements instead
       of 'use' statements so that the path to the modules directory can be
-      changed via the --Lib-dir command line argument.
+      changed via the --Lib-dir command line argument.  Also updated to use
+      the 'auto' heuristic (first implemented in the fwknop project) to detect
+      perl module directories that should be used in the --Lib-dir directory
+      to import perl modules from.
 
 gpgdir-1.9.1 (06/07/2008):
     - Updated to Class::MethodMaker 2.11 from CPAN.  This helps with systems

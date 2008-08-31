@@ -14,7 +14,7 @@
 #
 # Copyright (C) 2002-2008 Michael Rash (mbr@cipherdyne.org)
 #
-# License (GNU General Public License):
+# License: GNU General Public License version 2 (GPLv2)
 #
 #    This program is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -52,6 +52,8 @@ my $dir             = '';
 my $pw              = '';
 my $encrypt_dir     = '';
 my $decrypt_dir     = '';
+my $sign_dir        = '';
+my $verify_dir      = '';
 my $homedir         = '';
 my $exclude_pat     = '';
 my $exclude_file    = '';
@@ -76,6 +78,8 @@ my $force_mode      = 0;
 my $help            = 0;
 my $wipe_mode       = 0;
 my $encrypt_mode    = 0;
+my $signing_mode    = 0;
+my $verify_mode     = 0;
 my $use_default_key = 0;
 my $pw_file         = '';
 my $wipe_cmd        = '/usr/bin/wipe';
@@ -96,8 +100,8 @@ my $obfuscate_mode = 0;
 my $obfuscate_map_filename  = '.gpgdir_map_file';
 my $overwrite_encrypted = 0;
 my $overwrite_decrypted = 0;
-my $symmetric_mode  = 0;
-my $DEL_SOURCE_FILE = 1;
+my $symmetric_mode   = 0;
+my $DEL_SOURCE_FILE  = 1;
 my $NO_DEL_SOURCE_FILE = 0;
 
 my $locale = 'C';  ### default LC_ALL env variable
@@ -106,6 +110,9 @@ my $no_locale = 0;
 ### for user answers
 my $ACCEPT_YES_DEFAULT = 1;
 my $ACCEPT_NO_DEFAULT  = 2;
+
+### turn off buffering
+$| = 1;
 
 unless ($< == $>) {
     die "[*] Real and effective uid must be the same.  Make sure\n",
@@ -119,8 +126,10 @@ my @args_cp = @ARGV;
 Getopt::Long::Configure('no_ignore_case');
 
 die "[*] Use --help for usage information.\n" unless(GetOptions (
-    'encrypt=s'      => \$encrypt_dir,     # Encrypt files in this directory.
-    'decrypt=s'      => \$decrypt_dir,     # Decrypt files in this directory.
+    'encrypt-dir=s'  => \$encrypt_dir,     # Encrypt files in this directory.
+    'decrypt-dir=s'  => \$decrypt_dir,     # Decrypt files in this directory.
+    'sign-dir=s'     => \$sign_dir,        # Sign files in this directory.
+    'verify-dir=s'   => \$verify_dir,      # Verify files in this directory.
     'gnupg-dir=s'    => \$gpg_homedir,     # Path to /path/to/.gnupg directory.
     'pw-file=s'      => \$pw_file,         # Read password out of this file.
     'agent'          => \$use_gpg_agent,   # Use gpg-agent for passwords.
@@ -158,10 +167,10 @@ die "[*] Use --help for usage information.\n" unless(GetOptions (
     'Key-id=s'       => \$encrypt_user,    # Specify encrypt/decrypt key
     'Default-key'    => \$use_default_key, # Assume that default-key is set within
                                            # ~/.gnupg/options.
-    'Symmetric'      => \$symmetric_mode, # encrypt using symmetric cipher.
-                                                  # (this option is not required to
-                                                  # also decrypt, GnuPG handles
-                                                  # that automatically).
+    'Symmetric'      => \$symmetric_mode,  # encrypt using symmetric cipher.
+                                           #   (this option is not required to
+                                           #   also decrypt, GnuPG handles
+                                           #   that automatically).
     'Plain-ascii'    => \$ascii_armor_mode, # Ascii armor mode (creates non-binary
                                             # encrypted files).
     'skip-test'      => \$skip_test_mode,  # Skip encrypt -> decrypt test.
@@ -194,6 +203,17 @@ print "[+] gpgdir v$version (file revision: $rev_num)\n",
 
 if ($symmetric_mode and ($use_gpg_agent or $gpg_agent_info)) {
     die "[*] gpg-agent incompatible with --Symmetric mode";
+}
+
+die "[*] Cannot --sign-dir and --verify-dir"
+    if $sign_dir and $verify_dir;
+
+if ($sign_dir) {
+    $encrypt_dir  = $sign_dir;
+    $signing_mode = 1;
+} elsif ($verify_dir) {
+    $decrypt_dir = $verify_dir;
+    $verify_mode = 1;
 }
 
 if ($encrypt_dir and $overwrite_decrypted) {
@@ -235,7 +255,7 @@ if ($verbose) {
     );
 }
 
-$options{'armor'} = 1 if $ascii_armor_mode;
+$options{'armor'} = 1 if $ascii_armor_mode or $signing_mode;
 
 ### get the path to the user's home directory
 $homedir = &get_homedir() unless $homedir;
@@ -255,11 +275,19 @@ unless ($symmetric_mode) {
 }
 
 if ($decrypt_dir and $encrypt_dir) {
-    die "[*] You cannot encrypt and decrypt the same directory, see --help\n";
+    die "[*] Cannot encrypt and decrypt the same directory, see --help\n";
 }
 
 unless ($decrypt_dir or $encrypt_dir or $test_and_exit) {
-    print "[*] Please specify -e <dir>, -d <dir>, or --test-mode, see --help\n";
+    die "[*] Please specify -e <dir>, -d <dir>, or --test-mode, see --help\n";
+}
+
+if ($obfuscate_mode) {
+    if ($sign_dir) {
+        die "[*] -O mode incompatible with --sign-dir";
+    } elsif ($verify_dir) {
+        die "[*] -O mode incompatible with --verify-dir";
+    }
 }
 
 ### exclude file pattern
@@ -305,7 +333,7 @@ if ($dir) {
 
 ### don't need to test encrypt/decrypt ability if we are running
 ### in --Trial-run mode.
-$skip_test_mode = 1 if $trial_run;
+$skip_test_mode = 1 if $trial_run or $signing_mode or $verify_mode;
 
 if ($dir eq '.') {
     $dir = $initial_dir;
@@ -320,10 +348,11 @@ $pid_file = "$dir/.gpgdir.pid";
 &unique_pid();
 &write_pid();
 
-if ($symmetric_mode) {
+if ($symmetric_mode or $signing_mode) {
     &get_password();
 } else {
-    &get_password() unless $encrypt_mode and $skip_test_mode;
+    &get_password() unless (($encrypt_mode and $skip_test_mode)
+            or $verify_mode);
 }
 
 ### run a test to make sure gpgdir and encrypt and decrypt a file
@@ -332,10 +361,14 @@ unless ($skip_test_mode) {
     exit $rv if $test_and_exit;
 }
 
-if ($encrypt_mode) {
-    print "[+] Encrypting directory: $dir\n" unless $quiet;
+if ($signing_mode) {
+    print "[+] Signing files in directory: $dir\n" unless $quiet;
+} elsif ($encrypt_mode) {
+    print "[+] Encrypting files in directory: $dir\n" unless $quiet;
+} elsif ($verify_mode) {
+    print "[+] Verifying signatures in directory: $dir\n" unless $quiet;
 } else {
-    print "[+] Decrypting directory: $dir\n" unless $quiet;
+    print "[+] Decrypting files in directory: $dir\n" unless $quiet;
 }
 
 ### build a hash of file paths to work against
@@ -368,7 +401,7 @@ if (-e $pid_file) {
 exit 0;
 #==================== end main =====================
 
-sub encrypt_file() {
+sub encrypt_or_sign_file() {
     my ($in_file, $out_file, $del_flag) = @_;
 
     my $gpg = GnuPG::Interface->new();
@@ -414,6 +447,8 @@ sub encrypt_file() {
     } else {
         if ($symmetric_mode) {
             $pid = $gpg->encrypt_symmetrically('handles' => $handles);
+        } elsif ($signing_mode) {
+            $pid = $gpg->detach_sign('handles' => $handles);
         } else {
             $pid = $gpg->encrypt('handles' => $handles);
         }
@@ -445,18 +480,29 @@ sub encrypt_file() {
         if ($use_gpg_agent) {
             die "[*] Created zero-size file: $out_file\n",
 "    Maybe gpg-agent does not yet have the password for that key?\n",
-"    Try re-running with -v.";
+"    Try with --verbose";
         } else {
             die "[*] Created zero-size file: $out_file\n",
-                "    Bad password? Try re-running with -v.";
+                "    Bad password? Try with --verbose";
         }
     }
 
     return;
 }
 
-sub decrypt_file() {
+sub decrypt_or_verify_file() {
     my ($in_file, $out_file, $del_flag) = @_;
+
+    my $pid;
+    my $bad_passphrase = 0;
+    my $bad_signature  = 0;
+    my $file_encrypted_with_expected_key = 0;
+    my $input_fh  = '';
+    my $output_fh = '';
+    my $error_fh  = '';
+    my $pw_fh     = '';
+    my $status_fh = '';
+    my $handles   = '';
 
     my $gpg = GnuPG::Interface->new();
     $gpg->options->hash_init(%options);
@@ -464,49 +510,63 @@ sub decrypt_file() {
     die "[*] Could not create new gpg object with ",
         "homedir: $gpg_homedir" unless $gpg;
 
-    unless ($symmetric_mode or $use_default_key) {
+    unless ($verify_mode or $symmetric_mode or $use_default_key) {
         $gpg->options->default_key($encrypt_user);
         $gpg->options->push_recipients($encrypt_user);
     }
 
-    my ($input_fh, $output_fh, $error_fh, $pw_fh, $status_fh) =
-        (IO::File->new($in_file),
-        IO::File->new("> $out_file"),
-        IO::Handle->new(),
-        IO::Handle->new(),
-        IO::Handle->new());
-
-    my $handles = GnuPG::Handles->new(
-        stdin  => $input_fh,
-        stdout => $output_fh,
-        stderr => $error_fh,
-        passphrase => $pw_fh,
-        status => $status_fh
-    );
-    $handles->options('stdin')->{'direct'}  = 1;
-    $handles->options('stdout')->{'direct'} = 1;
-
-    my $pid;
+    if ($verify_mode) {
+        ($input_fh, $output_fh, $error_fh, $status_fh) =
+            (IO::Handle->new(),
+            IO::Handle->new(),
+            IO::Handle->new(),
+            IO::Handle->new());
+        $handles = GnuPG::Handles->new(
+            stdin  => $input_fh,
+            stdout => $output_fh,
+            stderr => $error_fh,
+            status => $status_fh
+        );
+    } else {
+        ($input_fh, $output_fh, $error_fh, $pw_fh, $status_fh) =
+            (IO::File->new($in_file),
+            IO::File->new("> $out_file"),
+            IO::Handle->new(),
+            IO::Handle->new(),
+            IO::Handle->new());
+        $handles = GnuPG::Handles->new(
+            stdin  => $input_fh,
+            stdout => $output_fh,
+            stderr => $error_fh,
+            passphrase => $pw_fh,
+            status => $status_fh
+        );
+        $handles->options('stdin')->{'direct'}  = 1;
+        $handles->options('stdout')->{'direct'} = 1;
+    }
 
     if ($use_gpg_agent) {
         $pid = $gpg->decrypt('handles' => $handles,
             'command_args' => [ qw( --use-agent ) ]);
     } else {
-        $pid = $gpg->decrypt('handles' => $handles);
-    }
-
-    print $pw_fh $pw;
-    close $pw_fh;
-
-    my @errors = <$error_fh>;
-
-    if ($verbose) {
-        print for @errors;
-    } else {
-        for (@errors) {
-            print if /bad\s+pass/;
+        if ($verify_mode) {
+            $pid = $gpg->wrap_call(
+                'commands'     => [ qw( --verify ) ],
+                'command_args' => [ ( $in_file ) ],
+                'handles'      => $handles
+            );
+        } else {
+            $pid = $gpg->decrypt('handles' => $handles);
         }
     }
+
+    unless ($verify_mode) {
+        print $pw_fh $pw;
+        close $pw_fh;
+    }
+
+    my @errors = <$error_fh>;
+    my @status = <$status_fh>;
 
     close $input_fh;
     close $output_fh;
@@ -515,16 +575,63 @@ sub decrypt_file() {
 
     waitpid $pid, 0;
 
-    if (-s $out_file == 0) {
+    for (@status) {
+        if ($verify_mode) {
+            ### [GNUPG:] BADSIG 9EEEEE6BEE428EEE Some User <someone@domain.com>
+            $bad_signature = 1 if /BADSIG/;
+        } else {
+            ### [GNUPG:] BAD_PASSPHRASE C326F95CE133EA4E
+            $bad_passphrase = 1 if /BAD_?PASS/;
+            if (/NEED_PASSPHRASE\s\S+\s+\S+$encrypt_user\s/) {
+                ### [GNUPG:] NEED_PASSPHRASE CDE4D7DDFD66DCB9 95D85DDDDD42D39D 16 0
+                $file_encrypted_with_expected_key = 1;
+            } elsif ((length($encrypt_user) == 8)
+                    and /USERID_HINT\s+.*$encrypt_user/) {
+                $file_encrypted_with_expected_key = 1;
+            }
+        }
+    }
+
+    if ($verbose) {
+        print "    GnuPG errors:\n";
+        print for @errors;
+        print "    GnuPG status:\n";
+        print for @status;
+    } else {
+        for (@status) {
+            if (/BAD_?PASS/) {
+                print unless $quiet;
+            } elsif (/BADSIG/) {
+                print unless $quiet;
+            }
+        }
+    }
+
+    if ($bad_passphrase) {
+        if (-s $out_file == 0) {
+            &delete_file($out_file);
+            &delete_file($in_file) if $del_flag == $DEL_SOURCE_FILE;
+            if ($file_encrypted_with_expected_key) {
+                die "[*] Bad passphrase, try gpgdir with -v";
+            } else {
+                print "[-] Skipping file encrypted with different ",
+                    "GnuPG key: $in_file\n" unless $quiet;
+            }
+        } else {
+            die
+"[*] Bad passphrase, but created non-zero sized output file, should not\n",
+"    happen. Try with --verbose";
+        }
+    } elsif (-s $out_file == 0) {
         &delete_file($out_file);
         &delete_file($in_file) if $del_flag == $DEL_SOURCE_FILE;
         if ($use_gpg_agent) {
             die "[*] Created zero-size file: $out_file\n",
 "    Maybe gpg-agent does not yet have the password for that key?\n",
-"    Try re-running with -v.";
+"    Try with --verbose";
         } else {
             die "[*] Created zero-size file: $out_file\n",
-                "    Bad password? Try re-running with -v.";
+                "    Bad password? Try with --verbose";
         }
     }
     return;
@@ -624,29 +731,35 @@ sub gpg_operation() {
                 $encrypt_filename = 'gpgdir_' . $obfuscate_ctrs{$dir} . '.gpg';
             }
 
-            if ($ascii_armor_mode) {
+            if ($ascii_armor_mode or $signing_mode) {
                 $encrypt_filename = "$filename.asc";
             }
 
             if (-e $encrypt_filename and not $overwrite_encrypted) {
-                print "[-] Encrypted file $dir/$encrypt_filename already ",
+                my $str = 'Encrypted';
+                $str = 'Signed' if $signing_mode;
+                print "[-] $str file $dir/$encrypt_filename already ",
                     "exists, skipping.\n" unless $quiet;
                 next FILE;
             }
 
             if ($interactive_mode) {
+                my $str = 'Encrypt';
+                $str = 'Sign' if $signing_mode;
                 next FILE unless (&query_yes_no(
-                    "    Encrypt: $file ([y]/n)?  ", $ACCEPT_YES_DEFAULT));
+                    "    $str: $file ([y]/n)?  ", $ACCEPT_YES_DEFAULT));
             }
 
-            print "[+] Encrypting:  $file\n" unless $quiet;
+            my $str = 'Encrypting';
+            $str = 'Signing' if $signing_mode;
+            print "[+] $str:  $file\n" unless $quiet;
 
             unless ($trial_run) {
 
-                &encrypt_file($filename, $encrypt_filename,
+                &encrypt_or_sign_file($filename, $encrypt_filename,
                         $NO_DEL_SOURCE_FILE);
 
-                if (-e $encrypt_filename && -s $encrypt_filename != 0) {
+                if (-e $encrypt_filename and -s $encrypt_filename != 0) {
                     ### set the atime and mtime to be the same as the
                     ### original file.
                     unless ($no_fs_times) {
@@ -655,26 +768,31 @@ sub gpg_operation() {
                             utime $atime, $mtime, $encrypt_filename;
                         }
                     }
-                    ### only delete the original file if
-                    ### the encrypted one exists
-                    if ($wipe_mode and not $quiet) {
-                        print "    Securely deleting file: $file\n";
-                    }
-                    &delete_file($filename);
 
-                    if ($obfuscate_mode) {
+                    unless ($signing_mode) {
+                        ### only delete the original file if
+                        ### the encrypted one exists
+                        if ($wipe_mode and not $quiet) {
+                            print "    Securely deleting file: $file\n";
+                        }
+                        &delete_file($filename);
 
-                        ### record the original file name mapping
-                        &append_obfuscated_mapping($filename,
-                            $encrypt_filename);
+                        if ($obfuscate_mode) {
 
-                        $obfuscate_ctrs{$dir}++;
+                            ### record the original file name mapping
+                            &append_obfuscated_mapping($filename,
+                                $encrypt_filename);
+
+                            $obfuscate_ctrs{$dir}++;
+                        }
                     }
 
                     $total_encrypted++;
 
                 } else {
-                    print "[-] Could not encrypt file: $file\n" unless $quiet;
+                    my $str = 'encrypt';
+                    $str = 'sign' if $signing_mode;
+                    print "[-] Could not $str file: $file\n" unless $quiet;
                     next FILE;
                 }
             }
@@ -719,46 +837,60 @@ sub gpg_operation() {
             ### length() allows files named "0"
             next FILE unless length($decrypt_filename) > 0;
 
-            ### don't decrypt a file on top of a normal file of
-            ### the same name
-            if (-e $decrypt_filename and not $overwrite_decrypted) {
-                print "[-] Decrypted file $dir/$decrypt_filename ",
-                    "already exists. Skipping.\n" unless $quiet;
-                next FILE;
+            if ($verify_mode) {
+                unless (-e $decrypt_filename) {
+                    print "[-] Original file $decrypt_filename ",
+                        "does not exist, skipping.\n";
+                    next FILE;
+                }
+            } else {
+                ### don't decrypt a file on top of a normal file of
+                ### the same name
+                if (-e $decrypt_filename and not $overwrite_decrypted) {
+                    print "[-] Decrypted file $dir/$decrypt_filename ",
+                        "already exists. Skipping.\n" unless $quiet;
+                    next FILE;
+                }
             }
 
             if ($interactive_mode) {
+                my $str = 'Decrypt';
+                $str = 'Verify' if $verify_mode;
                 next FILE unless (&query_yes_no(
-                    "    Decrypt: $file ([y]/n)?  ", $ACCEPT_YES_DEFAULT));
+                    "    $str: $file ([y]/n)?  ", $ACCEPT_YES_DEFAULT));
             }
 
             unless ($trial_run) {
-
-                print "[+] Decrypting:  $dir/$filename\n" unless $quiet;
-                &decrypt_file($filename, $decrypt_filename,
+                my $str = 'Decrypting';
+                $str = 'Verifying' if $verify_mode;
+                print "[+] $str:  $dir/$filename\n" unless $quiet;
+                &decrypt_or_verify_file($filename, $decrypt_filename,
                         $NO_DEL_SOURCE_FILE);
 
-                if (-e $decrypt_filename && -s $decrypt_filename != 0) {
-                    ### set the atime and mtime to be the same as the
-                    ### original file.
-                    unless ($no_fs_times) {
-                        if (defined $mtime and $mtime and
-                                defined $atime and $atime) {
-                            utime $atime, $mtime, $decrypt_filename;
+                unless ($verify_mode) {
+                    if (-e $decrypt_filename and -s $decrypt_filename != 0) {
+                        ### set the atime and mtime to be the same as the
+                        ### original file.
+                        unless ($no_fs_times) {
+                            if (defined $mtime and $mtime and
+                                    defined $atime and $atime) {
+                                utime $atime, $mtime, $decrypt_filename;
+                            }
                         }
-                    }
-                    if ($wipe_mode and not $quiet) {
-                        print "    Securely deleting file: $file\n";
-                    }
-                    ### only delete the original encrypted
-                    ### file if the decrypted one exists
-                    &delete_file($filename);
+                        if ($wipe_mode and not $quiet) {
+                            print "    Securely deleting file: $file\n";
+                        }
+                        ### only delete the original encrypted
+                        ### file if the decrypted one exists
+                        &delete_file($filename);
 
-                    $total_decrypted++;
+                        $total_decrypted++;
 
-                } else {
-                    print "[-] Could not decrypt file: $file\n" unless $quiet;
-                    next FILE;
+                    } else {
+                        print "[-] Could not decrypt file: $file\n"
+                            unless $quiet;
+                        next FILE;
+                    }
                 }
             }
         }
@@ -836,7 +968,7 @@ sub obfuscated_mapping_files() {
             print "[+] Encrypting mapping file:  ",
                 "$dir/$obfuscate_map_filename\n" unless $quiet;
             unless ($trial_run) {
-                &encrypt_file($obfuscate_map_filename,
+                &encrypt_or_sign_file($obfuscate_map_filename,
                     "$obfuscate_map_filename.gpg", $NO_DEL_SOURCE_FILE);
 
                 unlink $obfuscate_map_filename;
@@ -848,7 +980,7 @@ sub obfuscated_mapping_files() {
             print "[+] Decrypting mapping file:  ",
                 "$dir/$obfuscate_map_filename.gpg\n" unless $quiet;
             unless ($trial_run) {
-                &decrypt_file("$obfuscate_map_filename.gpg",
+                &decrypt_or_verify_file("$obfuscate_map_filename.gpg",
                     $obfuscate_map_filename, $NO_DEL_SOURCE_FILE);
 
                 unlink "$obfuscate_map_filename.gpg";
@@ -866,7 +998,7 @@ sub obfuscated_mapping_files() {
 sub handle_old_obfuscated_map_file() {
     return unless -e "$obfuscate_map_filename.gpg";
 
-    &decrypt_file("$obfuscate_map_filename.gpg",
+    &decrypt_or_verify_file("$obfuscate_map_filename.gpg",
             $obfuscate_map_filename, $NO_DEL_SOURCE_FILE);
 
     unlink "$obfuscate_map_filename.gpg";
@@ -916,7 +1048,7 @@ sub import_obfuscated_file_map() {
 
     return unless -e "$obfuscate_map_filename.gpg";
 
-    &decrypt_file("$obfuscate_map_filename.gpg",
+    &decrypt_or_verify_file("$obfuscate_map_filename.gpg",
             $obfuscate_map_filename, $NO_DEL_SOURCE_FILE);
 
     open G, "< $obfuscate_map_filename" or die "[*] Could not open ",
@@ -1006,10 +1138,9 @@ sub get_key() {
 _CONFIGRC_
 
     close F;
-    print
+    die
 "[*] Please edit $homedir/.gpgdirrc to include your gpg key identifier,\n",
 "    or use the default GnuPG key defined in ~/.gnupg/options.  Exiting.\n";
-    exit 0;
 }
 
 sub find_files() {
@@ -1025,9 +1156,14 @@ sub check_file_criteria() {
     return if -d $file;
     if (-e $file and not -l $file and -s $file != 0
             and $file !~ m|/\.|) {
-        if ($encrypt_mode) {
+        if ($encrypt_mode or $signing_mode) {
             if ($file =~ m|\.gpg| or $file =~ m|\.asc|) {
-                print "[-] Skipping encrypted file: $file\n" unless $quiet;
+                print "[-] Skipping encrypted/signed file: $file\n" unless $quiet;
+                return;
+            }
+        } elsif ($verify_mode) {
+            unless ($file =~ m|\.asc|) {
+                ### only pick up the signature files
                 return;
             }
         } else {
@@ -1075,14 +1211,16 @@ sub get_password() {
         if ($test_and_exit) {
             print "    *** test_mode() ***\n" unless $quiet;
         }
-        if ($encrypt_mode) {
+        if ($signing_mode) {
+            print "    Enter signing password.\n" unless $quiet;
+        } elsif ($encrypt_mode) {
             print '    Enter password (for initial ' .
                 "encrypt/decrypt test)\n" unless $quiet;
         }
         my $msg = 'Password: ';
         ### get the password without echoing the chars back to the screen
         ReadMode('noecho');
-        while (! $pw) {
+        while (not $pw) {
             print $msg;
             $pw = ReadLine(0);
             chomp $pw;
@@ -1125,7 +1263,7 @@ sub test_mode() {
         die "[*] test_mode(): Could not create $test_file\n";
     }
 
-    &encrypt_file($test_file, "${test_file}.gpg", $DEL_SOURCE_FILE);
+    &encrypt_or_sign_file($test_file, "${test_file}.gpg", $DEL_SOURCE_FILE);
 
     if (-e "$test_file.gpg" and (-s $test_file != 0)) {
         print "[+] test_mode(): Successful encrypt of $test_file\n"
@@ -1135,7 +1273,7 @@ sub test_mode() {
         die "[*] test_mode(): not encrypt $test_file (try adding -v).\n";
     }
 
-    &decrypt_file("${test_file}.gpg", $test_file, $DEL_SOURCE_FILE);
+    &decrypt_or_verify_file("${test_file}.gpg", $test_file, $DEL_SOURCE_FILE);
 
     if (-e $test_file and (-s $test_file != 0)) {
         print "[+] test_mode(): Successful decrypt of $test_file\n"
@@ -1253,7 +1391,8 @@ sub get_mod_paths() {
         ### get directories like "/usr/lib/gpgdir/x86_64-linux"
         next unless -d "$lib_dir/$dir";
         push @paths, "$lib_dir/$dir"
-            if $dir =~ m|linux| or $dir =~ m|thread|;
+            if $dir =~ m|linux| or $dir =~ m|thread|
+                or (-d "$lib_dir/$dir/auto");
     }
     return \@paths;
 }
@@ -1270,10 +1409,21 @@ gpgdir; Recursive direction encryption and decryption with GnuPG
 Usage: gpgdir -e|-d <directory> [options]
 
 Options:
-    -e, --encrypt <directory>   - Encrypt <directory> and all of its
-                                  subdirectories.
-    -d, --decrypt <directory>   - Decrypt <directory> and all of its
-                                  subdirectories.
+    -e, --encrypt <directory>   - Recursively encrypt all files in
+                                  <directory> and all subdirectories.
+    -d, --decrypt <directory>   - Recursively decrypt all files in
+                                  <directory> and all subdirectories.
+    --sign <directory>          - Recursively sign all files in <directory>
+                                  and all subdirectories.
+    --verify <directory>        - Recursively verify all GnuPG signatures
+                                  in <directory>.
+    -K, --Key-id <id>           - Specify GnuPG key ID, or key-matching
+                                  string. This overrides the use_key value
+                                  in ~/.gpgdirrc
+    -D, --Default-key           - Use the key that GnuPG defines as the
+                                  default (i.e. the key that is specified
+                                  by the default-key option in
+                                  ~/.gnupg/options).
     -a, --agent                 - Acquire password information from a
                                   running instance of gpg-agent.
     -A, --Agent-info <info>     - Specify the value for the GPG_AGENT_INFO
@@ -1282,8 +1432,10 @@ Options:
     -g, --gnupg-dir <dir>       - Specify a path to a .gnupg directory for
                                   gpg keys (the default is ~/.gnupg if this
                                   option is not used).
+    -S, --Symmetric             - Use symmetric encryption instead of the
+                                  default asymmetric encryption.
     -p, --pw-file <file>        - Read password in from <file>.
-    -s, --skip-test             - Skip encrypt -> decrypt test.
+    --skip-test                 - Skip encrypt -> decrypt test.
     -t, --test-mode             - Run encrypt -> decrypt test and exit.
     -T, --Trial-run             - Show what filesystem actions would take
                                   place without actually doing them.
@@ -1298,13 +1450,6 @@ Options:
                                   <pattern>.
     --Include-from <file>       - Include only those filenames that match a
                                   pattern contained within <file>.
-    -K, --Key-id <id>           - Specify GnuPG key ID, or key-matching
-                                  string. This overrides the use_key value
-                                  in ~/.gpgdirrc
-    -D, --Default-key           - Use the key that GnuPG defines as the
-                                  default (i.e. the key that is specified
-                                  by the default-key option in
-                                  ~/.gnupg/options).
     -O, --Obfuscate-filenames   - Substitute all real filenames in a
                                   directory with manufactured ones (the
                                   original filenames are preserved in a
@@ -1341,7 +1486,7 @@ Options:
                                   usually necessary).
     --no-locale                 - Don't set the locale to anything (the
                                   default is the "C" locale).
-    -v, --verbose               - Run in verbose mode.
+    --verbose               - Run in verbose mode.
     -V, --Version               - print version.
     -h, --help                  - print help.
 _HELP_

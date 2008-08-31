@@ -32,6 +32,7 @@
 
 use Digest::MD5 'md5_base64';
 use File::Find;
+use File::Copy;
 use Getopt::Long;
 use strict;
 
@@ -46,18 +47,20 @@ my $data_dir   = 'data-dir';
 
 my $gpg_dir = "$conf_dir/test-gpg";
 my $pw_file = "$conf_dir/test.pw";
+my $broken_pw_file = "$conf_dir/broken.pw";
 my $key_id  = '375D7DB9';
-
-my $cmd_stdout = "$output_dir/cmd.stdout";
-my $cmd_stderr = "$output_dir/cmd.stderr";
 #==================== end config ==================
 
 my $help = 0;
 my $test_num  = 0;
 my $PRINT_LEN = 68;
+my $APPEND    = 1;
+my $NO_APPEND = 0;
 my $failed_tests = 0;
 my $prepare_results = 0;
 my $successful_tests = 0;
+my $current_test_file = "$output_dir/$test_num.test";
+my $previous_test_file = '';
 my @data_dir_files = ();
 my %md5sums = ();
 
@@ -124,10 +127,15 @@ exit &prepare_results() if $prepare_results;
     \&recursively_signed);
 &test_driver('(Sign/verify dir) Excluded hidden files/dirs',
     \&skipped_hidden_files_dirs);
+&test_driver('(Sign/verify dir) Broken signature detection',
+    \&broken_sig_detection);
 &test_driver('(Sign/verify dir) gpgdir directory verification', \&verify);
 &test_driver('(Sign/verify dir) Files recursively verified',
     \&recursively_verified);
-### remove all .asc files now
+
+### bad password detection
+&test_driver('(Bad passphrase) detected broken passphrase',
+    \&broken_passphrase);
 
 &logr("\n");
 if ($successful_tests) {
@@ -146,77 +154,106 @@ exit 0;
 sub test_driver() {
     my ($msg, $func_ref) = @_;
 
+    my $test_status = 'pass';
     &dots_print($msg);
     if (&{$func_ref}) {
         &pass();
     } else {
+        $test_status = 'fail';
         $failed_tests++;
     }
+
+    open C, ">> $current_test_file"
+        or die "[*] Could not open $current_test_file: $!";
+    print C "\nTEST: $msg, STATUS: $test_status\n";
+    close C;
+
+    $previous_test_file = $current_test_file;
     $test_num++;
+    $current_test_file = "$output_dir/$test_num.test";
     return;
+}
+
+sub broken_passphrase() {
+    if (not &run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
+            " --pw-file $broken_pw_file --Key-id $key_id -e $data_dir",
+            $NO_APPEND)) {
+        my $found_bad_pass = 0;
+        open F, "< $current_test_file" or die $!;
+        while (<F>) {
+            if (/BAD_?PASS/) {
+                $found_bad_pass = 1;
+            }
+        }
+        close F;
+        if ($found_bad_pass) {
+            return 1;
+        }
+    }
+    return &print_errors("[-] Accepted broken passphrase");
 }
 
 sub encrypt() {
     if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id -e $data_dir")) {
+            " --pw-file $pw_file --Key-id $key_id -e $data_dir",
+            $NO_APPEND)) {
         return 1;
     }
-    return &print_errors("fail ($test_num)\n[*] " .
-        "Directory encryption");
+    return &print_errors("[-] Directory encryption");
 }
 
 sub ascii_encrypt() {
     if (&run_cmd("$gpgdirCmd --Plain-ascii --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id -e $data_dir")) {
+            " --pw-file $pw_file --Key-id $key_id -e $data_dir",
+            $NO_APPEND)) {
         return 1;
     }
-    return &print_errors("fail ($test_num)\n[*] " .
-        "Directory encryption");
+    return &print_errors("[-] Directory encryption");
 }
 
 sub obf_encrypt() {
     if (&run_cmd("$gpgdirCmd -O --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id -e $data_dir")) {
+            " --pw-file $pw_file --Key-id $key_id -e $data_dir",
+            $NO_APPEND)) {
         return 1;
     }
-    return &print_errors("fail ($test_num)\n[*] " .
-        "Directory encryption");
+    return &print_errors("[-] Directory encryption");
 }
 
 sub sign() {
     if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id --sign $data_dir")) {
+            " --pw-file $pw_file --Key-id $key_id --sign $data_dir",
+            $NO_APPEND)) {
         return 1;
     }
-    return &print_errors("fail ($test_num)\n[*] " .
-        "Directory signing");
+    return &print_errors("[-] Directory signing");
 }
 
 sub decrypt() {
     if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id -d $data_dir")) {
+            " --pw-file $pw_file --Key-id $key_id -d $data_dir",
+            $NO_APPEND)) {
         return 1;
     }
-    return &print_errors("fail ($test_num)\n[*] " .
-        "Directory decryption");
+    return &print_errors("[-] Directory decryption");
 }
 
 sub obf_decrypt() {
     if (&run_cmd("$gpgdirCmd -O --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id -d $data_dir")) {
+            " --pw-file $pw_file --Key-id $key_id -d $data_dir",
+            $NO_APPEND)) {
         return 1;
     }
-    return &print_errors("fail ($test_num)\n[*] " .
-        "Directory decryption");
+    return &print_errors("[-] Directory decryption");
 }
 
 sub verify() {
     if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id --verify $data_dir")) {
+            " --pw-file $pw_file --Key-id $key_id --verify $data_dir",
+            $NO_APPEND)) {
         return 1;
     }
-    return &print_errors("fail ($test_num)\n[*] " .
-        "Directory verification");
+    return &print_errors("[-] Directory verification");
 }
 
 sub recursively_encrypted() {
@@ -225,8 +262,7 @@ sub recursively_encrypted() {
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             unless ($file =~ m|\.gpg$|) {
-                return &print_errors("fail ($test_num)\n[*] " .
-                    "File $file not encrypted");
+                return &print_errors("[-] File $file not encrypted");
             }
         }
     }
@@ -240,8 +276,7 @@ sub recursively_signed() {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             if ($file !~ m|\.asc$|) {
                 unless (-e "$file.asc") {
-                    return &print_errors("fail ($test_num)\n[*] " .
-                        "File $file not signed");
+                    return &print_errors("[-] File $file not signed");
                 }
             }
         }
@@ -255,23 +290,66 @@ sub recursively_decrypted() {
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             if ($file =~ m|\.gpg$|) {
-                return &print_errors("fail ($test_num)\n[*] " .
-                    "File $file not encrypted");
+                return &print_errors("[-] File $file not encrypted");
             }
         }
     }
     return 1;
 }
 
+sub broken_sig_detection() {
+    move "$data_dir/multi-line-ascii", "$data_dir/multi-line-ascii.orig"
+        or die $!;
+    open F, "> $data_dir/multi-line-ascii" or die $!;
+    print F "bogus data\n";
+    close F;
+
+    &run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
+            " --pw-file $pw_file --Key-id $key_id --verify $data_dir",
+            $NO_APPEND);
+
+    my $found_bad_sig = 0;
+    open F, "< $current_test_file" or die $!;
+    while (<F>) {
+        if (/BADSIG/) {
+            $found_bad_sig = 1;
+        }
+    }
+    close F;
+
+    if ($found_bad_sig) {
+        unlink "$data_dir/multi-line-ascii";
+        move "$data_dir/multi-line-ascii.orig", "$data_dir/multi-line-ascii"
+            or die $!;
+        return 1;
+    }
+    return &print_errors("[-] Could not find bad signature");
+}
+
 sub recursively_verified() {
+
+    ### search for signature verification errors here
+    my $found_bad_sig = 0;
+    open F, "< $previous_test_file" or die $!;
+    while (<F>) {
+        if (/BADSIG/) {
+            $found_bad_sig = 1;
+        }
+    }
+    close F;
+
+    if ($found_bad_sig) {
+        return &print_errors("[-] Bad signature generated");
+    }
+
+    ### now remove signature files
     @data_dir_files = ();
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
-#            if ($file =~ m|\.gpg$|) {
-#                return &print_errors("fail ($test_num)\n[*] " .
-#                    "File $file not encrypted");
-#            }
+            if ($file =~ m|\.asc$|) {
+                unlink $file;
+            }
         }
     }
     return 1;
@@ -283,8 +361,7 @@ sub ascii_recursively_encrypted() {
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             unless ($file =~ m|\.asc$|) {
-                return &print_errors("fail ($test_num)\n[*] " .
-                    "File $file not encrypted");
+                return &print_errors("[-] File $file not encrypted");
             }
         }
     }
@@ -298,8 +375,8 @@ sub obf_recursively_encrypted() {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             ### gpgdir_1.gpg
             unless ($file =~ m|gpgdir_\d+\.gpg$|) {
-                return &print_errors("fail ($test_num)\n[*] " .
-                    "File $file not encrypted and obfuscated");
+                return &print_errors("[-] File $file not " .
+                    "encrypted and obfuscated");
             }
         }
     }
@@ -312,8 +389,7 @@ sub ascii_recursively_decrypted() {
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             if ($file =~ m|\.asc$|) {
-                return &print_errors("fail ($test_num)\n[*] " .
-                    "File $file not encrypted");
+                return &print_errors("[-] File $file not encrypted");
             }
         }
     }
@@ -326,8 +402,7 @@ sub obf_recursively_decrypted() {
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             if ($file =~ m|\.asc$|) {
-                return &print_errors("fail ($test_num)\n[*] " .
-                    "File $file not encrypted");
+                return &print_errors("[-] File $file not encrypted");
             }
         }
     }
@@ -342,8 +417,7 @@ sub skipped_hidden_files_dirs() {
             ### check for any .gpg or .asc extensions except
             ### for the gpgdir_map_file
             if ($file =~ m|\.gpg$| or $file =~ m|\.asc$|) {
-                return &print_errors("fail ($test_num)\n[*] " .
-                    "Encrypted hidden file");
+                return &print_errors("[-] Encrypted hidden file");
             }
         }
     }
@@ -359,8 +433,7 @@ sub obf_skipped_hidden_files_dirs() {
             ### for the gpgdir_map_file
             if ($file !~ m|gpgdir_map_file| and ($file =~ m|\.gpg$|
                     or $file =~ m|\.asc$|)) {
-                return &print_errors("fail ($test_num)\n[*] " .
-                    "Encrypted hidden file");
+                return &print_errors("[-] Encrypted hidden file");
             }
         }
     }
@@ -392,8 +465,7 @@ sub md5sum_validation() {
         if (-f $file) {
             if (not defined $md5sums{$file}
                     or $md5sums{$file} ne md5_base64($file)) {
-                return &print_errors("fail ($test_num)\n[*] " .
-                        "MD5 sum mis-match for $file");
+                return &print_errors("[-] MD5 sum mis-match for $file");
             }
         }
     }
@@ -402,10 +474,11 @@ sub md5sum_validation() {
 
 sub test_mode() {
     if (&run_cmd("$gpgdirCmd --test --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id")) {
+            " --pw-file $pw_file --Key-id $key_id",
+            $NO_APPEND)) {
         my $found = 0;
-        open F, "< ${cmd_stdout}.$test_num"
-            or die "[*] Could not open ${cmd_stderr}.$test_num: $!";
+        open F, "< $current_test_file"
+            or die "[*] Could not open $current_test_file: $!";
         while (<F>) {
             if (/Decrypted\s+content\s+matches\s+original/i) {
                 $found = 1;
@@ -415,21 +488,19 @@ sub test_mode() {
         close F;
         return 1 if $found;
     }
-    return &print_errors("fail ($test_num)\n[*] " .
-        "Encrypt/decrypt basic --test mode");
+    return &print_errors("[-] Encrypt/decrypt basic --test mode");
 }
 
 sub perl_compilation() {
-    unless (&run_cmd("perl -c $gpgdirCmd")) {
-        return &print_errors("fail ($test_num)\n[*] " .
-            "$gpgdirCmd does not compile");
+    unless (&run_cmd("perl -c $gpgdirCmd", $NO_APPEND)) {
+        return &print_errors("[-] $gpgdirCmd does not compile");
     }
     return 1;
 }
 
 sub getopt_test() {
-    if (&run_cmd("$gpgdirCmd --no-such-argument")) {
-        return &print_errors("fail ($test_num)\n[*] $gpgdirCmd " .
+    if (&run_cmd("$gpgdirCmd --no-such-argument", $NO_APPEND)) {
+        return &print_errors("[-] $gpgdirCmd " .
                 "allowed --no-such-argument on the command line");
     }
     return 1;
@@ -448,22 +519,33 @@ sub dots_print() {
 
 sub print_errors() {
     my $msg = shift;
-    &logr("$msg\n");
-    if (-e "${cmd_stderr}.$test_num") {
-        &logr("    STDOUT available in: " .
-            "${cmd_stdout}.$test_num file.\n");
-    }
-    if (-e "${cmd_stderr}.$test_num") {
-        &logr("    STDERR available in: " .
-            "${cmd_stderr}.$test_num file.\n");
+    &logr("fail ($test_num)\n$msg\n");
+    if (-e $current_test_file) {
+        &logr("    STDOUT and STDERR available in: " .
+            "$current_test_file file.\n");
+        open F, ">> $current_test_file"
+            or die "[*] Could not open $current_test_file: $!";
+        print F "MSG: $msg\n";
+        close F;
     }
     return 0;
 }
 
 sub run_cmd() {
-    my $cmd = shift;
-    my $rv = ((system "$cmd > ${cmd_stdout}.$test_num " .
-            "2> ${cmd_stderr}.$test_num") >> 8);
+    my ($cmd, $append) = @_;
+
+    if ($append == $APPEND) {
+        open F, ">> $current_test_file"
+            or die "[*] Could not open $current_test_file: $!";
+        print F "CMD: $cmd\n";
+        close F;
+    } else {
+        open F, "> $current_test_file"
+            or die "[*] Could not open $current_test_file: $!";
+        print F "CMD: $cmd\n";
+        close F;
+    }
+    my $rv = ((system "$cmd >> $current_test_file 2>&1") >> 8);
     if ($rv == 0) {
         return 1;
     }
@@ -497,7 +579,17 @@ sub setup() {
         mkdir $output_dir or die "[*] Could not mkdir $output_dir: $!";
     }
 
+    die "[*] Password file $pw_file does not exist" unless -f $pw_file;
+    die "[*] Broken password file $broken_pw_file does not exist"
+        unless -f $broken_pw_file;
+    die "[*] $data_dir/multi-line-ascii file does not exist"
+        unless -f "$data_dir/multi-line-ascii";
+
     for my $file (glob("$output_dir/cmd*")) {
+        unlink $file or die "[*] Could not unlink($file)";
+    }
+
+    for my $file (glob("$output_dir/*.test")) {
         unlink $file or die "[*] Could not unlink($file)";
     }
 
