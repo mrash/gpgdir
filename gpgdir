@@ -386,9 +386,15 @@ unless ($obfuscate_mode) {
     }
 }
 
-if ($encrypt_mode) {
+if ($signing_mode) {
+    print "[+] Total number of files signed: " .
+        "$total_encrypted\n" unless $quiet;
+} elsif ($encrypt_mode) {
     print "[+] Total number of files encrypted: " .
         "$total_encrypted\n" unless $quiet;
+} elsif ($verify_mode) {
+    print "[+] Total number of files verified: " .
+        "$total_decrypted\n" unless $quiet;
 } else {
     print "[+] Total number of files decrypted: " .
         "$total_decrypted\n" unless $quiet;
@@ -487,7 +493,7 @@ sub encrypt_or_sign_file() {
         }
     }
 
-    return;
+    return 1;
 }
 
 sub decrypt_or_verify_file() {
@@ -634,7 +640,10 @@ sub decrypt_or_verify_file() {
                 "    Bad password? Try with --verbose";
         }
     }
-    return;
+    if ($bad_signature) {
+        return 0;
+    }
+    return 1;
 }
 
 sub delete_file() {
@@ -756,7 +765,7 @@ sub gpg_operation() {
 
             unless ($trial_run) {
 
-                &encrypt_or_sign_file($filename, $encrypt_filename,
+                my $rv = &encrypt_or_sign_file($filename, $encrypt_filename,
                         $NO_DEL_SOURCE_FILE);
 
                 if (-e $encrypt_filename and -s $encrypt_filename != 0) {
@@ -864,10 +873,12 @@ sub gpg_operation() {
                 my $str = 'Decrypting';
                 $str = 'Verifying' if $verify_mode;
                 print "[+] $str:  $dir/$filename\n" unless $quiet;
-                &decrypt_or_verify_file($filename, $decrypt_filename,
+                my $rv = &decrypt_or_verify_file($filename, $decrypt_filename,
                         $NO_DEL_SOURCE_FILE);
 
-                unless ($verify_mode) {
+                if ($verify_mode) {
+                    $total_decrypted++ if $rv;
+                } else {
                     if (-e $decrypt_filename and -s $decrypt_filename != 0) {
                         ### set the atime and mtime to be the same as the
                         ### original file.
