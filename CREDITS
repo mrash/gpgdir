@@ -41,3 +41,7 @@ Franck Joncourt
       (which is superseded by LC_* vars).
     - Suggested moving perl modules to the deps/ directory.  This is to
       support the integration of the Cipherdyne projects with Debian.
+    - Added Short description to the gpgdir man page.  This fixes the
+      following lintian warning:
+
+        http://lintian.debian.org/tags/manpage-has-bad-whatis-entry.html
