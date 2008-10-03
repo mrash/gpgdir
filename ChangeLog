@@ -1,4 +1,4 @@
-gpgdir-1.9.3 (08/31/2008):
+gpgdir-1.9.3 (08//2008):
     - Simplified test suite code by creating a set of default arguments for
       the gpgdir command line as each test is executed.
 
