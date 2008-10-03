@@ -464,6 +464,15 @@ sub encrypt_or_sign_file() {
     close $pw_fh;
 
     my @errors = <$error_fh>;
+    close $error_fh;
+
+    my @status = <$status_fh>;
+    close $status_fh;
+
+    close $input_fh;
+    close $output_fh;
+
+    waitpid $pid, 0;
 
     if ($verbose) {
         print for @errors;
@@ -472,13 +481,6 @@ sub encrypt_or_sign_file() {
             print if /bad\s+pass/;
         }
     }
-
-    close $input_fh;
-    close $output_fh;
-    close $error_fh;
-    close $status_fh;
-
-    waitpid $pid, 0;
 
     if (-s $out_file == 0) {
         &delete_file($out_file);
@@ -572,12 +574,13 @@ sub decrypt_or_verify_file() {
     }
 
     my @errors = <$error_fh>;
+    close $error_fh;
+
     my @status = <$status_fh>;
+    close $status_fh;
 
     close $input_fh;
     close $output_fh;
-    close $error_fh;
-    close $status_fh;
 
     waitpid $pid, 0;
 

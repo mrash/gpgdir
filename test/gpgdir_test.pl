@@ -64,6 +64,9 @@ my $previous_test_file = '';
 my @data_dir_files = ();
 my %md5sums = ();
 
+my $default_args = "--gnupg-dir $gpg_dir " .
+    "--Key-id $key_id --pw-file $pw_file";
+
 die "[*] Use --help" unless GetOptions(
     'Prepare-results' => \$prepare_results,
     'help'            => \$help
@@ -86,7 +89,7 @@ exit &prepare_results() if $prepare_results;
 &test_driver('(Encrypt dir) gpgdir directory encryption', \&encrypt);
 &test_driver('(Encrypt dir) Files recursively encrypted',
     \&recursively_encrypted);
-&test_driver('(Encrypt dir) Excluded hidden files/dirs',
+&test_driver('(Encrypt dir) Exclude hidden files/dirs',
     \&skipped_hidden_files_dirs);
 &test_driver('(Decrypt dir) gpgdir directory decryption', \&decrypt);
 &test_driver('(Decrypt dir) Files recursively decrypted',
@@ -99,7 +102,7 @@ exit &prepare_results() if $prepare_results;
     \&ascii_encrypt);
 &test_driver('(Ascii-armor dir) Files recursively encrypted',
     \&ascii_recursively_encrypted);
-&test_driver('(Ascii-armor dir) Excluded hidden files/dirs',
+&test_driver('(Ascii-armor dir) Exclude hidden files/dirs',
     \&skipped_hidden_files_dirs);
 &test_driver('(Decrypt dir) gpgdir directory decryption', \&decrypt);
 &test_driver('(Decrypt dir) Files recursively decrypted',
@@ -112,7 +115,7 @@ exit &prepare_results() if $prepare_results;
     \&obf_encrypt);
 &test_driver('(Obfuscate filenames) Files recursively encrypted',
     \&obf_recursively_encrypted);
-&test_driver('(Obfuscate filenames) Excluded hidden files/dirs',
+&test_driver('(Obfuscate filenames) Exclude hidden files/dirs',
     \&obf_skipped_hidden_files_dirs);
 &test_driver('(Decrypt dir) gpgdir directory decryption',
     \&obf_decrypt);
@@ -125,7 +128,7 @@ exit &prepare_results() if $prepare_results;
 &test_driver('(Sign/verify dir) gpgdir directory signing', \&sign);
 &test_driver('(Sign/verify dir) Files recursively signed',
     \&recursively_signed);
-&test_driver('(Sign/verify dir) Excluded hidden files/dirs',
+&test_driver('(Sign/verify dir) Exclude hidden files/dirs',
     \&skipped_hidden_files_dirs);
 &test_driver('(Sign/verify dir) Broken signature detection',
     \&broken_sig_detection);
@@ -134,7 +137,7 @@ exit &prepare_results() if $prepare_results;
     \&recursively_verified);
 
 ### bad password detection
-&test_driver('(Bad passphrase) detected broken passphrase',
+&test_driver('(Bad passphrase) detect broken passphrase',
     \&broken_passphrase);
 
 &logr("\n");
@@ -194,17 +197,14 @@ sub broken_passphrase() {
 }
 
 sub encrypt() {
-    if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id -e $data_dir",
-            $NO_APPEND)) {
+    if (&run_cmd("$gpgdirCmd $default_args -e $data_dir", $NO_APPEND)) {
         return 1;
     }
     return &print_errors("[-] Directory encryption");
 }
 
 sub ascii_encrypt() {
-    if (&run_cmd("$gpgdirCmd --Plain-ascii --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id -e $data_dir",
+    if (&run_cmd("$gpgdirCmd $default_args --Plain-ascii -e $data_dir",
             $NO_APPEND)) {
         return 1;
     }
@@ -212,8 +212,7 @@ sub ascii_encrypt() {
 }
 
 sub obf_encrypt() {
-    if (&run_cmd("$gpgdirCmd -O --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id -e $data_dir",
+    if (&run_cmd("$gpgdirCmd $default_args -O -e $data_dir",
             $NO_APPEND)) {
         return 1;
     }
@@ -221,8 +220,7 @@ sub obf_encrypt() {
 }
 
 sub sign() {
-    if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id --sign $data_dir",
+    if (&run_cmd("$gpgdirCmd $default_args --sign $data_dir",
             $NO_APPEND)) {
         return 1;
     }
@@ -230,8 +228,7 @@ sub sign() {
 }
 
 sub decrypt() {
-    if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id -d $data_dir",
+    if (&run_cmd("$gpgdirCmd $default_args -d $data_dir",
             $NO_APPEND)) {
         return 1;
     }
@@ -239,8 +236,7 @@ sub decrypt() {
 }
 
 sub obf_decrypt() {
-    if (&run_cmd("$gpgdirCmd -O --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id -d $data_dir",
+    if (&run_cmd("$gpgdirCmd $default_args -O -d $data_dir",
             $NO_APPEND)) {
         return 1;
     }
@@ -248,8 +244,7 @@ sub obf_decrypt() {
 }
 
 sub verify() {
-    if (&run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id --verify $data_dir",
+    if (&run_cmd("$gpgdirCmd $default_args --verify $data_dir",
             $NO_APPEND)) {
         return 1;
     }
@@ -304,8 +299,7 @@ sub broken_sig_detection() {
     print F "bogus data\n";
     close F;
 
-    &run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id --verify $data_dir",
+    &run_cmd("$gpgdirCmd $default_args --verify $data_dir",
             $NO_APPEND);
 
     my $found_bad_sig = 0;
@@ -473,9 +467,7 @@ sub md5sum_validation() {
 }
 
 sub test_mode() {
-    if (&run_cmd("$gpgdirCmd --test --gnupg-dir $gpg_dir " .
-            " --pw-file $pw_file --Key-id $key_id",
-            $NO_APPEND)) {
+    if (&run_cmd("$gpgdirCmd $default_args --test", $NO_APPEND)) {
         my $found = 0;
         open F, "< $current_test_file"
             or die "[*] Could not open $current_test_file: $!";
