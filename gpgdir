@@ -663,7 +663,7 @@ sub delete_file() {
             if ($wipe_interactive) {
                 $cmd .= ' -i ';
             } else {
-                $cmd .= ' -I -s ';
+                $cmd .= ' -f -s ';
             }
         }
         $cmd .= $file;

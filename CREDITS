@@ -45,3 +45,5 @@ Franck Joncourt
       following lintian warning:
 
         http://lintian.debian.org/tags/manpage-has-bad-whatis-entry.html
+    - Suggested the appropriate bugfix to interface non-interactively with the
+      wipe program (-f instead of -I in later versions).

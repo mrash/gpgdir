@@ -1,4 +1,6 @@
 gpgdir-1.9.3 (08//2008):
+    - Bugfix for using -f instead of -I for non-interactive file erasure
+      (Franck Joncourt).
     - Simplified test suite code by creating a set of default arguments for
       the gpgdir command line as each test is executed.
 
