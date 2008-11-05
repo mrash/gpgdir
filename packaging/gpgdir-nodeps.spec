@@ -1,5 +1,5 @@
 %define name gpgdir
-%define version 1.9.2
+%define version 1.9.3
 %define release 1
 %define gpgdirlibdir %_libdir/%name
 
@@ -58,6 +58,9 @@ install -m 644 gpgdir.1 $RPM_BUILD_ROOT%{_mandir}/man1/
 %_libdir/%name
 
 %changelog
+* Wed Nov 11 2008 Michael Rash <mbr@cipherdyne.org>
+- gpgdir-1.9.3 release
+
 * Sun Aug 31 2008 Michael Rash <mbr@cipherdyne.org>
 - This spec file omits installing any perl module dependencies.
 - gpgdir-1.9.2 release

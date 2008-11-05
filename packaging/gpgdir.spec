@@ -1,5 +1,5 @@
 %define name gpgdir
-%define version 1.9.2
+%define version 1.9.3
 %define release 1
 %define gpgdirlibdir %_libdir/%name
 
@@ -115,6 +115,9 @@ cd ..
 %_libdir/%name
 
 %changelog
+* Wed Nov 11 2008 Michael Rash <mbr@cipherdyne.org>
+- gpgdir-1.9.3 release
+
 * Sun Aug 31 2008 Michael Rash <mbr@cipherdyne.org>
 - Updated to use the deps/ directory for all perl module sources.
 - gpgdir-1.9.2 release
