@@ -666,7 +666,7 @@ sub delete_file() {
                 $cmd .= ' -f -s ';
             }
         }
-        $cmd .= $file;
+        $cmd .= qq|"$file"|;
         if ($verbose) {
             print "    Executing: $cmd\n";
         }
@@ -1166,10 +1166,19 @@ sub find_files() {
 sub check_file_criteria() {
     my $file = shift;
     ### skip all links, zero size files, all hidden
-    ### files (includes .gnupg files), etc.
+    ### files (includes the .gnupg directory), etc.
     return if -d $file;
+
+    unless ($force_mode) {
+        if ($file =~ m|/\.|) {
+            print "[-] Skipping file: $file\n"
+                if $verbose and not $quiet;
+            return;
+        }
+    }
+
     if (-e $file and not -l $file and -s $file != 0
-            and $file !~ m|/\.|) {
+            and $file !~ m|\.gpgdir\.pid| and $file !~ m|\.gnupg|) {
         if ($encrypt_mode or $signing_mode) {
             if ($file =~ m|\.gpg| or $file =~ m|\.asc|) {
                 print "[-] Skipping encrypted/signed file: $file\n" unless $quiet;
