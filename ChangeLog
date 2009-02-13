@@ -1,4 +1,4 @@
-gpgdir-1.9.4 (11//2008):
+gpgdir-1.9.4 (02/12/2009):
     - Fixed a bug in missing the proper handling of files with spaces when
       using the --Wipe secure deletion mode (reported by Lars Wilke).
     - The --Force option now supports the ability to encrypt/decrypt hidden

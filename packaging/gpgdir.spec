@@ -1,5 +1,5 @@
 %define name gpgdir
-%define version 1.9.3
+%define version 1.9.4
 %define release 1
 %define gpgdirlibdir %_libdir/%name
 
@@ -115,6 +115,9 @@ cd ..
 %_libdir/%name
 
 %changelog
+* Thu Feb 12 2009 Michael Rash <mbr@cipherdyne.org>
+- gpgdir-1.9.4 release
+
 * Wed Nov 11 2008 Michael Rash <mbr@cipherdyne.org>
 - gpgdir-1.9.3 release
 
