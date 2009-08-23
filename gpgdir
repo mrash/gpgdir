@@ -817,6 +817,8 @@ sub gpg_operation() {
                 $decrypt_filename = $1;
             } elsif ($filename =~ /^(.+)\.asc$/) {
                 $decrypt_filename = $1;
+            } elsif ($filename =~ /^(.+)\.pgp$/) {
+                $decrypt_filename = $1;
             }
 
             if ($obfuscate_mode) {
@@ -1180,7 +1182,7 @@ sub check_file_criteria() {
     if (-e $file and not -l $file and -s $file != 0
             and $file !~ m|\.gpgdir\.pid| and $file !~ m|\.gnupg|) {
         if ($encrypt_mode or $signing_mode) {
-            if ($file =~ m|\.gpg| or $file =~ m|\.asc|) {
+            if ($file =~ m|\.gpg| or $file =~ m|\.asc| or $file =~ m|\.pgp|) {
                 print "[-] Skipping encrypted/signed file: $file\n" unless $quiet;
                 return;
             }
@@ -1190,7 +1192,8 @@ sub check_file_criteria() {
                 return;
             }
         } else {
-            unless ($file =~ m|\.gpg| or $file =~ m|\.asc|) {
+            unless ($file =~ m|\.gpg| or $file =~ m|\.asc|
+                    or $file =~ m|\.pgp|) {
                 print "[-] Skipping unencrypted file: $file\n" unless $quiet;
                 return;
             }
