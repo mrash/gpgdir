@@ -11,7 +11,7 @@
 #
 # Version: 1.9.5
 #
-# Copyright (C) 2008 Michael Rash (mbr@cipherdyne.org)
+# Copyright (C) 2008-2009 Michael Rash (mbr@cipherdyne.org)
 #
 # License (GNU Public License):
 #
