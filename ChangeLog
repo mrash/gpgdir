@@ -1,4 +1,4 @@
-gpgdir-1.9.5 (08/23/2009):
+gpgdir-1.9.5 (09/05/2009):
     - Added support for the decryption of PGP encrypted files (to round out
       the support of GnuPG).
 
