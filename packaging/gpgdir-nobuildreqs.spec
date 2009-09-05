@@ -16,7 +16,6 @@ Group: Applications/Cryptography
 Url: http://www.cipherdyne.org/gpgdir/
 Source: %name-%version.tar.gz
 BuildRoot: %_tmppath/%{name}-buildroot
-BuildRequires: perl-ExtUtils-MakeMaker
 #Prereq: rpm-helper
 
 %description
