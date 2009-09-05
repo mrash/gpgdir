@@ -1,5 +1,5 @@
 %define name gpgdir
-%define version 1.9.4
+%define version 1.9.5
 %define release 1
 %define gpgdirlibdir %_libdir/%name
 
@@ -58,6 +58,9 @@ install -m 644 gpgdir.1 $RPM_BUILD_ROOT%{_mandir}/man1/
 %_libdir/%name
 
 %changelog
+* Sat Sep 05 2009 Michael Rash <mbr@cipherdyne.org>
+- gpgdir-1.9.5 release
+
 * Thu Feb 12 2009 Michael Rash <mbr@cipherdyne.org>
 - gpgdir-1.9.4 release
 
