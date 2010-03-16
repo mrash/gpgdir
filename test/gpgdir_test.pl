@@ -9,7 +9,7 @@
 #
 # Author: Michael Rash (mbr@cipherdyne.org)
 #
-# Version: 1.9.5
+# Version: 1.9.6
 #
 # Copyright (C) 2008-2010 Michael Rash (mbr@cipherdyne.org)
 #
