@@ -1,3 +1,19 @@
+gpgdir-1.9.6 (03//2010):
+    - In --Obfuscate-filenames mode, added support for also obfuscating
+      directories.  Each directory is obfuscated similarly to files, so
+      /some/directory/path/ becomes /some/directory/gpgdir_dN where "N" is
+      an integer that is incremented for each directory at the same relative
+      path level.  The original directory names are stored in an encrypted
+      file ".gpgdir_dir_map_file.gpg" for each original directory.  The top
+      level directory path is not obfuscated.
+    - Better pid file handling so that the <dir>/.gpgdir.pid file is removed
+      at gpgdir shutdown even if various error conditions exist.
+    - (Test suite): Added more rigorous test suite support for ensuring that
+      the shape of a directory is preserved across the encrypt/decrypt cycle.
+      There was already code to verify MD5 sums across the cycle, but now an
+      error will be thrown if any file is lost or a new file is created by
+      gpgdir inappropriately.
+
 gpgdir-1.9.5 (09/05/2009):
     - Added support for the decryption of PGP encrypted files (to round out
       the support of GnuPG).

@@ -138,14 +138,16 @@ Use the
 .B wipe
 program to securely delete files after they have been successfully encrypted.
 .TP
-.BR \-O ", " \-\^\-Obfuscate-filename
+.BR \-O ", " \-\^\-Obfuscate-filenames
 Tell
 .B gpgdir
 to obfuscate the file names of files that it encrypts (in \-e mode).  The
 names of each file are stored within the file .gpgdir_map_file for every
 sub-directory, and this file is itself encrypted.  In decryption mode (\-d),
 the \-O argument reverses the process so that the original files are
-restored.
+restored.  Directory names are also obfuscated (except for the top level
+directory), and stored within the .gpgdir_dir_map_file, and this file itself
+is also encrypted/decrypted respectively in \-e and \-d mode.
 .TP
 .BR \-\^\-overwrite-encrypted
 Overwrite encrypted files even if a previous <file>.gpg file

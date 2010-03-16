@@ -11,7 +11,7 @@
 #
 # Version: 1.9.5
 #
-# Copyright (C) 2008-2009 Michael Rash (mbr@cipherdyne.org)
+# Copyright (C) 2008-2010 Michael Rash (mbr@cipherdyne.org)
 #
 # License (GNU Public License):
 #
@@ -61,8 +61,9 @@ my $prepare_results = 0;
 my $successful_tests = 0;
 my $current_test_file = "$output_dir/$test_num.test";
 my $previous_test_file = '';
-my @data_dir_files = ();
-my %md5sums = ();
+my @data_dir_files  = ();
+my @initial_files   = ();
+my %initial_md5sums = ();
 
 my $default_args = "--gnupg-dir $gpg_dir " .
     "--Key-id $key_id --pw-file $pw_file";
@@ -76,7 +77,7 @@ exit &prepare_results() if $prepare_results;
 
 &setup();
 
-&collect_md5sums();
+&collect_paths_and_md5sums();
 
 &logr("\n[+] ==> Running gpgdir test suite <==\n\n");
 
@@ -94,6 +95,8 @@ exit &prepare_results() if $prepare_results;
 &test_driver('(Decrypt dir) gpgdir directory decryption', \&decrypt);
 &test_driver('(Decrypt dir) Files recursively decrypted',
     \&recursively_decrypted);
+&test_driver('(Paths) match paths across encrypt/decrypt cycle',
+    \&paths_validation);
 &test_driver('(MD5 digest) match across encrypt/decrypt cycle',
     \&md5sum_validation);
 
@@ -107,6 +110,8 @@ exit &prepare_results() if $prepare_results;
 &test_driver('(Decrypt dir) gpgdir directory decryption', \&decrypt);
 &test_driver('(Decrypt dir) Files recursively decrypted',
     \&ascii_recursively_decrypted);
+&test_driver('(Paths) match paths across encrypt/decrypt cycle',
+    \&paths_validation);
 &test_driver('(MD5 digest) match across encrypt/decrypt cycle',
     \&md5sum_validation);
 
@@ -121,6 +126,8 @@ exit &prepare_results() if $prepare_results;
     \&obf_decrypt);
 &test_driver('(Decrypt dir) Files recursively decrypted',
     \&obf_recursively_decrypted);  ### same as ascii_recursively_decrypted()
+&test_driver('(Paths) match paths across encrypt/decrypt cycle',
+    \&paths_validation);
 &test_driver('(MD5 digest) match across encrypt/decrypt cycle',
     \&md5sum_validation);
 
@@ -135,6 +142,8 @@ exit &prepare_results() if $prepare_results;
 &test_driver('(Sign/verify dir) gpgdir directory verification', \&verify);
 &test_driver('(Sign/verify dir) Files recursively verified',
     \&recursively_verified);
+&test_driver('(Paths) match paths across sign/verify cycle',
+    \&paths_validation);
 
 ### bad password detection
 &test_driver('(Bad passphrase) detect broken passphrase',
@@ -408,8 +417,7 @@ sub skipped_hidden_files_dirs() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if ($file =~ m|^\.| or $file =~ m|/\.|) {
-            ### check for any .gpg or .asc extensions except
-            ### for the gpgdir_map_file
+            ### check for any .gpg or .asc extensions
             if ($file =~ m|\.gpg$| or $file =~ m|\.asc$|
                     or $file =~ m|\.pgp$|) {
                 return &print_errors("[-] Encrypted hidden file");
@@ -426,8 +434,9 @@ sub obf_skipped_hidden_files_dirs() {
         if ($file =~ m|^\.| or $file =~ m|/\.|) {
             ### check for any .gpg or .asc extensions except
             ### for the gpgdir_map_file
-            if ($file !~ m|gpgdir_map_file| and ($file =~ m|\.gpg$|
-                    or $file =~ m|\.asc$| or $file =~ m|\.pgp$|)) {
+            if (($file !~ m|gpgdir_map_file| and $file !~ m|gpgdir_dir_map_file|)
+                    and ($file =~ m|\.gpg$| or $file =~ m|\.asc$|
+                    or $file =~ m|\.pgp$|)) {
                 return &print_errors("[-] Encrypted hidden file");
             }
         }
@@ -435,21 +444,61 @@ sub obf_skipped_hidden_files_dirs() {
     return 1;
 }
 
-
 sub find_files() {
     my $file = $File::Find::name;
     push @data_dir_files, $file;
     return;
 }
 
-sub collect_md5sums() {
+sub collect_paths_and_md5sums() {
+
     @data_dir_files = ();
     find(\&find_files, $data_dir);
+
+    ### save off an initial copy of the directory structure
+    @initial_files = @data_dir_files;
+
     for my $file (@data_dir_files) {
         if (-f $file) {
-            $md5sums{$file} = md5_base64($file);
+            $initial_md5sums{$file} = md5_base64($file);
         }
     }
+    return 1;
+}
+
+sub paths_validation() {
+    @data_dir_files = ();
+    find(\&find_files, $data_dir);
+
+    return &print_errors("[-] Path mis-match")
+        unless @data_dir_files eq @initial_files;
+
+    for my $file (@data_dir_files) {
+        my $found = 0;
+        for my $initial_file (@initial_files) {
+            if ($file eq $initial_file) {
+                $found = 1;
+                last;
+            }
+        }
+        unless ($found) {
+            return &print_errors("[-] New file $file found");
+        }
+    }
+
+    for my $file (@initial_files) {
+        my $found = 0;
+        for my $initial_file (@data_dir_files) {
+            if ($file eq $initial_file) {
+                $found = 1;
+                last;
+            }
+        }
+        unless ($found) {
+            return &print_errors("[-] Initial file $file not found");
+        }
+    }
+
     return 1;
 }
 
@@ -458,8 +507,8 @@ sub md5sum_validation() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file) {
-            if (not defined $md5sums{$file}
-                    or $md5sums{$file} ne md5_base64($file)) {
+            if (not defined $initial_md5sums{$file}
+                    or $initial_md5sums{$file} ne md5_base64($file)) {
                 return &print_errors("[-] MD5 sum mis-match for $file");
             }
         }

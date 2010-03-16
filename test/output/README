@@ -8,4 +8,5 @@ a problem running gpgdir on a particular system then the information in this
 directory along with the output of the test suite may provide a clues as to
 why.  If gpgdir appears to not be working properly and you want additional
 help to diagnose the problem, you can tar up the output/ directory and send it
-to Michael Rash at the following email address: mbr@cipherdyne.org.
+to Michael Rash at the following email address: mbr@cipherdyne.org
+
