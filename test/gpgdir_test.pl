@@ -375,11 +375,18 @@ sub obf_recursively_encrypted() {
     @data_dir_files = ();
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
-        if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+        next if $file =~ m|^\.| or $file =~ m|/\.|;
+        if (-f $file) {
             ### gpgdir_1.gpg
             unless ($file =~ m|gpgdir_\d+\.gpg$|) {
                 return &print_errors("[-] File $file not " .
-                    "encrypted and obfuscated");
+                    "encrypted and obfuscated as 'gpgdir_N.gpg'");
+            }
+        } elsif (-d $file) {
+            ### gpgdir_d1/
+            unless ($file =~ m|gpgdir_\d+$|) {
+                return &print_errors("[-] Directory $file not " .
+                    "obfuscated as 'gpgdir_dN'");
             }
         }
     }
