@@ -729,195 +729,225 @@ sub gpg_operation() {
 
         if ($encrypt_mode) {
 
-            my $encrypt_filename = "$filename.gpg";
-
-            if ($obfuscate_mode) {
-
-                unless (defined $obfuscate_ctrs{$dir}) {
-
-                    ### create a new gpgdir mapping file for obfuscated file
-                    ### names, but preserve any previously encrypted file
-                    ### name mappings
-                    &handle_old_obfuscated_map_file();
-
-                    ### make obfuscated file names start at 1 for each
-                    ### directory
-                    $obfuscate_ctrs{$dir} = 1;
-                }
-
-                $encrypt_filename = 'gpgdir_' . $obfuscate_ctrs{$dir} . '.gpg';
-            }
-
-            if ($ascii_armor_mode or $signing_mode) {
-                $encrypt_filename = "$filename.asc";
-            }
-
-            if (-e $encrypt_filename and not $overwrite_encrypted) {
-                my $str = 'Encrypted';
-                $str = 'Signed' if $signing_mode;
-                print "[-] $str file $dir/$encrypt_filename already ",
-                    "exists, skipping.\n" unless $quiet;
-                next FILE;
-            }
-
-            if ($interactive_mode) {
-                my $str = 'Encrypt';
-                $str = 'Sign' if $signing_mode;
-                next FILE unless (&query_yes_no(
-                    "    $str: $file ([y]/n)?  ", $ACCEPT_YES_DEFAULT));
-            }
-
-            my $str = 'Encrypting';
-            $str = 'Signing' if $signing_mode;
-            print "[+] $str:  $file\n" unless $quiet;
-
-            unless ($trial_run) {
-
-                my $rv = &encrypt_or_sign_file($filename, $encrypt_filename,
-                        $NO_DEL_SOURCE_FILE);
-
-                if (-e $encrypt_filename and -s $encrypt_filename != 0) {
-                    ### set the atime and mtime to be the same as the
-                    ### original file.
-                    unless ($no_fs_times) {
-                        if (defined $mtime and $mtime and
-                                defined $atime and $atime) {
-                            utime $atime, $mtime, $encrypt_filename;
-                        }
-                    }
-
-                    unless ($signing_mode) {
-                        ### only delete the original file if
-                        ### the encrypted one exists
-                        if ($wipe_mode and not $quiet) {
-                            print "    Securely deleting file: $file\n";
-                        }
-                        &delete_file($filename);
-
-                        if ($obfuscate_mode) {
-
-                            ### record the original file name mapping
-                            &append_obfuscated_mapping($filename,
-                                $encrypt_filename);
-
-                            $obfuscate_ctrs{$dir}++;
-                        }
-                    }
-
-                    $total_encrypted++;
-
-                } else {
-                    my $str = 'encrypt';
-                    $str = 'sign' if $signing_mode;
-                    print "[-] Could not $str file: $file\n" unless $quiet;
-                    next FILE;
-                }
-            }
+            &do_encrypt($dir, $file, $filename, $mtime, $atime);
 
         } else {
 
-            ### allow filenames with spaces
-            my $decrypt_filename = '';
-            if ($filename =~ /^(.+)\.gpg$/) {
-                $decrypt_filename = $1;
-            } elsif ($filename =~ /^(.+)\.asc$/) {
-                $decrypt_filename = $1;
-            } elsif ($filename =~ /^(.+)\.pgp$/) {
-                $decrypt_filename = $1;
+            &do_decrypt($dir, $file, $filename, $mtime, $atime);
+        }
+    }
+
+    print "\n" unless $quiet;
+    chdir $initial_dir or &cleanup("[*] Could not chdir: $initial_dir\n");
+    return;
+}
+
+sub do_encrypt() {
+    my ($dir, $file, $filename, $mtime, $atime) = @_;
+
+    my $encrypt_filename = "$filename.gpg";
+
+    if ($obfuscate_mode) {
+
+        unless (defined $obfuscate_ctrs{$dir}) {
+
+            ### create a new gpgdir mapping file for obfuscated file
+            ### names, but preserve any previously encrypted file
+            ### name mappings, and ensure no conflicts if a new file
+            ### with the same name as an old one is created in a
+            ### previously encrypted directory
+            my $previous_obf_files = &handle_old_obfuscated_map_file();
+
+            if (defined $previous_obf_files->{$filename}) {
+                print "[-] Previous file $filename exists, skipping.\n"
+                    unless $quiet;
+                return;
             }
 
-            if ($obfuscate_mode) {
+            ### make obfuscated file names start at 1 for each
+            ### directory
+            $obfuscate_ctrs{$dir} = 1;
+        }
 
-                &import_obfuscated_file_map($dir)
-                    unless defined $obfuscated_dirs{$dir};
+        $encrypt_filename = 'gpgdir_' . $obfuscate_ctrs{$dir} . '.gpg';
 
-                if (defined $obfuscated_dirs{$dir}{$filename}) {
-                    $decrypt_filename = $obfuscated_dirs{$dir}{$filename};
-                } else {
-                    ###
-                    print "[-] Obfuscated file map does not exist for ",
-                        "$filename in\n    $obfuscate_map_file, ",
-                        "skipping.\n" unless $quiet;
-                    next FILE;
-                }
+        ### if a file has been added to a previously encrypted directory
+        ### (encrypted with -O), then find the next 'gpgdir_<num>' file
+        while (-e $encrypt_filename) {
+            print "here\n";
+            $obfuscate_ctrs{$dir}++;
+            $encrypt_filename = 'gpgdir_' . $obfuscate_ctrs{$dir} . '.gpg';
+        }
+    }
 
-            } else {
-                if (not $force_mode and ($file =~ /gpgdir_\d+_\d+\.gpg/
-                        or $file =~ /gpgdir_\d+\.gpg/)) {
-                    ### be careful not to decrypt obfuscated file unless we
-                    ### are running in -O mode.  This ensures that the
-                    ### original file names will be acquired from the
-                    ### /some/dir/.gpgdir_map_file
-                    $have_obfuscated_file = 1;
-                    next FILE;
-                }
-            }
+    if ($ascii_armor_mode or $signing_mode) {
+        $encrypt_filename = "$filename.asc";
+    }
 
-            ### length() allows files named "0"
-            next FILE unless length($decrypt_filename) > 0;
+    if (-e $encrypt_filename and not $overwrite_encrypted) {
+        my $str = 'Encrypted';
+        $str = 'Signed' if $signing_mode;
+        print "[-] $str file $dir/$encrypt_filename already ",
+              "exists, skipping.\n" unless $quiet;
+        return;
+    }
 
-            if ($verify_mode) {
-                unless (-e $decrypt_filename) {
-                    print "[-] Original file $decrypt_filename ",
-                        "does not exist, skipping.\n";
-                    next FILE;
-                }
-            } else {
-                ### don't decrypt a file on top of a normal file of
-                ### the same name
-                if (-e $decrypt_filename and not $overwrite_decrypted) {
-                    print "[-] Decrypted file $dir/$decrypt_filename ",
-                        "already exists. Skipping.\n" unless $quiet;
-                    next FILE;
-                }
-            }
-
-            if ($interactive_mode) {
-                my $str = 'Decrypt';
-                $str = 'Verify' if $verify_mode;
-                next FILE unless (&query_yes_no(
+    if ($interactive_mode) {
+        my $str = 'Encrypt';
+        $str = 'Sign' if $signing_mode;
+        return unless (&query_yes_no(
                     "    $str: $file ([y]/n)?  ", $ACCEPT_YES_DEFAULT));
+    }
+
+    my $str = 'Encrypting';
+    $str = 'Signing' if $signing_mode;
+    print "[+] $str:  $file\n" unless $quiet;
+
+    unless ($trial_run) {
+
+        my $rv = &encrypt_or_sign_file($filename, $encrypt_filename,
+                $NO_DEL_SOURCE_FILE);
+
+        if (-e $encrypt_filename and -s $encrypt_filename != 0) {
+            ### set the atime and mtime to be the same as the
+            ### original file.
+            unless ($no_fs_times) {
+                if (defined $mtime and $mtime and
+                        defined $atime and $atime) {
+                    utime $atime, $mtime, $encrypt_filename;
+                }
             }
 
-            unless ($trial_run) {
-                my $str = 'Decrypting';
-                $str = 'Verifying' if $verify_mode;
-                print "[+] $str:  $dir/$filename\n" unless $quiet;
-                my $rv = &decrypt_or_verify_file($filename, $decrypt_filename,
-                        $NO_DEL_SOURCE_FILE);
+            unless ($signing_mode) {
+                ### only delete the original file if
+                ### the encrypted one exists
+                if ($wipe_mode and not $quiet) {
+                    print "    Securely deleting file: $file\n";
+                }
+                &delete_file($filename);
 
-                if ($verify_mode) {
-                    $total_decrypted++ if $rv;
-                } else {
-                    if (-e $decrypt_filename and -s $decrypt_filename != 0) {
-                        ### set the atime and mtime to be the same as the
-                        ### original file.
-                        unless ($no_fs_times) {
-                            if (defined $mtime and $mtime and
-                                    defined $atime and $atime) {
-                                utime $atime, $mtime, $decrypt_filename;
-                            }
-                        }
-                        if ($wipe_mode and not $quiet) {
-                            print "    Securely deleting file: $file\n";
-                        }
-                        ### only delete the original encrypted
-                        ### file if the decrypted one exists
-                        &delete_file($filename);
+                if ($obfuscate_mode) {
 
-                        $total_decrypted++;
+                    ### record the original file name mapping
+                    &append_obfuscated_mapping($filename,
+                            $encrypt_filename);
 
-                    } else {
-                        print "[-] Could not decrypt file: $file\n"
-                            unless $quiet;
-                        next FILE;
+                    $obfuscate_ctrs{$dir}++;
+                }
+            }
+
+            $total_encrypted++;
+
+        } else {
+            my $str = 'encrypt';
+            $str = 'sign' if $signing_mode;
+            print "[-] Could not $str file: $file\n" unless $quiet;
+            return;
+        }
+    }
+    return;
+}
+
+sub do_decrypt() {
+    my ($dir, $file, $filename, $mtime, $atime) = @_;
+
+    ### allow filenames with spaces
+    my $decrypt_filename = '';
+    if ($filename =~ /^(.+)\.gpg$/) {
+        $decrypt_filename = $1;
+    } elsif ($filename =~ /^(.+)\.asc$/) {
+        $decrypt_filename = $1;
+    } elsif ($filename =~ /^(.+)\.pgp$/) {
+        $decrypt_filename = $1;
+    }
+
+    if ($obfuscate_mode) {
+
+        &import_obfuscated_file_map($dir)
+            unless defined $obfuscated_dirs{$dir};
+
+        if (defined $obfuscated_dirs{$dir}{$filename}) {
+            $decrypt_filename = $obfuscated_dirs{$dir}{$filename};
+        } else {
+            print "[-] Obfuscated file map does not exist for ",
+                  "$filename in\n    $obfuscate_map_file, ",
+                  "skipping.\n" unless $quiet;
+            return;
+        }
+
+    } else {
+        if (not $force_mode and ($file =~ /gpgdir_\d+_\d+\.gpg/
+                    or $file =~ /gpgdir_\d+\.gpg/)) {
+            ### be careful not to decrypt obfuscated file unless we
+            ### are running in -O mode.  This ensures that the
+            ### original file names will be acquired from the
+            ### /some/dir/.gpgdir_map_file
+            $have_obfuscated_file = 1;
+            return;
+        }
+    }
+
+    ### length() allows files named "0"
+    return unless length($decrypt_filename) > 0;
+
+    if ($verify_mode) {
+        unless (-e $decrypt_filename) {
+            print "[-] Original file $decrypt_filename ",
+                  "does not exist, skipping.\n";
+            return;
+        }
+    } else {
+        ### don't decrypt a file on top of a normal file of
+        ### the same name
+        if (-e $decrypt_filename and not $overwrite_decrypted) {
+            print "[-] Decrypted file $dir/$decrypt_filename ",
+                  "already exists. Skipping.\n" unless $quiet;
+            return;
+        }
+    }
+
+    if ($interactive_mode) {
+        my $str = 'Decrypt';
+        $str = 'Verify' if $verify_mode;
+        return unless (&query_yes_no(
+                    "    $str: $file ([y]/n)?  ", $ACCEPT_YES_DEFAULT));
+    }
+
+    unless ($trial_run) {
+        my $str = 'Decrypting';
+        $str = 'Verifying' if $verify_mode;
+        print "[+] $str:  $dir/$filename\n" unless $quiet;
+        my $rv = &decrypt_or_verify_file($filename, $decrypt_filename,
+                $NO_DEL_SOURCE_FILE);
+
+        if ($verify_mode) {
+            $total_decrypted++ if $rv;
+        } else {
+            if (-e $decrypt_filename and -s $decrypt_filename != 0) {
+                ### set the atime and mtime to be the same as the
+                ### original file.
+                unless ($no_fs_times) {
+                    if (defined $mtime and $mtime and
+                            defined $atime and $atime) {
+                        utime $atime, $mtime, $decrypt_filename;
                     }
                 }
+                if ($wipe_mode and not $quiet) {
+                    print "    Securely deleting file: $file\n";
+                }
+                ### only delete the original encrypted
+                ### file if the decrypted one exists
+                &delete_file($filename);
+
+                $total_decrypted++;
+
+            } else {
+                print "[-] Could not decrypt file: $file\n"
+                    unless $quiet;
+                return;
             }
         }
     }
-    print "\n" unless $quiet;
-    chdir $initial_dir or &cleanup("[*] Could not chdir: $initial_dir\n");
     return;
 }
 
@@ -981,6 +1011,8 @@ sub obfuscated_mapping_directories() {
     my $continue = 1;
 
     OUTER_LOOP: while($continue) {
+
+        $continue = 0 unless keys %$dirs_hr;
 
         DIR: for my $dir (keys %$dirs_hr) {
 
@@ -1108,8 +1140,10 @@ sub obfuscated_mapping_files() {
             next DIR unless -e $obfuscate_map_file;
             ### encrypt the map file now that we have encrypted
             ### the directory
+
             print "[+] Encrypting mapping file:  ",
                 "$dir/$obfuscate_map_file\n" unless $quiet;
+
             unless ($trial_run) {
                 &encrypt_or_sign_file($obfuscate_map_file,
                     "$obfuscate_map_file.gpg", $NO_DEL_SOURCE_FILE);
@@ -1147,17 +1181,20 @@ sub handle_old_obfuscated_map_file() {
     unlink "$obfuscate_map_file.gpg";
 
     my @existing_obfuscated_files = ();
+    my %previous_obfuscated_files = ();
 
     open F, "< $obfuscate_map_file" or &cleanup("[*] Could not open ",
         "$obfuscate_map_file: $!");
     while (<F>) {
-        if (/^\s*.*\s+(gpgdir_\d+_\d+\.gpg)/) {
-            if (-e $1) {
+        if (/^\s*(.*)\s+(gpgdir_\d+_\d+\.gpg)/) {
+            if (-e $2) {
                 push @existing_obfuscated_files, $_;
+                $previous_obfuscated_files{$1} = '';
             }
-        } elsif (/^\s*.*\s+(gpgdir_\d+\.gpg)/) {
-            if (-e $1) {
+        } elsif (/^\s*(.*)\s+(gpgdir_\d+\.gpg)/) {
+            if (-e $2) {
                 push @existing_obfuscated_files, $_;
+                $previous_obfuscated_files{$1} = '';
             }
         }
     }
@@ -1171,7 +1208,7 @@ sub handle_old_obfuscated_map_file() {
         print G for @existing_obfuscated_files;
         close G;
     }
-    return;
+    return \%previous_obfuscated_files;
 }
 
 sub append_obfuscated_dir() {
