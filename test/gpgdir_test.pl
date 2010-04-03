@@ -100,6 +100,19 @@ exit &prepare_results() if $prepare_results;
 &test_driver('(MD5 digest) match across encrypt/decrypt cycle',
     \&md5sum_validation);
 
+### multi-encryption test
+&test_driver('(Multi-encrypt) gpgdir directory encryption', \&encrypt);
+&test_driver('(Multi-encrypt) Files recursively encrypted',
+    \&recursively_encrypted);
+&test_driver('(Multi-encrypt) No new encrypted files', \&multi_encrypt);
+&test_driver('(Decrypt dir) gpgdir directory decryption', \&decrypt);
+&test_driver('(Decrypt dir) Files recursively decrypted',
+    \&recursively_decrypted);
+&test_driver('(Paths) match paths across encrypt/decrypt cycle',
+    \&paths_validation);
+&test_driver('(MD5 digest) match across encrypt/decrypt cycle',
+    \&md5sum_validation);
+
 ### ascii encrypt/decrypt
 &test_driver('(Ascii-armor dir) gpgdir directory encryption',
     \&ascii_encrypt);
@@ -122,6 +135,24 @@ exit &prepare_results() if $prepare_results;
     \&obf_recursively_encrypted);
 &test_driver('(Obfuscate filenames) Exclude hidden files/dirs',
     \&obf_skipped_hidden_files_dirs);
+&test_driver('(Decrypt dir) gpgdir directory decryption',
+    \&obf_decrypt);
+&test_driver('(Decrypt dir) Files recursively decrypted',
+    \&obf_recursively_decrypted);  ### same as ascii_recursively_decrypted()
+&test_driver('(Paths) match paths across encrypt/decrypt cycle',
+    \&paths_validation);
+&test_driver('(MD5 digest) match across encrypt/decrypt cycle',
+    \&md5sum_validation);
+
+### multi-cycle obfuscated tests
+&test_driver('(Multi-obfuscate cycle) gpgdir directory encryption',
+    \&obf_encrypt);
+&test_driver('(Multi-obfuscate cycle) Files recursively encrypted',
+    \&obf_recursively_encrypted);
+&test_driver('(Multi-obfuscate cycle) Exclude hidden files/dirs',
+    \&obf_skipped_hidden_files_dirs);
+&test_driver('(Multi-obfuscate cycle) No new files',
+    \&multi_obf_encrypt);
 &test_driver('(Decrypt dir) gpgdir directory decryption',
     \&obf_decrypt);
 &test_driver('(Decrypt dir) Files recursively decrypted',
@@ -226,6 +257,26 @@ sub obf_encrypt() {
         return 1;
     }
     return &print_errors("[-] Directory encryption");
+}
+
+sub multi_obf_encrypt() {
+
+    my @dir_old = ();
+    find(\&find_files, $data_dir);
+
+    unless (&run_cmd("$gpgdirCmd $default_args -O -e $data_dir",
+            $NO_APPEND)) {
+        return &print_errors("[-] Could not encrypt directory");
+    }
+
+    my @dir_new = ();
+    find(\&find_files, $data_dir);
+
+    my ($rv, $msg) = &compare_paths(\@dir_old, \@dir_new);
+
+    return 1 if $rv;
+
+    return &print_errors($msg);
 }
 
 sub sign() {
@@ -371,6 +422,25 @@ sub ascii_recursively_encrypted() {
     return 1;
 }
 
+sub multi_encrypt() {
+
+    my @dir_old = ();
+    find(\&find_files, $data_dir);
+
+    unless (&run_cmd("$gpgdirCmd $default_args -e $data_dir", $NO_APPEND)) {
+        return &print_errors("[-] Could not encrypt directory");
+    }
+
+    my @dir_new = ();
+    find(\&find_files, $data_dir);
+
+    my ($rv, $msg) = &compare_paths(\@dir_old, \@dir_new);
+
+    return 1 if $rv;
+
+    return &print_errors($msg);
+}
+
 sub obf_recursively_encrypted() {
     @data_dir_files = ();
     find(\&find_files, $data_dir);
@@ -383,8 +453,9 @@ sub obf_recursively_encrypted() {
                     "encrypted and obfuscated as 'gpgdir_N.gpg'");
             }
         } elsif (-d $file) {
+            next if $file eq $data_dir;
             ### gpgdir_d1/
-            unless ($file =~ m|gpgdir_\d+$|) {
+            unless ($file =~ m|gpgdir_d\d+$|) {
                 return &print_errors("[-] Directory $file not " .
                     "obfuscated as 'gpgdir_dN'");
             }
@@ -477,36 +548,46 @@ sub paths_validation() {
     @data_dir_files = ();
     find(\&find_files, $data_dir);
 
-    return &print_errors("[-] Path mis-match")
-        unless @data_dir_files eq @initial_files;
+    my ($rv, $msg) = &compare_paths(\@initial_files, \@data_dir_files);
 
-    for my $file (@data_dir_files) {
+    return 1 if $rv;
+
+    return &print_errors($msg);
+}
+
+sub compare_paths() {
+    my ($old_dir_ar, $new_dir_ar) = @_;
+
+    return (0, "[-] Path mis-match")
+        unless @$new_dir_ar eq @$old_dir_ar;
+
+    for my $file (@$new_dir_ar) {
         my $found = 0;
-        for my $initial_file (@initial_files) {
+        for my $initial_file (@$old_dir_ar) {
             if ($file eq $initial_file) {
                 $found = 1;
                 last;
             }
         }
         unless ($found) {
-            return &print_errors("[-] New file $file found");
+            return (0, "[-] New file $file found");
         }
     }
 
-    for my $file (@initial_files) {
+    for my $file (@$old_dir_ar) {
         my $found = 0;
-        for my $initial_file (@data_dir_files) {
+        for my $initial_file (@$new_dir_ar) {
             if ($file eq $initial_file) {
                 $found = 1;
                 last;
             }
         }
         unless ($found) {
-            return &print_errors("[-] Initial file $file not found");
+            return (0, "[-] Initial file $file not found");
         }
     }
 
-    return 1;
+    return 1, '';
 }
 
 sub md5sum_validation() {
