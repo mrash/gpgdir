@@ -1,0 +1,6 @@
+This is a file that contains multiple lines of ascii text,
+but there is no file extension on this one.
+
+gppdir should encrypt this file under the test suite.
+
+This file is in the top-level data-dir directory.
