@@ -1,0 +1,283 @@
+gpgdir-1.9.6 (03//2010):
+    - In --Obfuscate-filenames mode, added support for also obfuscating
+      directories.  Each directory is obfuscated similarly to files, so
+      /some/directory/path/ becomes /some/directory/gpgdir_dN where "N" is
+      an integer that is incremented for each directory at the same relative
+      path level.  The original directory names are stored in an encrypted
+      file ".gpgdir_dir_map_file.gpg" for each original directory.  The top
+      level directory path is not obfuscated.
+    - Better pid file handling so that the <dir>/.gpgdir.pid file is removed
+      at gpgdir shutdown even if various error conditions exist.
+    - (Test suite): Added more rigorous test suite support for ensuring that
+      the shape of a directory is preserved across the encrypt/decrypt cycle.
+      There was already code to verify MD5 sums across the cycle, but now an
+      error will be thrown if any file is lost or a new file is created by
+      gpgdir inappropriately.
+
+gpgdir-1.9.5 (09/05/2009):
+    - Added support for the decryption of PGP encrypted files (to round out
+      the support of GnuPG).
+
+gpgdir-1.9.4 (02/12/2009):
+    - Fixed a bug in missing the proper handling of files with spaces when
+      using the --Wipe secure deletion mode (reported by Lars Wilke).
+    - The --Force option now supports the ability to encrypt/decrypt hidden
+      files (suggested by Lars Wilke).
+
+gpgdir-1.9.3 (11/05/2008):
+    - Bugfix for using -f instead of -I for non-interactive file erasure
+      (Franck Joncourt).
+    - Simplified test suite code by creating a set of default arguments for
+      the gpgdir command line as each test is executed.
+
+gpgdir-1.9.2 (08/31/2008):
+    - Added new modes '--sign <dir>' and '--verify <dir>' to allow all files
+      in the specified directory to be signed or verified instead of encrypted
+      or decrypted.  All GnuPG signatures are created as "<file>.asc", and the
+      original file is not removed in --sign mode.  In --verify mode, if any
+      file does not match the expected .asc signature, then a warning like the
+      following will be generated:
+
+        [+] Verifying:  /home/mbr/src/gpgdir/test/data-dir/multi-line-ascii.asc
+        [GNUPG:] BADSIG 9EDEEEEBA742EEEF Some User <someuser@domain.org>
+
+    - Bugfix to not die() when files that are encrypted with a different GnuPG
+      key are encountered in a directory that is being decrypted. A warning
+      message (see below) is now generated and the file is skipped:
+
+      [+] Decrypting:  /home/mbr/tmp/gpgdir/a.gpg
+      [GNUPG:] BAD_PASSPHRASE CF16F0FCFFF3FF4F
+      [-] Skipping file encrypted with different GnuPG key: a.gpg
+
+    - Updated to use the status output from GnuPG::Interface to detect a bad
+      passphrase and whether a file is encrypted with the expected GnuPG key.
+    - Moved the GnuPG::Interface, Class::MethodMaker, and Term::ReadKey
+      modules to the deps/ directory, and updated the installer and RPM spec
+      file to account for the path change.  This change was suggested by
+      Franck Joncourt for the other cipherdyne.org projects.
+    - Updated the test suite to generate files in the output/ directory
+      according to test number and append the result of each test within each
+      file.  This makes it easy to tell which tests have failed with a simple
+      'grep fail output/*test'.
+    - Added the gpgdir-nodeps.spec file to allow an RPM to be built that does
+      not contain any perl modules dependencies.
+    - Updated gpgdir to import perl modules via 'require' statements instead
+      of 'use' statements so that the path to the modules directory can be
+      changed via the --Lib-dir command line argument.  Also updated to use
+      the 'auto' heuristic (first implemented in the fwknop project) to detect
+      perl module directories that should be used in the --Lib-dir directory
+      to import perl modules from.
+
+gpgdir-1.9.1 (06/07/2008):
+    - Updated to Class::MethodMaker 2.11 from CPAN.  This helps with systems
+      running perl-5.10.0 and greater (such as Fedora 9).
+    - Updated to always set the LC_ALL environmental variable to the "C"
+      locale.  This can be set to other locales with a new argument --locale,
+      or the default locale can be used by using --no-locale argument.
+
+gpgdir-1.9 (05/31/2008):
+    - Changed --Obfuscate-filenames format to not include the gpgdir PID.
+      This allows directories to be encrypted/decrypted under -O multiple
+      times without creating new filenames (which would pollute encrypted
+      directories under rsync to other systems).  The new -O encrypted
+      filename format is just "gpgdir_<num>.gpg".
+    - Added PID locking against directories so that multiple gpgdir processes
+      cannot operate against the same top-level directory simultaneously.
+      This is useful for users that typically operate with multiple shells
+      and might launch gpgdir from any of them.
+
+gpgdir-1.8 (04/04/2008):
+    - Updated the test suite to validate the gpgdir --Obfuscate-filenames
+      mode to ensure that files are encrypted as "gpgdir_<pid>_<num>.gpg".
+    - Minor bug fix to remove the .gpgdir_map_file in --Obfuscate-filenames
+      mode after a successful decryption cycle.
+    - Updated to version 0.36 of CPAN GnuPG::Interface module.
+
+gpgdir-1.7 (02/18/2008):
+    - Bugfix to ensure that encrypted directories can actually be decrypted.
+      This bug was reported by Per Ronny Westin.
+    - Updated to use the ".asc" extension for encrypted files in --Plain-ascii
+      mode.
+    - Added gpgdir test suite.  All future gpgdir releases (and including this
+      1.7 release) require that all gpgdir tests pass on the systems where
+      gpgdir is developed.
+
+gpgdir-1.6 (02/17/2008):
+    - Bugfix to not include previously encrypted files (i.e. those with a .gpg
+      extension) in the encryption/decryption file list.  This bug was
+      introduced in gpgdir-1.5 when a change was made to ignore ascii-armored
+      files.
+    - Added added LC_ALL=C locale setting for the install.pl script (this
+      should help to ensure gpgdir is properly installed on most systems). Two
+      new command line arguments --LC_ALL and --no-LC_ALL also allow the
+      locale setting to be changed or not used at all.
+    - Added --Exclude-mod-regex option to the install.pl script so that it is
+      possible to force the exclusion of perl modules that gpgdir would
+      normally install. This is useful for ensuring that gpgdir references
+      perl modules that are already installed in the system perl library tree
+      instead of using those that are installed in /usr/lib/gpgdir.
+    - Updated to display command line usage warnings without automatically
+      displaying the entire usage() page (which is quite long).
+
+gpgdir-1.5 (08/31/2007):
+    - Added the --Symmetric option so that files can be encrypted/decrypted
+      via a symmetric encryption algorithm (GnuPG commonly uses CAST5 for
+      this).
+    - Added the --Plain-ascii option so that GnuPG is invoked with the -a
+      option so that encrypted files are ascii armored instead of encrypted in
+      binary form.
+    - Bugfix to ensure not to delete zero-size files if a bad password is
+      given (gpgdir now just throws a warning and exits in this case).
+    - Minor code enhancements to provide a consistent hash_init() invocation
+      with the same options hash.
+    - Updated to exclude .asc files from the encryption/decryption process.
+
+gpgdir-1.4 (07/20/2007):
+    - (Anthony Chivetta) Submitted patch to implement the
+      --overwrite-encrypted command line argument to allow previously
+      encrypted files to be overwritten. This is useful for updating an
+      encrypted directory with new versions of the previously encrypted files.
+      Also added the --overwrite-decrypted command line argument to perform
+      the same function for previously decrypted files.
+    - (Anthony Chivetta) Submitted patch to fix a bug where a filename of
+      "0.gpg" could not be decrypted because "0" does not evaluate to a true
+      value.
+
+gpgdir-1.3 (06/09/2007):
+    - Added --Obfuscate mode so that the files within a directory can be
+      altered into unrecognizable names (which are stored within the file
+      .gpgdir_map_file within each sub-directory, and this file is itself
+      encrypted).  The obfuscated file names are reversed when a directory
+      is decrypted.
+    - Added the --Agent-info command line argument so that the value of the
+      GPG_AGENT_INFO environment variable can be specified on the gpgdir
+      command line.
+
+gpgdir-1.2 (05/28/2007):
+    - Added support for installing gpgdir on Windows under Cygwin (via the
+      install.pl script). Installing gpgdir on FreeBSD systems also works.
+    - Added support for installing gpgdir within a user home directory without
+      the need for root access (this requires installing gpgdir with the
+      install.pl script).
+    - Added --agent to have gpgdir acquire gpg key password from a running
+      gpg-agent instance.
+    - Added --no-password so gpgdir can use a gpg key with no associated
+      password (this is not common).  The user is not prompted for a password
+      in this case.
+
+gpgdir-1.1 (05/21/2007):
+    - Added the ability to securely delete the original versions of files with
+      the 'wipe' program (after they have been successfully encrypted).  Also
+      added --wipe-path to specify a path to the wipe binary (the default is
+      /usr/bin/wipe), --wipe-interactive to force the wipe program to prompt
+      the user before a file is deleted, and --wipe-cmdline to allow the user
+      to build a set of command line arguments that are passed to the wipe
+      program.
+    - Added --Force to have gpgdir skip over the error condition where a file
+      cannot be deleted (because of a permissions issue for example).
+    - Added --Trial-run to allow the user to see what actions gpgdir would
+      take to encrypt or decrypt files, but no files are actually modified.
+    - Added --Interactive to have gpgdir prompt the user before every file is
+      encrypted, decrypted.
+    - Added the gpgdir.SlackBuild script (contributed by pyllyukko originally
+      for the psad project) for building gpgdir on Slackware systems.
+
+gpgdir-1.0.3 (09/17/2006):
+    - Minor bugfix to correct 1.0.1 version number (which should have been set
+      to 1.0.2) in the gpgdir RPM spec file.
+
+gpgdir-1.0.2 (09/17/2006):
+    - Minor bugfix to correct 1.0 version number (which should have been set
+      to 1.0.1).  The result is the 1.0.2 release.
+
+gpgdir-1.0.1 (09/16/2006):
+    - Added --quiet option to have gpgdir print as little as possible to the
+      screen when encrypting or decrypting a directory.
+    - Added x86_64 RPM (original patch from Mate Wierdl adapted for gpgdir).
+
+gpgdir-1.0 (09/13/2006):
+    - Added --Key-id command line argument so that use_key can be overridden
+      from the command line
+    - Made the argument to use_key not have to strictly be a keyID since GnuPG
+      allows a unique string match on keys in the key ring
+    - Added --Default-key to allow the user to have gpgdir use the default
+      key that is defined by GnuPG within the ~/.gnupg/options file.
+    - Updated the .gpgdirrc file to include the line "default_key" to allow
+      the user to have gpgdir prefer to use the GnuPG default key.
+    - Added the ChangeLog.svn file to show exactly which files have been
+      changed from release to release, and what the corresponding Subversion
+      log messages are.
+    - Minor documentation updates.
+
+gpgdir-0.9.9 (09/07/2006):
+    - Added RPM .spec file to build gpgdir as an RPM.
+    - Added the --Skip-mod-install command line argument to install.pl to
+      allow all perl module installs to be skipped.
+    - Added the --force-mod-regex command line argument to install.pl to allow
+      a regex match on perl module names to force matching modules to be
+      installed.
+    - Updated to TermReadKey-2.30 from 2.21.
+
+gpgdir-0.9.8 (07/03/2006):
+    - Updated to use GnuPG::Interface instead of GnuPG module.  This should
+      fix the incompatibility issues seen between the GnuPG module and some
+      GnuPG installations.
+    - Added perl module installation code from fwknop (see
+      http://www.cipherdyne.org/fwknop/).  This allows gpgdir to
+      preferentially use any perl modules that are already be installed on the
+      system.
+
+gpgdir-0.9.4 (10/12/2005):
+    - Updated test mode to encrypt and decrypt a testing file within the
+      directory to be encrypted or decrypted.  This file is located at
+      <dir>/gpgdir_test, and is removed after the test is completed.
+    - Bugfix for "protocol error: expected SHM_GET_XXX got GOOD_PASSPHRASE"
+      error in GnuPG module.
+
+gpgdir-0.9.3 (02/20/2005):
+    - Added --Include and --Include-from options to allow inclusion
+      regular expressions to be specified.
+    - Bugfix for not decrypting filesnames that contain spaces.
+
+gpgdir-0.9.2 (01/05/2005):
+    - Added preservation of file mtime and atime values (may be disabled
+      with the --no-preserve-times option).
+    - Added testing encryption and decryption of dummy file (may be
+      disabled with --skip-test) by default for both encrypt and decrypt
+      modes.
+    - Added --test-mode to run encrypt -> decrypt test and exit.
+    - Removed unnecessary compression options.
+    - Updated get_homedir() to reference HOME environmental variable if
+      the /etc/passwd file does not exist (OS X being a good example).
+    - Added --verbose mode.
+    - Updated output to generate errors on a per-file basis instead of
+      dumping them at the end of an encrypt/decrypt operation.
+
+gpgdir-0.9.1 (11/11/2004):
+    - Updated GnuPG.pm perl module to handle return code of PLAINTEXT
+      which seems to be returned by GunPG now (as of version 1.2.6)
+      instead of DECRYPTION_OKAY upon a successful decryption.
+
+gpgdir-0.9 (09/12/2004):
+    - Added --gnupg-dir option to allow a user to specify a different
+      user's .gnupg directory for encryption keys.
+    - Switched to "[+]" (and related) message prefixes.
+
+gpgdir-0.8 (05/29/2004):
+    - Added --Exclude and --Exclude-from options to allow files to be
+      excluded based on regex matches.
+    - Reworked error messages so they contain the filename associated
+      with each error.
+
+gpgdir-0.4 (04/23/2004):
+    - Added --pw-file option so that a decryption password can be
+      read out of a file.
+    - Better directory validation (filesystem -e and -d checks).
+    - Added INSTALL file.
+    - Updated man page and README file.
+
+gpgdir-0.3 (09/27/2003):
+    - Bundled perl modules GnuPG and TermReadKey with gpgdir.
+    - Modified install.pl and gpgdir to install and use GnuPG and
+      TermReadKey modules from the /usr/lib/gpgdir directory.
+    - Added check_commands() subroutine from psad.
