@@ -40,9 +40,6 @@ use strict;
 
 ### set the current gpgdir version and file revision numbers
 my $version = '1.9.6';
-my $revision_svn = '$Revision$';
-my $rev_num = '1';
-($rev_num) = $revision_svn =~ m|\$Rev.*:\s+(\S+)|;
 
 ### establish some defaults
 my $encrypt_user    = '';
@@ -197,8 +194,7 @@ die "[*] Use --help for usage information.\n" unless(GetOptions (
 ### set LC_ALL env variable
 $ENV{'LC_ALL'} = $locale unless $no_locale;
 
-print "[+] gpgdir v$version (file revision: $rev_num)\n",
-    "      by Michael Rash <mbr\@cipherdyne.org>\n"
+print "[+] gpgdir v$version by Michael Rash <mbr\@cipherdyne.org>\n"
     and exit 0 if $printver;
 
 if ($symmetric_mode and ($use_gpg_agent or $gpg_agent_info)) {
@@ -1634,9 +1630,9 @@ sub usage_and_exit() {
 
 gpgdir; Recursive direction encryption and decryption with GnuPG
 
-[+] Version: $version (file revision: $rev_num)
-    By Michael Rash (mbr\@cipherdyne.org)
-    URL: http://www.cipherdyne.org/gpgdir/
+[+] Version: $version
+    Author:  Michael Rash (mbr\@cipherdyne.org)
+    URL:     http://www.cipherdyne.org/gpgdir/
 
 Usage: gpgdir -e|-d <directory> [options]
 
