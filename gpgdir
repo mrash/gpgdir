@@ -1683,7 +1683,7 @@ Options:
                                   original filenames are preserved in a
                                   mapping file and restored when the
                                   directory is decrypted).
-    --obfuscate-map_file <file> - Specify path to obfuscated mapping file
+    --obfuscate-map-file <file> - Specify path to obfuscated mapping file
                                   (in -O mode).
     -F, --Force                 - Continue to run even if files cannot be
                                   deleted (because of permissions problems
