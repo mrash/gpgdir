@@ -437,7 +437,7 @@ sub obf_recursively_encrypted() {
         if (-f $file) {
             ### gpgdir_1.gpg
             unless ($file =~ m|gpgdir_\d+\.gpg$|) {
-                &write_file("[-] File $file not " .
+                &print_errors("[-] File $file not " .
                     "encrypted and obfuscated as 'gpgdir_N.gpg'");
                 $rv = 0;
             }
@@ -445,7 +445,7 @@ sub obf_recursively_encrypted() {
             next if $file eq $data_dir;
             ### gpgdir_d1/
             unless ($file =~ m|gpgdir_d\d+$|) {
-                &write_file("[-] Directory $file not " .
+                &print_errors("[-] Directory $file not " .
                     "obfuscated as 'gpgdir_dN'");
                 $rv = 0;
             }
@@ -455,32 +455,37 @@ sub obf_recursively_encrypted() {
 }
 
 sub ascii_recursively_decrypted() {
+    my $rv = 1;
     @data_dir_files = ();
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             if ($file =~ m|\.asc$|) {
-                return &print_errors("[-] File $file not encrypted");
+                &print_errors("[-] File $file not encrypted");
+                $rv = 0;
             }
         }
     }
-    return 1;
+    return $rv;
 }
 
 sub obf_recursively_decrypted() {
+    my $rv = 1;
     @data_dir_files = ();
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             if ($file =~ m|\.asc$|) {
-                return &print_errors("[-] File $file not encrypted");
+                &print_errors("[-] File $file not encrypted");
+                $rv = 0;
             }
         }
     }
-    return 1;
+    return $rv;
 }
 
 sub skipped_hidden_files_dirs() {
+    my $rv = 1;
     @data_dir_files = ();
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
@@ -488,14 +493,16 @@ sub skipped_hidden_files_dirs() {
             ### check for any .gpg or .asc extensions
             if ($file =~ m|\.gpg$| or $file =~ m|\.asc$|
                     or $file =~ m|\.pgp$|) {
-                return &print_errors("[-] Encrypted hidden file");
+                &print_errors("[-] Encrypted hidden file");
+                $rv = 0;
             }
         }
     }
-    return 1;
+    return $rv;
 }
 
 sub obf_skipped_hidden_files_dirs() {
+    my $rv = 1;
     @data_dir_files = ();
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
@@ -505,11 +512,12 @@ sub obf_skipped_hidden_files_dirs() {
             if (($file !~ m|gpgdir_map_file| and $file !~ m|gpgdir_dir_map_file|)
                     and ($file =~ m|\.gpg$| or $file =~ m|\.asc$|
                     or $file =~ m|\.pgp$|)) {
-                return &print_errors("[-] Encrypted hidden file");
+                &print_errors("[-] Encrypted hidden file");
+                $rv = 0;
             }
         }
     }
-    return 1;
+    return $rv;
 }
 
 sub find_files() {
