@@ -58,6 +58,7 @@ my $failed_tests = 0;
 my $prepare_results = 0;
 my $successful_tests = 0;
 my $current_test_file = "$output_dir/$test_num.test";
+my $cmd_out = 'cmd.out';
 my $previous_test_file = '';
 my @data_dir_files  = ();
 my @initial_files   = ();
@@ -204,10 +205,8 @@ sub test_driver() {
         $failed_tests++;
     }
 
-    open C, ">> $current_test_file"
-        or die "[*] Could not open $current_test_file: $!";
-    print C "\nTEST: $msg, STATUS: $test_status\n";
-    close C;
+
+    &write_file("TEST: $msg, STATUS: $test_status\n", $current_test_file);
 
     $previous_test_file = $current_test_file;
     $test_num++;
@@ -217,8 +216,7 @@ sub test_driver() {
 
 sub broken_passphrase() {
     if (not &run_cmd("$gpgdirCmd --gnupg-dir $gpg_dir " .
-            " --pw-file $broken_pw_file --Key-id $key_id -e $data_dir",
-            $NO_APPEND)) {
+            " --pw-file $broken_pw_file --Key-id $key_id -e $data_dir")) {
         my $found_bad_pass = 0;
         open F, "< $current_test_file" or die $!;
         while (<F>) {
@@ -235,23 +233,21 @@ sub broken_passphrase() {
 }
 
 sub encrypt() {
-    if (&run_cmd("$gpgdirCmd $default_args -e $data_dir", $NO_APPEND)) {
+    if (&run_cmd("$gpgdirCmd $default_args -e $data_dir")) {
         return 1;
     }
     return &print_errors("[-] Directory encryption");
 }
 
 sub ascii_encrypt() {
-    if (&run_cmd("$gpgdirCmd $default_args --Plain-ascii -e $data_dir",
-            $NO_APPEND)) {
+    if (&run_cmd("$gpgdirCmd $default_args --Plain-ascii -e $data_dir")) {
         return 1;
     }
     return &print_errors("[-] Directory encryption");
 }
 
 sub obf_encrypt() {
-    if (&run_cmd("$gpgdirCmd $default_args -O -e $data_dir",
-            $NO_APPEND)) {
+    if (&run_cmd("$gpgdirCmd $default_args -O -e $data_dir")) {
         return 1;
     }
     return &print_errors("[-] Directory encryption");
@@ -262,8 +258,7 @@ sub multi_obf_encrypt() {
     my @dir_old = ();
     find(\&find_files, $data_dir);
 
-    unless (&run_cmd("$gpgdirCmd $default_args -O -e $data_dir",
-            $NO_APPEND)) {
+    unless (&run_cmd("$gpgdirCmd $default_args -O -e $data_dir")) {
         return &print_errors("[-] Could not encrypt directory");
     }
 
@@ -278,32 +273,28 @@ sub multi_obf_encrypt() {
 }
 
 sub sign() {
-    if (&run_cmd("$gpgdirCmd $default_args --sign $data_dir",
-            $NO_APPEND)) {
+    if (&run_cmd("$gpgdirCmd $default_args --sign $data_dir")) {
         return 1;
     }
     return &print_errors("[-] Directory signing");
 }
 
 sub decrypt() {
-    if (&run_cmd("$gpgdirCmd $default_args -d $data_dir",
-            $NO_APPEND)) {
+    if (&run_cmd("$gpgdirCmd $default_args -d $data_dir")) {
         return 1;
     }
     return &print_errors("[-] Directory decryption");
 }
 
 sub obf_decrypt() {
-    if (&run_cmd("$gpgdirCmd $default_args -O -d $data_dir",
-            $NO_APPEND)) {
+    if (&run_cmd("$gpgdirCmd $default_args -O -d $data_dir")) {
         return 1;
     }
     return &print_errors("[-] Directory decryption");
 }
 
 sub verify() {
-    if (&run_cmd("$gpgdirCmd $default_args --verify $data_dir",
-            $NO_APPEND)) {
+    if (&run_cmd("$gpgdirCmd $default_args --verify $data_dir")) {
         return 1;
     }
     return &print_errors("[-] Directory verification");
@@ -357,8 +348,7 @@ sub broken_sig_detection() {
     print F "bogus data\n";
     close F;
 
-    &run_cmd("$gpgdirCmd $default_args --verify $data_dir",
-            $NO_APPEND);
+    &run_cmd("$gpgdirCmd $default_args --verify $data_dir");
 
     my $found_bad_sig = 0;
     open F, "< $current_test_file" or die $!;
@@ -425,7 +415,7 @@ sub multi_encrypt() {
     my @dir_old = ();
     find(\&find_files, $data_dir);
 
-    unless (&run_cmd("$gpgdirCmd $default_args -e $data_dir", $NO_APPEND)) {
+    unless (&run_cmd("$gpgdirCmd $default_args -e $data_dir")) {
         return &print_errors("[-] Could not encrypt directory");
     }
 
@@ -603,7 +593,7 @@ sub md5sum_validation() {
 }
 
 sub test_mode() {
-    if (&run_cmd("$gpgdirCmd $default_args --test", $NO_APPEND)) {
+    if (&run_cmd("$gpgdirCmd $default_args --test")) {
         my $found = 0;
         open F, "< $current_test_file"
             or die "[*] Could not open $current_test_file: $!";
@@ -620,14 +610,14 @@ sub test_mode() {
 }
 
 sub perl_compilation() {
-    unless (&run_cmd("perl -c $gpgdirCmd", $NO_APPEND)) {
+    unless (&run_cmd("perl -c $gpgdirCmd")) {
         return &print_errors("[-] $gpgdirCmd does not compile");
     }
     return 1;
 }
 
 sub getopt_test() {
-    if (&run_cmd("$gpgdirCmd --no-such-argument", $NO_APPEND)) {
+    if (&run_cmd("$gpgdirCmd --no-such-argument")) {
         return &print_errors("[-] $gpgdirCmd " .
                 "allowed --no-such-argument on the command line");
     }
@@ -655,30 +645,90 @@ sub print_errors() {
             or die "[*] Could not open $current_test_file: $!";
         print F "MSG: $msg\n";
         close F;
+        &write_file("MSG: $msg\n", $current_test_file);
     }
     return 0;
 }
 
 sub run_cmd() {
-    my ($cmd, $append) = @_;
+    my $cmd = shift;
 
-    if ($append == $APPEND) {
-        open F, ">> $current_test_file"
+    unlink $cmd_out if -e $cmd_out;
+
+    if (-e $current_test_file) {
+        open RC, ">> $current_test_file"
             or die "[*] Could not open $current_test_file: $!";
-        print F "CMD: $cmd\n";
-        close F;
+        print RC localtime() . " CMD: $cmd\n";
+        close RC;
     } else {
-        open F, "> $current_test_file"
+        open RCA, "> $current_test_file"
             or die "[*] Could not open $current_test_file: $!";
-        print F "CMD: $cmd\n";
-        close F;
+        print RCA localtime() . " CMD: $cmd\n";
+        close RCA;
     }
-    my $rv = ((system "$cmd >> $current_test_file 2>&1") >> 8);
+
+    ### copy original file descriptors (credit: Perl Cookbook)
+    open OLDOUT, ">&STDOUT";
+    open OLDERR, ">&STDERR";
+
+    ### redirect command output
+    open STDOUT, "> $cmd_out" or die "[*] Could not redirect stdout: $!";
+    open STDERR, ">&STDOUT"   or die "[*] Could not dup stdout: $!";
+
+    my $rv = ((system $cmd) >> 8);
+
+    close STDOUT or die "[*] Could not close STDOUT: $!";
+    close STDERR or die "[*] Could not close STDERR: $!";
+
+    ### restore original filehandles
+    open STDERR, ">&OLDERR" or die "[*] Could not restore stderr: $!";
+    open STDOUT, ">&OLDOUT" or die "[*] Could not restore stdout: $!";
+
+    ### close the old copies
+    close OLDOUT or die "[*] Could not close OLDOUT: $!";
+    close OLDERR or die "[*] Could not close OLDERR: $!";
+
+    open C, "< $cmd_out" or die "[*] Could not open $cmd_out: $!";
+    my @cmd_lines = <C>;
+    close C;
+
+    open L, ">> $current_test_file" or
+        die "[*] Could not open $current_test_file: $!";
+    for (@cmd_lines) {
+        if (/\n/) {
+            print L $_;
+        } else {
+            print L $_, "\n";
+        }
+    }
+    close L;
+
     if ($rv == 0) {
         return 1;
     }
     return 0;
 }
+
+#sub run_cmd() {
+#    my ($cmd, $append) = @_;
+#
+#    if ($append == $APPEND) {
+#        open F, ">> $current_test_file"
+#            or die "[*] Could not open $current_test_file: $!";
+#        print F "CMD: $cmd\n";
+#        close F;
+#    } else {
+#        open F, "> $current_test_file"
+#            or die "[*] Could not open $current_test_file: $!";
+#        print F "CMD: $cmd\n";
+#        close F;
+#    }
+#    my $rv = ((system "$cmd >> $current_test_file 2>&1") >> 8);
+#    if ($rv == 0) {
+#        return 1;
+#    }
+#    return 0;
+#}
 
 sub prepare_results() {
     my $rv = 0;
@@ -741,6 +791,14 @@ sub setup() {
 sub pass() {
     &logr("pass ($test_num)\n");
     $successful_tests++;
+    return;
+}
+
+sub write_file() {
+    my ($msg, $file) = @_;
+    open C, ">> $file" or die "[*] Could not open $file $!";
+    print C $msg;
+    close C;
     return;
 }
 
