@@ -809,7 +809,7 @@ sub pass() {
 }
 
 sub write_file() {
-    my $msg = @_;
+    my $msg = shift;
     open C, ">> $current_test_file"
         or die "[*] Could not open $current_test_file $!";
     print C $msg;
