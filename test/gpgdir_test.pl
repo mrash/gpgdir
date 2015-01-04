@@ -470,14 +470,14 @@ sub obf_recursively_encrypted() {
                     "encrypted and obfuscated as 'gpgdir_N.gpg'\n");
                 $rv = 0;
             }
-        } elsif (-d $file) {
-            next if $file eq $data_dir;
-            ### gpgdir_d1/
-            unless ($file =~ m|gpgdir_d\d+$|) {
-                &write_file("[-] Directory '$file' not " .
-                    "obfuscated as 'gpgdir_dN'\n");
-                $rv = 0;
-            }
+#        } elsif (-d $file) {
+#            next if $file eq $data_dir;
+#            ### gpgdir_d1/
+#            unless ($file =~ m|gpgdir_d\d+$|) {
+#                &write_file("[-] Directory '$file' not " .
+#                    "obfuscated as 'gpgdir_dN'\n");
+#                $rv = 0;
+#            }
         }
     }
     return $rv;

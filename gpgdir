@@ -378,7 +378,7 @@ if ($signing_mode) {
 
 if ($obfuscate_mode) {
     &obfuscated_mapping_files();
-    &obfuscated_mapping_directories();
+    #&obfuscated_mapping_directories();
 }
 
 unless ($obfuscate_mode) {
