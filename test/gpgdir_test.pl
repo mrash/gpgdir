@@ -318,7 +318,7 @@ sub recursively_encrypted() {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             &write_file("$file\n");
             unless ($file =~ m|\.gpg$|) {
-                &write_file("[-] File $file not encrypted\n");
+                &write_file("[-] File '$file' not encrypted\n");
                 $rv = 0;
             }
         }
@@ -335,7 +335,7 @@ sub recursively_signed() {
             &write_file("$file\n");
             if ($file !~ m|\.asc$|) {
                 unless (-e "$file.asc") {
-                    &write_file("[-] File $file not signed\n");
+                    &write_file("[-] File '$file' not signed\n");
                     $rv = 0;
                 }
             }
@@ -352,7 +352,7 @@ sub recursively_decrypted() {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             &write_file("$file\n");
             if ($file =~ m|\.gpg$| or $file =~ m|\.pgp$|) {
-                &write_file("[-] File $file not encrypted\n");
+                &write_file("[-] File '$file' not encrypted\n");
                 $rv = 0;
             }
         }
@@ -427,7 +427,7 @@ sub ascii_recursively_encrypted() {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             &write_file("$file\n");
             unless ($file =~ m|\.asc$|) {
-                &write_file("[-] File $file not encrypted\n");
+                &write_file("[-] File '$file' not encrypted\n");
                 $rv = 0;
             }
         }
@@ -466,7 +466,7 @@ sub obf_recursively_encrypted() {
         if (-f $file) {
             ### gpgdir_1.gpg
             unless ($file =~ m|gpgdir_\d+\.gpg$|) {
-                &write_file("[-] File $file not " .
+                &write_file("[-] File '$file' not " .
                     "encrypted and obfuscated as 'gpgdir_N.gpg'\n");
                 $rv = 0;
             }
@@ -474,7 +474,7 @@ sub obf_recursively_encrypted() {
             next if $file eq $data_dir;
             ### gpgdir_d1/
             unless ($file =~ m|gpgdir_d\d+$|) {
-                &write_file("[-] Directory $file not " .
+                &write_file("[-] Directory '$file' not " .
                     "obfuscated as 'gpgdir_dN'\n");
                 $rv = 0;
             }
@@ -491,7 +491,7 @@ sub ascii_recursively_decrypted() {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             &write_file("$file\n");
             if ($file =~ m|\.asc$|) {
-                &write_file("[-] File $file not encrypted\n");
+                &write_file("[-] File '$file' not encrypted\n");
                 $rv = 0;
             }
         }
@@ -507,7 +507,7 @@ sub obf_recursively_decrypted() {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             &write_file("$file\n");
             if ($file =~ m|\.asc$|) {
-                &write_file("[-] File $file not encrypted\n");
+                &write_file("[-] File '$file' not encrypted\n");
                 $rv = 0;
             }
         }
@@ -631,7 +631,7 @@ sub md5sum_validation() {
             &write_file("$file\n");
             if (not defined $initial_md5sums{$file}
                     or $initial_md5sums{$file} ne md5_base64($file)) {
-                &write_file("[-] MD5 sum mis-match for $file\n");
+                &write_file("[-] MD5 sum mis-match for '$file'\n");
                 $rv = 0;
             }
         }
