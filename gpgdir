@@ -51,9 +51,7 @@ my $decrypt_dir     = '';
 my $sign_dir        = '';
 my $verify_dir      = '';
 my $homedir         = '';
-my $exclude_pat     = '';
 my $exclude_file    = '';
-my $include_pat     = '';
 my $include_file    = '';
 my $lib_dir         = '/usr/lib/gpgdir';
 my $pid_file        = '';
@@ -146,11 +144,11 @@ die "[*] Use --help for usage information.\n" unless(GetOptions (
                                                     # even if they exist.
     'overwrite-decrypted' => \$overwrite_decrypted, # Overwrite decrypted files
                                                     # even if they exist.
-    'Exclude=s'      => \$exclude_pat,     # Exclude a pattern from encrypt/decrypt
+    'Exclude=s'      => \@exclude_patterns,  # Exclude a pattern from encrypt/decrypt
                                            # cycle.
     'Exclude-from=s' => \$exclude_file,    # Exclude patterns in <file> from
                                            # encrypt decrypt cycle.
-    'Include=s'      => \$include_pat,     # Specify a pattern used to restrict
+    'Include=s'      => \@include_patterns,  # Specify a pattern used to restrict
                                            # encrypt/decrypt operation to.
     'Include-from=s' => \$include_file,    # Specify a file of include patterns to
                                            # restrict all encrypt/decrypt
@@ -289,8 +287,6 @@ if ($obfuscate_mode) {
 }
 
 ### exclude file pattern
-push @exclude_patterns, $exclude_pat if $exclude_pat;
-
 if ($exclude_file) {
     open P, "< $exclude_file" or die "[*] Could not open file: $exclude_file";
     my @lines = <P>;
@@ -301,9 +297,6 @@ if ($exclude_file) {
         push @exclude_patterns, qr{$line};
     }
 }
-
-### include file pattern
-push @include_patterns, $include_pat if $include_pat;
 
 if ($include_file) {
     open P, "< $include_file" or die "[*] Could not open file: $include_file";

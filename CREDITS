@@ -53,3 +53,7 @@ Lars Wilke
       using the --Wipe secure deletion mode.
     - Suggested the ability to encrypt/decrypt hidden files, and --Force now
       supports this.
+
+Ben Staude
+    - Submitted a patch to allow multiple --Exclude patterns to be specified
+      directly from the command line.
