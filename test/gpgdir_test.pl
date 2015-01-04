@@ -709,27 +709,6 @@ sub run_cmd() {
     return 0;
 }
 
-#sub run_cmd() {
-#    my ($cmd, $append) = @_;
-#
-#    if ($append == $APPEND) {
-#        open F, ">> $current_test_file"
-#            or die "[*] Could not open $current_test_file: $!";
-#        print F "CMD: $cmd\n";
-#        close F;
-#    } else {
-#        open F, "> $current_test_file"
-#            or die "[*] Could not open $current_test_file: $!";
-#        print F "CMD: $cmd\n";
-#        close F;
-#    }
-#    my $rv = ((system "$cmd >> $current_test_file 2>&1") >> 8);
-#    if ($rv == 0) {
-#        return 1;
-#    }
-#    return 0;
-#}
-
 sub prepare_results() {
     my $rv = 0;
     die "[*] $output_dir does not exist" unless -d $output_dir;
