@@ -205,8 +205,7 @@ sub test_driver() {
         $failed_tests++;
     }
 
-
-    &write_file("TEST: $msg, STATUS: $test_status\n", $current_test_file);
+    &write_file("TEST: $msg, STATUS: $test_status\n");
 
     $previous_test_file = $current_test_file;
     $test_num++;
@@ -430,6 +429,7 @@ sub multi_encrypt() {
 }
 
 sub obf_recursively_encrypted() {
+    my $rv = 1;
     @data_dir_files = ();
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
@@ -437,19 +437,21 @@ sub obf_recursively_encrypted() {
         if (-f $file) {
             ### gpgdir_1.gpg
             unless ($file =~ m|gpgdir_\d+\.gpg$|) {
-                return &print_errors("[-] File $file not " .
+                &write_file("[-] File $file not " .
                     "encrypted and obfuscated as 'gpgdir_N.gpg'");
+                $rv = 0;
             }
         } elsif (-d $file) {
             next if $file eq $data_dir;
             ### gpgdir_d1/
             unless ($file =~ m|gpgdir_d\d+$|) {
-                return &print_errors("[-] Directory $file not " .
+                &write_file("[-] Directory $file not " .
                     "obfuscated as 'gpgdir_dN'");
+                $rv = 0;
             }
         }
     }
-    return 1;
+    return $rv;
 }
 
 sub ascii_recursively_decrypted() {
@@ -645,7 +647,7 @@ sub print_errors() {
             or die "[*] Could not open $current_test_file: $!";
         print F "MSG: $msg\n";
         close F;
-        &write_file("MSG: $msg\n", $current_test_file);
+        &write_file("MSG: $msg\n");
     }
     return 0;
 }
@@ -774,8 +776,9 @@ sub pass() {
 }
 
 sub write_file() {
-    my ($msg, $file) = @_;
-    open C, ">> $file" or die "[*] Could not open $file $!";
+    my $msg = @_;
+    open C, ">> $current_test_file"
+        or die "[*] Could not open $current_test_file $!";
     print C $msg;
     close C;
     return;
