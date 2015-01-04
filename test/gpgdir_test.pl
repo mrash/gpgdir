@@ -262,8 +262,8 @@ sub multi_obf_encrypt() {
     my @dir_old = ();
     find(\&find_files, $data_dir);
 
-    unless (&run_cmd("$gpgdirCmd $default_args -O -e $data_dir")) {
-        &write_file("[-] Could not encrypt directory\n");
+    if (&run_cmd("$gpgdirCmd $default_args -O -e $data_dir")) {
+        &write_file("[-] Re-encrypted directory in -O mode.\n");
         return 0;
     }
 

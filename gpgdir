@@ -95,6 +95,8 @@ my $cmdline_no_password = 0;
 my $obfuscate_mode = 0;
 my $obfuscate_map_file = '.gpgdir_map_file';
 my $obfuscate_dir_map_file = '.gpgdir_dir_map_file';  ### for obfuscated dir names
+my $obf_current_dir_map_file = '';
+my $obf_current_pt_dir_map_file = '';
 my $overwrite_encrypted = 0;
 my $overwrite_decrypted = 0;
 my $symmetric_mode   = 0;
@@ -370,6 +372,10 @@ if ($signing_mode) {
     print "[+] Decrypting files in directory: $op_dir\n" unless $quiet;
 }
 
+if ($obfuscate_mode and not $encrypt_mode) {
+    &obfuscate_restore_dirs();
+}
+
 ### build a hash of file paths to work against
 &get_files($op_dir);
 
@@ -378,7 +384,7 @@ if ($signing_mode) {
 
 if ($obfuscate_mode) {
     &obfuscated_mapping_files();
-    #&obfuscated_mapping_directories();
+    &obfuscated_mapping_directories() if $encrypt_mode;
 }
 
 unless ($obfuscate_mode) {
@@ -488,6 +494,10 @@ sub encrypt_or_sign_file() {
         for (@errors) {
             print if /bad\s+pass/;
         }
+    }
+
+    unless (-e $out_file) {
+        &cleanup("[*] $out_file does not exist.");
     }
 
     if (-s $out_file == 0) {
@@ -780,9 +790,7 @@ sub do_encrypt() {
             $obfuscate_ctrs{$dir}++;
             $encrypt_filename = 'gpgdir_' . $obfuscate_ctrs{$dir} . '.gpg';
         }
-    }
-
-    if ($ascii_armor_mode or $signing_mode) {
+    } elsif ($ascii_armor_mode or $signing_mode) {
         $encrypt_filename = "$filename.asc";
     }
 
@@ -1001,127 +1009,121 @@ sub include_file() {
 
 sub obfuscated_mapping_directories() {
 
-    my $dirs_hr = {};
-    my %mapped_dirs = ();
+    &obfuscate_dirs(\%obfuscate_ctrs);
+
+    return;
+}
+
+sub obfuscate_dirs() {
+    my $dirs_hr = shift;
+
     my %mapped_dir_ctrs = ();
 
-    if ($encrypt_mode) {
-        $dirs_hr = \%obfuscate_ctrs;
-    } else {
-        $dirs_hr = \%obfuscated_dirs;
+    ### make sure to order on directory path length to start with deeply
+    ### buried subdirectories first
+    DIR: for my $dir (sort {length($b) <=> length($a)} keys %$dirs_hr) {
+
+        next DIR unless -d $dir;
+
+        ### don't obfuscate the top level directory path
+        next DIR if $dir eq $initial_dir;
+        next DIR if $dir eq $op_dir;
+
+        my ($up_dir, $sub_dir) = ($dir =~ m|(.*)/(.*)|);
+
+        chdir($up_dir)
+            or &cleanup("[*] Could not chdir() $up_dir: $!");
+
+        my $new_sub_dir = '';
+        unless (defined $mapped_dir_ctrs{$up_dir}) {
+            ### make obfuscated dir names start at 'gpgdir_d1'
+            $mapped_dir_ctrs{$up_dir} = 1;
+        }
+
+        $new_sub_dir = 'gpgdir_d' . $mapped_dir_ctrs{$up_dir};
+
+        $mapped_dir_ctrs{$up_dir}++;
+
+        &append_obfuscated_dir($sub_dir, $new_sub_dir);
+        move $sub_dir, $new_sub_dir;
     }
 
-    my $continue = 1;
+    ### make sure all of the directory mapping files are encrypted
+    &obf_encrypt_dir_mapping_files();
 
-    OUTER_LOOP: while($continue) {
+    return;
+}
 
-        $continue = 0 unless keys %$dirs_hr;
+sub obf_encrypt_dir_mapping_files() {
 
-        ### make sure to order on directory path length to start with deeply
-        ### buried subdirectories first
-        DIR: for my $dir (sort {length($b) <=> length($a)} keys %$dirs_hr) {
+    find(\&obf_find_pt_dir_mapping_file, $op_dir);
 
-            next DIR unless -d $dir;
+    while ($obf_current_pt_dir_map_file) {
 
-            $continue = 0;
+        my ($dir, $filename) = ($obf_current_pt_dir_map_file =~ m|(.*)/(.*)|);
+        $obf_current_pt_dir_map_file = '';
 
-            if ($encrypt_mode) {
+        chdir($dir) or &cleanup("[*] Could not chdir() $dir: $!");
 
-                ### for the top level directory mapping file
-                $mapped_dirs{$initial_dir} = $initial_dir;
-                $mapped_dirs{$op_dir} = $op_dir;
+        print "[+] Encrypting directory mapping file:  ",
+            "$dir/$obfuscate_dir_map_file\n" unless $quiet;
+        unless ($trial_run) {
+            if (&encrypt_or_sign_file($obfuscate_dir_map_file,
+                    "$obfuscate_dir_map_file.gpg", $NO_DEL_SOURCE_FILE)) {
+                unlink $obfuscate_dir_map_file;
+            }
+        }
 
-                ### don't encrypt the top level directory path
-                next DIR if $dir eq $initial_dir;
-                next DIR if $dir eq $op_dir;
+        chdir($op_dir);
+        find(\&obf_find_pt_dir_mapping_file, $op_dir);
+    }
+    return;
+}
 
-                my ($up_dir, $sub_dir) = ($dir =~ m|(.*)/(.*)|);
+sub obfuscate_restore_dirs() {
 
-                if (defined $mapped_dirs{$up_dir}) {
-                    chdir($mapped_dirs{$up_dir}) or &cleanup($!);
-                } else {
-                    chdir($up_dir);
-                }
+    find(\&obf_find_dir_mapping_file, $op_dir);
 
-                my $new_sub_dir = '';
-                unless (defined $mapped_dir_ctrs{$up_dir}) {
-                    ### make obfuscated dir names start at 'gpgdir_d1'
-                    $mapped_dir_ctrs{$up_dir} = 1;
-                }
+    while ($obf_current_dir_map_file) {
 
-                $new_sub_dir = 'gpgdir_d' . $mapped_dir_ctrs{$up_dir};
+        my ($dir, $filename) = ($obf_current_dir_map_file =~ m|(.*)/(.*)|);
+        $obf_current_dir_map_file = '';
 
-                move $sub_dir, $new_sub_dir;
+        chdir($dir) or &cleanup("[*] Could not chdir() $dir: $!");
 
-                &append_obfuscated_dir($sub_dir, $new_sub_dir);
+        print "[+] Decrypting directory mapping file:  ",
+            "$dir/$obfuscate_dir_map_file.gpg\n" unless $quiet;
+        unless ($trial_run) {
+            &decrypt_or_verify_file("$obfuscate_dir_map_file.gpg",
+                $obfuscate_dir_map_file, $NO_DEL_SOURCE_FILE);
 
-                $mapped_dirs{$dir} = "$up_dir/$new_sub_dir";
+            unlink "$obfuscate_dir_map_file.gpg";
+        }
 
-                $mapped_dir_ctrs{$up_dir}++;
+        open D, "< $obfuscate_dir_map_file"
+            or &cleanup("[*] In dir: $dir, could not open $obfuscate_dir_map_file: $!");
 
-            } else {
+        while (<D>) {
+            if (/^\s*(.*)\s+(gpgdir_d\d+)/) {
+                my $orig_dir = $1;
+                my $obf_dir  = $2;
 
-                chdir($dir) or &cleanup($!);
-                next DIR unless -e "$obfuscate_dir_map_file.gpg";
-                $continue = 1;
-
-                print "[+] Decrypting directory mapping file:  ",
-                    "$dir/$obfuscate_dir_map_file.gpg\n" unless $quiet;
-                unless ($trial_run) {
-                    &decrypt_or_verify_file("$obfuscate_dir_map_file.gpg",
-                        $obfuscate_dir_map_file, $NO_DEL_SOURCE_FILE);
-
-                    unlink "$obfuscate_dir_map_file.gpg";
-                }
-
-                open D, "< $obfuscate_dir_map_file" or &cleanup($!);
-
-                while (<D>) {
-
-                    if (/^\s*(.*)\s+(gpgdir_d\d+)/) {
-                        my $orig_dir = $1;
-                        my $obf_dir  = $2;
-
-                        if (-d $obf_dir) {
-                            $continue = 1;
-                            move $obf_dir, $orig_dir;
-
-                            ### update the $dirs_hr with the new path
-                            my ($up_dir) = ($dir =~ m|(.*)/.*|);
-
-                            $dirs_hr->{"$dir/$orig_dir"} = '';
-                        }
-                    }
-                }
-                close D;
-
-                if ($total_mapped_files == $total_decrypted) {
-                    ### we are confident that we decrypted all files,
-                    ### so delete the directory mapping file.
-                    unlink $obfuscate_dir_map_file;
+                if (-d $obf_dir) {
+                    print "    restore $obf_dir/ -> $orig_dir/\n" unless $quiet;
+                    move $obf_dir, $orig_dir;
                 }
             }
         }
-    }
+        close D;
 
-    if ($encrypt_mode) {
-        DIR: for my $orig_dir (keys %mapped_dirs) {
-            my $dir = $mapped_dirs{$orig_dir};
-            next DIR unless -d $dir;
-            chdir($dir) or &cleanup($!);
-            next DIR unless -e $obfuscate_dir_map_file;
-
-            print "[+] Encrypting directory mapping file:  ",
-                "$dir/$obfuscate_dir_map_file\n" unless $quiet;
-            unless ($trial_run) {
-                if (&encrypt_or_sign_file($obfuscate_dir_map_file,
-                        "$obfuscate_dir_map_file.gpg", $NO_DEL_SOURCE_FILE)) {
-                    unlink $obfuscate_dir_map_file;
-                }
-            }
+        if ($total_mapped_files == $total_decrypted) {
+            ### we are confident that we decrypted all files,
+            ### so delete the directory mapping file.
+            unlink $obfuscate_dir_map_file;
         }
+        chdir($op_dir);
+        find(\&obf_find_dir_mapping_file, $op_dir);
     }
-
     return;
 }
 
@@ -1143,9 +1145,9 @@ sub obfuscated_mapping_files() {
 
         if ($encrypt_mode) {
             next DIR unless -e $obfuscate_map_file;
+
             ### encrypt the map file now that we have encrypted
             ### the directory
-
             print "[+] Encrypting mapping file:  ",
                 "$dir/$obfuscate_map_file\n" unless $quiet;
 
@@ -1155,6 +1157,7 @@ sub obfuscated_mapping_files() {
 
                 unlink $obfuscate_map_file;
             }
+
         } else {
 
             next DIR unless -e "$obfuscate_map_file.gpg";
@@ -1346,12 +1349,56 @@ sub find_files() {
     return;
 }
 
+sub obf_find_pt_dir_mapping_file() {
+    my $file = $File::Find::name;
+    &is_pt_dir_mapping_file($file);
+    return;
+}
+
+sub obf_find_dir_mapping_file() {
+    my $file = $File::Find::name;
+    &is_dir_mapping_file($file);
+    return;
+}
+
+sub is_pt_dir_mapping_file() {
+    my $file = shift;
+    if ($obf_current_pt_dir_map_file) {
+        return;
+    } else {
+        if ($file =~ m|/\Q$obfuscate_dir_map_file\E$|) {
+            $obf_current_pt_dir_map_file = $file;
+        }
+    }
+    return;
+}
+
+sub is_dir_mapping_file() {
+    my $file = shift;
+    if ($obf_current_dir_map_file) {
+        return;
+    } else {
+        if ($file =~ m|/\Q$obfuscate_dir_map_file\E\.gpg|) {
+            $obf_current_dir_map_file = $file;
+        }
+    }
+    return;
+}
+
 sub check_file_criteria() {
     my $file = shift;
 
-    ### skip all links, zero size files, all hidden
-    ### files (includes the .gnupg directory), etc.
     unless ($force_mode) {
+        if ($encrypt_mode) {
+            ### dont' re-encrypt if we find one of the obfuscated
+            ### mapping files in the directory
+            if ($file =~ m|/\Q$obfuscate_dir_map_file\E\.gpg|
+                    or $file =~ m|/\Q$obfuscate_map_file\E\.gpg|) {
+                die "[*] -O mapping file found ('$file') exiting.";
+            }
+        }
+
+        ### skip all hidden files
         if ($file =~ m|/\.|) {
             print "[-] Skipping file: $file\n"
                 if $verbose and not $quiet;
@@ -1361,13 +1408,21 @@ sub check_file_criteria() {
 
     if (-d $file) {
         ### skip all directories but only after we have verified
-        ### whether they are writable
+        ### whether they are writable. We do record all directory paths
+        ### in --Obfuscate mode.
         unless ((stat($file))[2] & S_IWUSR) {
             die "[*] Directory: '$file' is not writable by the current user.";
+        }
+        if ($obfuscate_mode) {
+            ### make obfuscated directory paths start at 1 for each
+            ### directory
+            $obfuscate_ctrs{$file} = 1;
         }
         return;
     }
 
+    ### skip all links, zero size files, all hidden
+    ### files (includes the .gnupg directory), etc.
     if (-e $file and not -l $file and -s $file != 0
             and $file !~ m|\.gpgdir\.pid| and $file !~ m|\.gnupg|) {
         if ($encrypt_mode or $signing_mode) {
@@ -1394,6 +1449,7 @@ sub check_file_criteria() {
         print "[-] Skipping file: $file\n"
             if $verbose and not $quiet;
     }
+
     return;
 }
 
