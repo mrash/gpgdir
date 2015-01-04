@@ -12,8 +12,8 @@
 is a perl script that uses the CPAN GnuPG::Interface perl module to recursively
 encrypt and decrypt directories using gpg.
 .B gpgdir
-recursively descends through a directory in order to make sure it encrypts or
-decrypts every file in a directory and all of its subdirectories.  By default
+recursively descends through a directory in order to encrypt, decrypt, sign, or
+verify every file in a directory and all of its subdirectories.  By default,
 the mtime and atime values of all files will be preserved upon encryption and
 decryption (this can be disabled with the
 .B \-\-no-preserve-times
@@ -32,11 +32,9 @@ specify a password (this is consistent with
 .B gpg
 behavior).  Also, note that gpgdir is careful not encrypt hidden files and
 directories.  After all, you probably don't want your ~/.gnupg directory or
-~/.bashrc file to be encrypted.  The key
+~/.bashrc file to be encrypted.  The GnuPG key
 .B gpgdir
-uses to encrypt/decrypt a directory is specified in ~/.gpgdirrc.
-
-Finally,
+uses to encrypt/decrypt a directory is specified in ~/.gpgdirrc.  Also,
 .B gpgdir
 can use the
 .B wipe
@@ -47,6 +45,15 @@ have been successfully encrypted.  This elevates the security stance of gpgdir
 since it is more difficult to recover the unencrypted data associated with
 files from the filesystem after they are encrypted (unlink() does not erase data
 blocks even though a file is removed).
+
+Note that
+.B gpgdir
+is not designed to be a replacement for an encrypted filesystem solution like
+.B encfs
+or
+.B ecryptfs.
+Rather, it is an alternative that allows one to take advantage of the cryptographic
+properties offered by GnuPG in a recursive manner across an existing filesystem.
 
 .SH OPTIONS
 .TP
