@@ -316,6 +316,7 @@ sub recursively_encrypted() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            &write_file("$file\n");
             unless ($file =~ m|\.gpg$|) {
                 &write_file("[-] File $file not encrypted\n");
                 $rv = 0;
@@ -331,6 +332,7 @@ sub recursively_signed() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            &write_file("$file\n");
             if ($file !~ m|\.asc$|) {
                 unless (-e "$file.asc") {
                     &write_file("[-] File $file not signed\n");
@@ -348,6 +350,7 @@ sub recursively_decrypted() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            &write_file("$file\n");
             if ($file =~ m|\.gpg$| or $file =~ m|\.pgp$|) {
                 &write_file("[-] File $file not encrypted\n");
                 $rv = 0;
@@ -407,6 +410,7 @@ sub recursively_verified() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            &write_file("$file\n");
             if ($file =~ m|\.asc$|) {
                 unlink $file;
             }
@@ -421,6 +425,7 @@ sub ascii_recursively_encrypted() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            &write_file("$file\n");
             unless ($file =~ m|\.asc$|) {
                 &write_file("[-] File $file not encrypted\n");
                 $rv = 0;
@@ -457,6 +462,7 @@ sub obf_recursively_encrypted() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         next if $file =~ m|^\.| or $file =~ m|/\.|;
+        &write_file("$file\n");
         if (-f $file) {
             ### gpgdir_1.gpg
             unless ($file =~ m|gpgdir_\d+\.gpg$|) {
@@ -483,6 +489,7 @@ sub ascii_recursively_decrypted() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            &write_file("$file\n");
             if ($file =~ m|\.asc$|) {
                 &write_file("[-] File $file not encrypted\n");
                 $rv = 0;
@@ -498,6 +505,7 @@ sub obf_recursively_decrypted() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
+            &write_file("$file\n");
             if ($file =~ m|\.asc$|) {
                 &write_file("[-] File $file not encrypted\n");
                 $rv = 0;
@@ -513,6 +521,7 @@ sub skipped_hidden_files_dirs() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if ($file =~ m|^\.| or $file =~ m|/\.|) {
+            &write_file("$file\n");
             ### check for any .gpg or .asc extensions
             if ($file =~ m|\.gpg$| or $file =~ m|\.asc$|
                     or $file =~ m|\.pgp$|) {
@@ -530,6 +539,7 @@ sub obf_skipped_hidden_files_dirs() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if ($file =~ m|^\.| or $file =~ m|/\.|) {
+            &write_file("$file\n");
             ### check for any .gpg or .asc extensions except
             ### for the gpgdir_map_file
             if (($file !~ m|gpgdir_map_file| and $file !~ m|gpgdir_dir_map_file|)
@@ -618,6 +628,7 @@ sub md5sum_validation() {
     find(\&find_files, $data_dir);
     for my $file (@data_dir_files) {
         if (-f $file) {
+            &write_file("$file\n");
             if (not defined $initial_md5sums{$file}
                     or $initial_md5sums{$file} ne md5_base64($file)) {
                 &write_file("[-] MD5 sum mis-match for $file\n");
