@@ -229,7 +229,7 @@ sub broken_passphrase() {
             return 1;
         }
     }
-    &write_file("[-] Accepted broken passphrase");
+    &write_file("[-] Accepted broken passphrase\n");
     return 0;
 }
 
@@ -237,7 +237,7 @@ sub encrypt() {
     if (&run_cmd("$gpgdirCmd $default_args -e $data_dir")) {
         return 1;
     }
-    &write_file("[-] Directory encryption");
+    &write_file("[-] Directory encryption\n");
     return 0;
 }
 
@@ -245,7 +245,7 @@ sub ascii_encrypt() {
     if (&run_cmd("$gpgdirCmd $default_args --Plain-ascii -e $data_dir")) {
         return 1;
     }
-    &write_file("[-] Directory encryption");
+    &write_file("[-] Directory encryption\n");
     return 0;
 }
 
@@ -253,7 +253,7 @@ sub obf_encrypt() {
     if (&run_cmd("$gpgdirCmd $default_args -O -e $data_dir")) {
         return 1;
     }
-    &write_file("[-] Directory encryption");
+    &write_file("[-] Directory encryption\n");
     return 0;
 }
 
@@ -263,7 +263,7 @@ sub multi_obf_encrypt() {
     find(\&find_files, $data_dir);
 
     unless (&run_cmd("$gpgdirCmd $default_args -O -e $data_dir")) {
-        &write_file("[-] Could not encrypt directory");
+        &write_file("[-] Could not encrypt directory\n");
         return 0;
     }
 
@@ -282,7 +282,7 @@ sub sign() {
     if (&run_cmd("$gpgdirCmd $default_args --sign $data_dir")) {
         return 1;
     }
-    &write_file("[-] Directory signing");
+    &write_file("[-] Directory signing\n");
     return 0;
 }
 
@@ -290,7 +290,7 @@ sub decrypt() {
     if (&run_cmd("$gpgdirCmd $default_args -d $data_dir")) {
         return 1;
     }
-    &write_file("[-] Directory decryption");
+    &write_file("[-] Directory decryption\n");
     return 0;
 }
 
@@ -298,7 +298,7 @@ sub obf_decrypt() {
     if (&run_cmd("$gpgdirCmd $default_args -O -d $data_dir")) {
         return 1;
     }
-    &write_file("[-] Directory decryption");
+    &write_file("[-] Directory decryption\n");
     return 0;
 }
 
@@ -306,7 +306,7 @@ sub verify() {
     if (&run_cmd("$gpgdirCmd $default_args --verify $data_dir")) {
         return 1;
     }
-    &write_file("[-] Directory verification");
+    &write_file("[-] Directory verification\n");
     return 0;
 }
 
@@ -317,7 +317,7 @@ sub recursively_encrypted() {
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             unless ($file =~ m|\.gpg$|) {
-                &write_file("[-] File $file not encrypted");
+                &write_file("[-] File $file not encrypted\n");
                 $rv = 0;
             }
         }
@@ -333,7 +333,7 @@ sub recursively_signed() {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             if ($file !~ m|\.asc$|) {
                 unless (-e "$file.asc") {
-                    &write_file("[-] File $file not signed");
+                    &write_file("[-] File $file not signed\n");
                     $rv = 0;
                 }
             }
@@ -349,7 +349,7 @@ sub recursively_decrypted() {
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             if ($file =~ m|\.gpg$| or $file =~ m|\.pgp$|) {
-                &write_file("[-] File $file not encrypted");
+                &write_file("[-] File $file not encrypted\n");
                 $rv = 0;
             }
         }
@@ -381,7 +381,7 @@ sub broken_sig_detection() {
             or die $!;
         return 1;
     }
-    &write_file("[-] Could not find bad signature");
+    &write_file("[-] Could not find bad signature\n");
     return 0;
 }
 
@@ -398,7 +398,7 @@ sub recursively_verified() {
     close F;
 
     if ($found_bad_sig) {
-        &write_file("[-] Bad signature generated");
+        &write_file("[-] Bad signature generated\n");
         return 0;
     }
 
@@ -422,7 +422,7 @@ sub ascii_recursively_encrypted() {
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             unless ($file =~ m|\.asc$|) {
-                &write_file("[-] File $file not encrypted");
+                &write_file("[-] File $file not encrypted\n");
                 $rv = 0;
             }
         }
@@ -436,7 +436,7 @@ sub multi_encrypt() {
     find(\&find_files, $data_dir);
 
     unless (&run_cmd("$gpgdirCmd $default_args -e $data_dir")) {
-        &write_file("[-] Could not encrypt directory");
+        &write_file("[-] Could not encrypt directory\n");
         return 0;
     }
 
@@ -461,7 +461,7 @@ sub obf_recursively_encrypted() {
             ### gpgdir_1.gpg
             unless ($file =~ m|gpgdir_\d+\.gpg$|) {
                 &write_file("[-] File $file not " .
-                    "encrypted and obfuscated as 'gpgdir_N.gpg'");
+                    "encrypted and obfuscated as 'gpgdir_N.gpg'\n");
                 $rv = 0;
             }
         } elsif (-d $file) {
@@ -469,7 +469,7 @@ sub obf_recursively_encrypted() {
             ### gpgdir_d1/
             unless ($file =~ m|gpgdir_d\d+$|) {
                 &write_file("[-] Directory $file not " .
-                    "obfuscated as 'gpgdir_dN'");
+                    "obfuscated as 'gpgdir_dN'\n");
                 $rv = 0;
             }
         }
@@ -484,7 +484,7 @@ sub ascii_recursively_decrypted() {
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             if ($file =~ m|\.asc$|) {
-                &write_file("[-] File $file not encrypted");
+                &write_file("[-] File $file not encrypted\n");
                 $rv = 0;
             }
         }
@@ -499,7 +499,7 @@ sub obf_recursively_decrypted() {
     for my $file (@data_dir_files) {
         if (-f $file and not ($file =~ m|^\.| or $file =~ m|/\.|)) {
             if ($file =~ m|\.asc$|) {
-                &write_file("[-] File $file not encrypted");
+                &write_file("[-] File $file not encrypted\n");
                 $rv = 0;
             }
         }
@@ -516,7 +516,7 @@ sub skipped_hidden_files_dirs() {
             ### check for any .gpg or .asc extensions
             if ($file =~ m|\.gpg$| or $file =~ m|\.asc$|
                     or $file =~ m|\.pgp$|) {
-                &write_file("[-] Encrypted hidden file");
+                &write_file("[-] Encrypted hidden file\n");
                 $rv = 0;
             }
         }
@@ -535,7 +535,7 @@ sub obf_skipped_hidden_files_dirs() {
             if (($file !~ m|gpgdir_map_file| and $file !~ m|gpgdir_dir_map_file|)
                     and ($file =~ m|\.gpg$| or $file =~ m|\.asc$|
                     or $file =~ m|\.pgp$|)) {
-                &write_file("[-] Encrypted hidden file");
+                &write_file("[-] Encrypted hidden file\n");
                 $rv = 0;
             }
         }
@@ -620,7 +620,7 @@ sub md5sum_validation() {
         if (-f $file) {
             if (not defined $initial_md5sums{$file}
                     or $initial_md5sums{$file} ne md5_base64($file)) {
-                &write_file("[-] MD5 sum mis-match for $file");
+                &write_file("[-] MD5 sum mis-match for $file\n");
                 $rv = 0;
             }
         }
@@ -642,13 +642,13 @@ sub test_mode() {
         close F;
         return 1 if $found;
     }
-    &write_file("[-] Encrypt/decrypt basic --test mode");
+    &write_file("[-] Encrypt/decrypt basic --test mode\n");
     return 0;
 }
 
 sub perl_compilation() {
     unless (&run_cmd("perl -c $gpgdirCmd")) {
-        &write_file("[-] $gpgdirCmd does not compile");
+        &write_file("[-] $gpgdirCmd does not compile\n");
         return 0;
     }
     return 1;
@@ -657,7 +657,7 @@ sub perl_compilation() {
 sub getopt_test() {
     if (&run_cmd("$gpgdirCmd --no-such-argument")) {
         &write_file("[-] $gpgdirCmd " .
-                "allowed --no-such-argument on the command line");
+                "allowed --no-such-argument on the command line\n");
         return 0;
     }
     return 1;
