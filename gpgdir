@@ -1127,15 +1127,15 @@ sub obfuscated_mapping_directories() {
 
 sub obfuscated_mapping_files() {
 
-    my $dirs_href = {};
+    my $dirs_hr = {};
 
     if ($encrypt_mode) {
-        $dirs_href = \%obfuscate_ctrs;
+        $dirs_hr = \%obfuscate_ctrs;
     } else {
-        $dirs_href = \%obfuscated_dirs;
+        $dirs_hr = \%obfuscated_dirs;
     }
 
-    DIR: for my $dir (keys %$dirs_href) {
+    DIR: for my $dir (keys %$dirs_hr) {
         unless (chdir($dir)) {
             print "[-] Could not chdir $dir, skipping.\n" unless $quiet;
             next DIR;
