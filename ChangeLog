@@ -1,829 +1,130 @@
-commit dd25af3f72f93f4105750bfd7afb3c60cf64c3b5
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Jun 14 23:14:40 2011 -0400
-
-    Removed "Id" tags that were a hold over from Subversion (they have no meaning in
-    the git world)
-
-commit dcf0688cb6c7a85ed0e0c607d01764d93af96aaf
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Apr 25 19:47:20 2010 +0000
-
-    added additional test directories
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@362 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 6199de930e13b1d5603947062b3cd1418ef4f20d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Apr 25 19:46:47 2010 +0000
-
-    added dirs with spaces
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@361 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 244cccdc2c47cc04a34793b996a9df0d61b2dab5
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Apr 25 19:45:21 2010 +0000
-
-    added directory with no sub-files to test/data-dir
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@360 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 3d87866c107edad47b33f15822e9a013115fd879
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Apr 25 19:00:33 2010 +0000
-
-    Added directories with spaces
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@359 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit a1638dc139da02f1ea386ff84dad85a82c81ea3e
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Apr 25 18:35:30 2010 +0000
-
-    added writable permissions check for directories
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@358 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8f084c4982784e9717b7e2d0cc313668af0cc0c9
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Apr 25 18:09:38 2010 +0000
-
-    added check for gpg file handles, sort on directory path length in -O mode, bug fix for string passing to cleanup() calls
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@357 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit fe67067b168f3839ccd6aef245e2d3f7b6a562ae
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 3 15:55:49 2010 +0000
-
-    added multi-encrypt tests
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@356 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8002859c7aa8bac91fe638bf548d21b70ad5d2a8
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Mar 30 03:50:13 2010 +0000
-
-    code restructure to put encryption/decryption code in dedicated functions, bug fix to ensure that gpgdir does not descend into an infinitely loop when encrypting a directory in -O mode multiple times
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@355 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e8887d77cb8818d4052dde6d2d77c85bafc927eb
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Mar 21 20:52:34 2010 +0000
-
-    added check for gpgdir_dN directories in -O encrypt mode
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@354 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 92bab733e1b5368a948ad307e428e4d61d46b6bd
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Mar 16 03:14:30 2010 +0000
-
-    gpgdir-1.9.6 release
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@353 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 4f1b3a59386779594368877054738792f55132ea
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Mar 16 02:56:15 2010 +0000
-
+gpgdir-1.9.6 (01/05/2015):
     - In --Obfuscate-filenames mode, added support for also obfuscating
-    directories.  Each directory is obfuscated similarly to files, so
-    /some/directory/path/ becomes /some/directory/gpgdir_dN where "N" is
-    an integer that is incremented for each directory at the same relative
-    path level.  The original directory names are stored in an encrypted
-    file ".gpgdir_dir_map_file.gpg" for each original directory.  The top
-    level directory path is not obfuscated.
+      directories.  Each directory is obfuscated similarly to files, so
+      /some/directory/path/ becomes /some/directory/gpgdir_dN where "N" is
+      an integer that is incremented for each directory at the same relative
+      path level.  The original directory names are stored in an encrypted
+      file ".gpgdir_dir_map_file.gpg" for each original directory.  The top
+      level directory path is not obfuscated.
+    - (Ben Staude) Submitted a patch to allow multiple --Exclude patterns to
+      be specified directly from the command line.
     - Better pid file handling so that the <dir>/.gpgdir.pid file is removed
-    at gpgdir shutdown even if various error conditions exist.
+      at gpgdir shutdown even if various error conditions exist.
     - (Test suite): Added more rigorous test suite support for ensuring that
-    the shape of a directory is preserved across the encrypt/decrypt cycle.
-    There was already code to verify MD5 sums across the cycle, but now an
-    error will be thrown if any file is lost or a new file is created by
-    gpgdir inappropriately.
-    
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@352 958e171a-1414-0410-8e2f-9d295d3c0db0
+      the shape of a directory is preserved across the encrypt/decrypt cycle.
+      There was already code to verify MD5 sums across the cycle, but now an
+      error will be thrown if any file is lost or a new file is created by
+      gpgdir inappropriately.
 
-commit 556366b25fb3ab29204706e75b9aa22d922f7225
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 5 18:50:48 2009 +0000
-
-    For all RPM's built on the local system (Ubuntu for now), updated to reference the
-    "-nobuildreqs.spec" file so that the "BuildRequires: perl-ExtUtils-MakeMaker" directive
-    is not used.  Using this results in the following error on an Ubuntu system where no
-    software is installed/upgrade with RPM:
-    
-    rpm: To install rpm packages on Debian systems, use alien. See README.Debian.
-    error: cannot open Packages index using db3 - No such file or directory (2)
-    error: cannot open Packages database in /var/lib/rpm
-    
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@347 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e559f303bca7e276d027cb5441cd456f99b59519
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 5 18:28:24 2009 +0000
-
-    updated to include 1.9.5 release
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@344 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 64a25a05227c2c2b8eb4720563128d033ff59284
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 5 18:24:38 2009 +0000
-
-    updated 1.9.5 release date
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@342 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 74406c0b5103964ac3b263808824a9098eef10b3
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Aug 26 02:43:51 2009 +0000
-
-    minor copyright update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@341 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 9f0c4b502eb4f0e51f008e52763440b21ee46ebc
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 23 18:32:29 2009 +0000
-
-    bumped version to 1.9.5
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@340 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 76890a1fb4c010010722032db05460868a8704b2
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 23 18:31:48 2009 +0000
-
+gpgdir-1.9.5 (09/05/2009):
     - Added support for the decryption of PGP encrypted files (to round out
-    the support of GnuPG).
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@339 958e171a-1414-0410-8e2f-9d295d3c0db0
+      the support of GnuPG).
 
-commit 9cd53c6b8033100e4dd63a49c4a0d2653edf534a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Feb 13 04:48:54 2009 +0000
-
-    version 1.9.4
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@335 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b1d8eacc0769b45e79bde95817714e5704a157a3
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Nov 9 20:23:13 2008 +0000
-
-    tagged gpgdir-1.9.4-pre1
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@333 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 71c975a8e623d441154bec63f1f3c92a5ae2e330
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Nov 9 20:22:46 2008 +0000
-
+gpgdir-1.9.4 (02/12/2009):
     - Fixed a bug in missing the proper handling of files with spaces when
-    using the --Wipe secure deletion mode (reported by Lars Wilke).
+      using the --Wipe secure deletion mode (reported by Lars Wilke).
     - The --Force option now supports the ability to encrypt/decrypt hidden
-    files (suggested by Lars Wilke).
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@332 958e171a-1414-0410-8e2f-9d295d3c0db0
+      files (suggested by Lars Wilke).
 
-commit e7862badf1e41c8ee7faaefdab8561b5a67b64ca
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Nov 5 05:04:20 2008 +0000
-
-    1.9.3 release
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@328 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit ce08a19c90cc14953eac14a90c3507f109112681
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Oct 14 01:55:56 2008 +0000
-
-    bumped version to 1.9.3-pre1
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@326 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 804f74c7f582e27cdcd4948061642a023d2b1e0b
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Oct 3 04:04:46 2008 +0000
-
+gpgdir-1.9.3 (11/05/2008):
     - Bugfix for using -f instead of -I for non-interactive file erasure
-    (Franck Joncourt).
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@325 958e171a-1414-0410-8e2f-9d295d3c0db0
+      (Franck Joncourt).
+    - Simplified test suite code by creating a set of default arguments for
+      the gpgdir command line as each test is executed.
 
-commit 82e319a83533f36990080f86b5c4aa336c34cff1
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Oct 3 03:57:33 2008 +0000
-
-    minor date update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@324 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit ee0a831f469fd0ad9bef64acb7c5f220260c8dcc
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Oct 3 03:57:11 2008 +0000
-
-    Simplified test suite code by creating a set of default arguments for
-    the gpgdir command line as each test is executed
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@323 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 989ad8f173b9c4772d539c4de168f5064ed2fdd6
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 11 03:40:35 2008 +0000
-
-    applied gpgdir man page fix from Franck
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@322 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 82e3b1fe6a700b91896c6f000d6c1780cd2fde62
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Sep 1 04:24:35 2008 +0000
-
-    merged in 'signed' vs. 'verified' text fix
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@321 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 9f5d876b3bc8525ce7fbe20ff3a8c9ab0cc6636c
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 31 23:24:15 2008 +0000
-
-    - Added --sign and --verify options.
-    - Fixed dash vs. minus sign fix noticed by Franck Joncourt:
-    
-    http://lintian.debian.org/tags/hyphen-used-as-minus-sign.html
-    
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@315 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit cf51ab9f3cf2c0e150c57b6221033c207d3bab85
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 31 23:15:40 2008 +0000
-
-    version 1.9.2
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@314 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8a7a41086e1a492752454360d7cd61eb7d474351
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 31 23:11:34 2008 +0000
-
-    1.9.2-pre3
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@312 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b434af123d7488d8a5550bec969ad3ed46f6c222
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 31 23:11:12 2008 +0000
-
-    bugfix to include the deps/ directory
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@311 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 661c787f1a6a6ac0aa1124d458201760c6ca705c
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 31 23:09:16 2008 +0000
-
+gpgdir-1.9.2 (08/31/2008):
     - Added new modes '--sign <dir>' and '--verify <dir>' to allow all files
-    in the specified directory to be signed or verified instead of encrypted
-    or decrypted.  All GnuPG signatures are created as "<file>.asc", and the
-    original file is not removed in --sign mode.  In --verify mode, if any
-    file does not match the expected .asc signature, then a warning like the
-    following will be generated:
-    
-    [+] Verifying:  /home/mbr/src/gpgdir/test/data-dir/multi-line-ascii.asc
-    [GNUPG:] BADSIG 9EDEEEEBA742EEEF Some User <someuser@domain.org>
-    
+      in the specified directory to be signed or verified instead of encrypted
+      or decrypted.  All GnuPG signatures are created as "<file>.asc", and the
+      original file is not removed in --sign mode.  In --verify mode, if any
+      file does not match the expected .asc signature, then a warning like the
+      following will be generated:
+
+        [+] Verifying:  /home/mbr/src/gpgdir/test/data-dir/multi-line-ascii.asc
+        [GNUPG:] BADSIG 9EDEEEEBA742EEEF Some User <someuser@domain.org>
+
     - Bugfix to not die() when files that are encrypted with a different GnuPG
-    key are encountered in a directory that is being decrypted. A warning
-    message (see below) is now generated and the file is skipped:
-    
-    [+] Decrypting:  /home/mbr/tmp/gpgdir/a.gpg
-    [GNUPG:] BAD_PASSPHRASE CF16F0FCFFF3FF4F
-    [-] Skipping file encrypted with different GnuPG key: a.gpg
-    
+      key are encountered in a directory that is being decrypted. A warning
+      message (see below) is now generated and the file is skipped:
+
+      [+] Decrypting:  /home/mbr/tmp/gpgdir/a.gpg
+      [GNUPG:] BAD_PASSPHRASE CF16F0FCFFF3FF4F
+      [-] Skipping file encrypted with different GnuPG key: a.gpg
+
     - Updated to use the status output from GnuPG::Interface to detect a bad
-    passphrase and whether a file is encrypted with the expected GnuPG key.
-    
+      passphrase and whether a file is encrypted with the expected GnuPG key.
+    - Moved the GnuPG::Interface, Class::MethodMaker, and Term::ReadKey
+      modules to the deps/ directory, and updated the installer and RPM spec
+      file to account for the path change.  This change was suggested by
+      Franck Joncourt for the other cipherdyne.org projects.
     - Updated the test suite to generate files in the output/ directory
-    according to test number and append the result of each test within each
-    file.  This makes it easy to tell which tests have failed with a simple
-    'grep fail output/*test'.
-    
-    - Updated to use the 'auto' heuristic (first implemented in the fwknop
-    project) to detect perl module directories that should be used in the
-    --Lib-dir directory to import perl modules from.
-    
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@310 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 3bef21eebb44c865a7713e4ad8eba03d70287289
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 31 20:29:08 2008 +0000
-
-    Added broken.pw file for broken passphrase testing
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@309 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b88cc4f3581304ac10501365c1d31561c76464ad
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 31 19:44:04 2008 +0000
-
-    added tests for --sign and --verify modes
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@308 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b9052274db02bbebb00a453095331383cef96826
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Aug 30 20:06:05 2008 +0000
-
-    updated to the version of the cd_rpmbuilder code that can build the 'nodeps' RPM's
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@307 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 21d734ed5327037045fb011938bc2384591e84d4
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Aug 16 01:03:38 2008 +0000
-
-    minor wording update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@305 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 5c61e3cb4e33b06de59ef35977cc14e05ecd30e9
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Aug 16 01:01:41 2008 +0000
-
-    bumped version to 1.9.2-pre1
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@304 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e678a159c663cc449855874691270b6a91f8325a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Aug 16 00:53:40 2008 +0000
-
-    minor edit for Franck:
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@303 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit d054d4606ce19bbdfece61a96697bb7b284b6115
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Aug 16 00:52:02 2008 +0000
-
-    added 1.9.2 blurbs
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@302 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit ef62a98249ddcaede7fec8cde72e0c1f6b5a227b
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Aug 16 00:39:56 2008 +0000
-
-    moved TermReadKey/ to deps/ directory
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@301 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8509bd086e8fa7824f613e185b6cedbfc1c71eb2
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Aug 16 00:37:59 2008 +0000
-
-    moved GnuPG::Interface and Class:MethodMaker to the deps/ directory, added gpgdir-nodeps.spec file
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@300 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 373dbb94dffac5259914e6a4da5691ad6e72c948
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Aug 16 00:36:18 2008 +0000
-
-    update to import perl modules via a function and 'require' statements, added --Lib-dir arg
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@299 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit f10e71754c39a348293c97c35173a2db91eab1b1
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Aug 16 00:22:34 2008 +0000
-
-    added META.yml file
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@298 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 1bd1c98f9513c5bac840c6a438f1a6c853449049
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Aug 16 00:15:49 2008 +0000
-
-    Added deps/ directory
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@297 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 5f5f981a7ffac2c185a8712cfbc08dcf0eee0f0a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 7 02:47:33 2008 +0000
-
-    updated to use the 'C' locale by default
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@293 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8249b20ed95194f548aad30fc2aa5796ca536756
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 7 01:57:41 2008 +0000
-
-    updated to 1.9.1 release date
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@292 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit f071817607eabdb303626816c22f17a49e34aecc
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 7 01:43:57 2008 +0000
-
-    Added bump_version.pl script
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@291 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit fe14816fe7f19c4b68c6cf7f3a54fcd0a715c2b0
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 7 01:43:50 2008 +0000
-
-    bumped version to 1.9.1
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@290 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 3097d92148438324520efaa4b64fe432b4622f45
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 7 01:41:33 2008 +0000
-
-    added version comment
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@289 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c97ad94b3ecaa0f79d529311d5796533909d6d7e
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 7 01:37:14 2008 +0000
-
-    updated to Class::MethodMaker 2.11
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@288 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c40ffa482ea467f900c27a9b9a6559b500e3708e
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 7 01:34:49 2008 +0000
-
-    updated to 2.11
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@287 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 43282972ea898d41a26dd3d5064713a6a874fcc0
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 31 15:47:36 2008 +0000
-
-    merged 281:285 for 1.9 release
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@286 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 69cd3b6e8c5578a27f453f59e37b50143882d255
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 31 15:09:16 2008 +0000
-
-    added release date for version 1.9
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@281 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit abe9eef7d5c87baa7405ed00bf320f5a6dab2a8f
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 31 00:00:46 2008 +0000
-
-    version 1.9
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@280 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 0a7db63e3c83ee994091345e36f9e2e7f3f0677c
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu May 8 04:13:42 2008 +0000
-
-     - Changed --Obfuscate-filenames format to not include the gpgdir PID.
-       This allows directories to be encrypted/decrypted under -O multiple
-       times without creating new filenames (which would pollute encrypted
-       directories under rsync to other systems).  The new -O encrypted
-       filename format is just "gpgdir_<num>.gpg".
-     - Added PID locking against directories so that multiple gpgdir processes
-       cannot operate against the same top-level directory simultaneously.
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@279 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b89277b5fd474976aab1092bfe71b91c03ea9c1d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 5 03:20:20 2008 +0000
-
-    1.8 release
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@275 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 644096ec6ed5815572b4edd7eea3293b880fc054
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 5 03:15:28 2008 +0000
-
-    added for 0.36
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@274 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 91537884edc2a71b44a68c1646d95410b40c1c62
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 5 03:13:59 2008 +0000
-
-    updated to version 0.36
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@273 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 4558137dbbd048a85afd097777bc83f9c5424d67
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 5 02:59:10 2008 +0000
-
-    minor update to point the user at --help for command line usage errors
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@272 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 620d07efac7eb8e11381530bdd0735b0efdda197
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 5 02:42:12 2008 +0000
-
-    minor text move
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@271 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 4b9b76527c6a689f80f0e736b26c49d51a6d08ff
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 5 02:39:08 2008 +0000
-
-    gpgdir-1.8 additions
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@270 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 46ef0b48f635af07029d373867b890e79a3eb3c1
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 5 02:34:47 2008 +0000
-
-    updated to delete the .gpgdir_map_file after successful decrypt
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@269 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit aa356372513ba9da716090f330258fa0a49ce5c6
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Feb 24 21:12:46 2008 +0000
-
-    minor addition to mention the test suite
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@268 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 1270ebcda165041b21837e0c3324c5616290b802
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 19 04:37:15 2008 +0000
-
-    merged 250:264
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@267 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 2e866cdf32370a67b38b1e75a6909dbe103c6030
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 19 04:11:10 2008 +0000
-
-    Added setup() call
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@260 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 5c7568f6aa2e5d09690c420617b4b6def8b91b0a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 19 04:06:52 2008 +0000
-
-    version 1.7
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@259 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 0a3ac2fac99eebb7539a897e45d698bb30c46bb4
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 19 04:06:10 2008 +0000
-
-    Added ascii-armor test
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@258 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit cc166859399cff47ee3b73ccf5103016a7a7fadf
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 19 03:37:49 2008 +0000
-
-    test suite addition
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@257 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit a1d1fecd98a7a15c31c41ef518ff00d58f328620
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 19 03:36:14 2008 +0000
-
-    added md5 sum checking across encrypt/decrypt cycles, added standard encryption/decryption cycle
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@256 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit df0e8a5cb2885e4135ca594a6c5973c385b11463
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 19 00:01:22 2008 +0000
-
-    fixed exit status for --test-mode, better handling of GnuPG homedir
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@255 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8468c44d47fd27d210d096b085b528efaa543223
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 19 00:00:21 2008 +0000
-
-    added basic --test mode, added test stats display
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@254 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c438ca4878842494c7182f51b6f34a4eb05c794b
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 18 16:17:41 2008 +0000
-
-    added test.pw file for the gpgdir test suite
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@253 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 2a6cb24a3e7db402289527498f99c2b41b4b597e
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 18 15:40:26 2008 +0000
-
-    added setup() routine, added --Prepare-results argument
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@252 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 1a6de011d5957faf03b9a21a2af09cfb2040ce5d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 18 15:34:53 2008 +0000
-
-    first working version of the test suite
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@251 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 859d040df953750ee93c06d13d08a13e324755a7
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 18 15:32:44 2008 +0000
-
-    added output/ directory
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@250 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e8e987e1a945c344e5ee75b763c3727677f87ace
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 18 15:17:38 2008 +0000
-
-    deleted random_seed since this file changes with each execution of the test suite
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@249 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 78ad8b4798068335aa2deee94ab76039a3f11586
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 18 15:16:41 2008 +0000
-
-    added test/ directory for the gpgdir test suite
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@248 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit fd7998dfb800cc2b4e20129da669c1fee64c0d52
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 18 15:16:21 2008 +0000
-
-    started on 1.7 additions
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@247 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 78d90c64351b05bdb982bccc1ca1d6aed0f98435
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 18 14:29:16 2008 +0000
-
-    - Bugfix to ensure that encrypted directories and actually be decrypted.
+      according to test number and append the result of each test within each
+      file.  This makes it easy to tell which tests have failed with a simple
+      'grep fail output/*test'.
+    - Added the gpgdir-nodeps.spec file to allow an RPM to be built that does
+      not contain any perl modules dependencies.
+    - Updated gpgdir to import perl modules via 'require' statements instead
+      of 'use' statements so that the path to the modules directory can be
+      changed via the --Lib-dir command line argument.  Also updated to use
+      the 'auto' heuristic (first implemented in the fwknop project) to detect
+      perl module directories that should be used in the --Lib-dir directory
+      to import perl modules from.
+
+gpgdir-1.9.1 (06/07/2008):
+    - Updated to Class::MethodMaker 2.11 from CPAN.  This helps with systems
+      running perl-5.10.0 and greater (such as Fedora 9).
+    - Updated to always set the LC_ALL environmental variable to the "C"
+      locale.  This can be set to other locales with a new argument --locale,
+      or the default locale can be used by using --no-locale argument.
+
+gpgdir-1.9 (05/31/2008):
+    - Changed --Obfuscate-filenames format to not include the gpgdir PID.
+      This allows directories to be encrypted/decrypted under -O multiple
+      times without creating new filenames (which would pollute encrypted
+      directories under rsync to other systems).  The new -O encrypted
+      filename format is just "gpgdir_<num>.gpg".
+    - Added PID locking against directories so that multiple gpgdir processes
+      cannot operate against the same top-level directory simultaneously.
+      This is useful for users that typically operate with multiple shells
+      and might launch gpgdir from any of them.
+
+gpgdir-1.8 (04/04/2008):
+    - Updated the test suite to validate the gpgdir --Obfuscate-filenames
+      mode to ensure that files are encrypted as "gpgdir_<pid>_<num>.gpg".
+    - Minor bug fix to remove the .gpgdir_map_file in --Obfuscate-filenames
+      mode after a successful decryption cycle.
+    - Updated to version 0.36 of CPAN GnuPG::Interface module.
+
+gpgdir-1.7 (02/18/2008):
+    - Bugfix to ensure that encrypted directories can actually be decrypted.
+      This bug was reported by Per Ronny Westin.
     - Updated to use the ".asc" extension for encrypted files in --Plain-ascii
       mode.
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@246 958e171a-1414-0410-8e2f-9d295d3c0db0
+    - Added gpgdir test suite.  All future gpgdir releases (and including this
+      1.7 release) require that all gpgdir tests pass on the systems where
+      gpgdir is developed.
 
-commit a51de5440789ca53526cec3ff2bdecb2d1c8e968
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 18 02:36:25 2008 +0000
-
-    minor contributor update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@245 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b2a7ab785a14fd59cdac0a4058597dbffc12c59a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Feb 17 06:10:13 2008 +0000
-
-    version 1.6
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@241 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit a8d8735c3702a526b4a1a03082176d05b0cd5317
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Feb 17 06:08:53 2008 +0000
-
+gpgdir-1.6 (02/17/2008):
     - Bugfix to not include previously encrypted files (i.e. those with a .gpg
-    extension) in the encryption/decryption file list.  This bug was
-    introduced in gpgdir-1.5 when a change was made to ignore ascii-armored
-    files.
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@240 958e171a-1414-0410-8e2f-9d295d3c0db0
+      extension) in the encryption/decryption file list.  This bug was
+      introduced in gpgdir-1.5 when a change was made to ignore ascii-armored
+      files.
+    - Added added LC_ALL=C locale setting for the install.pl script (this
+      should help to ensure gpgdir is properly installed on most systems). Two
+      new command line arguments --LC_ALL and --no-LC_ALL also allow the
+      locale setting to be changed or not used at all.
+    - Added --Exclude-mod-regex option to the install.pl script so that it is
+      possible to force the exclusion of perl modules that gpgdir would
+      normally install. This is useful for ensuring that gpgdir references
+      perl modules that are already installed in the system perl library tree
+      instead of using those that are installed in /usr/lib/gpgdir.
+    - Updated to display command line usage warnings without automatically
+      displaying the entire usage() page (which is quite long).
 
-commit 198baf2f3235edaed9852f3834d1747b0afb223d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Jan 11 02:06:28 2008 +0000
-
-    added locale setting and --Exclude option
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@239 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b5a8206277017c53844b3c1fd5617df38af1fc93
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Sep 9 17:22:32 2007 +0000
-
-    minor man page wording updates
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@238 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 2e74ab68c12387c1e6f457f541a0c138a5285fdb
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 1 03:18:02 2007 +0000
-
-    minor wording update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@237 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 33e2b60f8f2cf6ca17f7822d5bb07e47fc257c3d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 1 03:17:38 2007 +0000
-
-    bugfix for test_mode() file deletions
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@236 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c8d7699766844979f9a56566d96600553a0c8292
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 1 02:01:46 2007 +0000
-
-    updated to delete zero-byte files
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@229 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c7cd2ad9d32a6c32153b3a897c0421fde4b700fd
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 1 01:57:21 2007 +0000
-
-    version 1.5
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@228 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 0d4f4d3e4d295d640c15acfc0515db87f34c95be
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Aug 31 02:36:05 2007 +0000
-
-    1.5-pre1
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@226 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 5313e1b75bde960d2a5b2f527b58ff3bff3d010d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Aug 31 02:35:03 2007 +0000
-
-    Added --Symmetric option
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@225 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c501f80dca4f058165c0b031d1bb6f43485f57ab
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Aug 31 02:33:23 2007 +0000
-
-    added Fermin Manzanedo
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@224 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8f3bbed0074c20bc40c1d4af9dda0970f2dae116
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Aug 31 02:32:19 2007 +0000
-
+gpgdir-1.5 (08/31/2007):
     - Added the --Symmetric option so that files can be encrypted/decrypted
       via a symmetric encryption algorithm (GnuPG commonly uses CAST5 for
-      this). Using this option drastically speeds up the encryption/decryption
-      process.
+      this).
     - Added the --Plain-ascii option so that GnuPG is invoked with the -a
       option so that encrypted files are ascii armored instead of encrypted in
       binary form.
@@ -831,808 +132,116 @@ Date:   Fri Aug 31 02:32:19 2007 +0000
       given (gpgdir now just throws a warning and exits in this case).
     - Minor code enhancements to provide a consistent hash_init() invocation
       with the same options hash.
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@223 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit feb10d86edb832e6f2658596de0b31f0d49a1425
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jul 21 03:04:20 2007 +0000
-
-    version 1.4
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@218 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit acf12800e48bcd414dc15a76b3a3e497ccb67ed0
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jul 21 03:03:11 2007 +0000
-
-    added --overwrite-encrypted and --overwrite-decrypted options
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@217 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit be666f49901f86e0c031a449eedc21a5e4b4efa9
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Jul 13 01:12:37 2007 +0000
-
-    (Anthony Chivetta) Submitted patch to implement the
-    --overwrite-encrypted command line argument to allow previously
-    encrypted files to be overwritten. This is useful for updating an
-    encrypted directory with new versions of the previously encrypted files.
-    Also added the --overwrite-decrypted command line argument to perform
-    the same function for previously decrypted files.
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@216 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e8d1a4c8bb7466e548bd82d50259514bf1e699e1
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Jul 13 00:57:21 2007 +0000
-
-    minor usage() update to include -O options
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@215 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 1fac2af920426315f22957bb09eb31fd9d72670a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Jul 13 00:44:19 2007 +0000
-
-    bugfix to allow filenames of '0.gpg' to be decrypted (Anthony Chivetta)
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@214 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 6f03cdbc4c32ca1875be646018b99c819887d42e
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 9 04:48:53 2007 +0000
-
-    version 1.3
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@210 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 29bbd2f74b5ed2fcadd8ff223db48f77b716254b
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 9 04:48:36 2007 +0000
-
-    bugfix to import encrypted .gpgdir_map_file files
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@209 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit f435a752a8322861788e88653aa434459bcbc42f
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 9 04:47:56 2007 +0000
-
-    updated to remove md5 sum files
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@208 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 0208be81f67cd2f62009b4ac85774f13a251d32d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Jun 8 04:21:09 2007 +0000
-
-    added --Obfuscate mode so that file names wtihin a directory can be obfuscated (gpgdir maintains a mapping file .gpgdir_map_file for the original file names
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@207 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 20f06a3036846f4f340c7cb5ceb1348222316273
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 2 03:03:27 2007 +0000
-
-    minor spacing fix
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@206 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit d59a65884cb48e55d427f9ed6ad9c5edf0f2ec6a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 2 02:49:02 2007 +0000
-
-    updated version to 1.3
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@205 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 4ab563e5d392264f0ce803beed533b11070eaa83
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jun 2 02:48:11 2007 +0000
-
-    Added the --Agent-info command line argument so that gpg-agent connection information can be manually specified
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@204 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8aab778a5e4354f813d8e130f2cd61f4973e6b59
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 28 13:48:37 2007 +0000
-
-    better debugging output in --agent mode if the password is not available in the running gpg-agent instance
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@198 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 5008ab554fab65129b5d6ade75244dc98620ca0c
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 28 13:30:22 2007 +0000
-
-    minor 1.2 addition
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@197 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit f4f8ecf0600e3ef675568947fb5deb6242913198
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 28 13:14:34 2007 +0000
-
-    minor date comment fixes
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@196 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8a6dec22960b36a32c2237bb0e6f6b5bcd6dc6b8
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 28 13:13:46 2007 +0000
-
-    updated to derive Id tag from cipherdyne3.org repository
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@195 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit f3f34cd891aa3624508a659b0278e1b08c77d3c0
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 28 13:12:57 2007 +0000
-
-    path bugfix for wget vs. rpmbuild
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@194 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 80ed4cb93f3125b3300c16d10550f1874ff18598
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 28 13:04:11 2007 +0000
-
-    bugfix to not force non-root installs
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@193 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit f9e081a043232f98516c5ce910cce6dd79b0f842
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 28 03:40:46 2007 +0000
-
-    added --agent and --no-password
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@192 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit a17cb528d207bf644b0092e7494c711e006cc224
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 26 17:33:53 2007 +0000
-
-    minor paragraph bugfix
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@190 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit d8b88c56d8d97f88f5dff15278be37318cddee94
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 26 17:32:53 2007 +0000
-
-    non-root install documentation update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@189 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 42dc6cbb89540ac198a07f5573a3034329e18f16
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 26 17:29:16 2007 +0000
-
-    updated to not install man page if gpgdir is installed by a non-root user
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@188 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 88fc1def172c16a66ef1a722a4c509bd15d4ea70
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 26 17:14:08 2007 +0000
-
-    1.2 update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@187 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit a16400b78f80e0ea492eb34610e69ccf68cb351c
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 26 17:13:05 2007 +0000
-
-    bumped version to 1.2
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@186 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit d481367eca93204cc4d632e0b527aab2947a9a1f
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 26 17:11:02 2007 +0000
-
-    non-root user installation support, and Cygwin support
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@185 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b52eb4bb27a3bdfd9da4ea8750387a3b97b35431
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue May 22 01:25:17 2007 +0000
-
-    minor date fix
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@184 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c09d4aa70ab52660ff4dd4da562cac0fb7a79a72
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue May 22 01:21:13 2007 +0000
-
-    bugfix to change PSAD_VERSION var to GPGDIR_VERSION
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@183 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit dc1662f122e9e5f3e94044af68e5866469db896c
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 21 04:09:41 2007 +0000
-
-    release date update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@177 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 48907772eaeca6c9ac88c7e4abc7553e8c00797c
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 21 04:09:33 2007 +0000
-
-    man page documentation updates for 1.1 release
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@176 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c245c2a2c41aa1b20f3d137adab2a8717bb0999d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 21 03:39:41 2007 +0000
-
-    minor output update to show when files are being deleted via the wipe command
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@175 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 33fbd6b2d3a8170577fdb8e1e3562b2c0b70093d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 21 03:00:39 2007 +0000
-
-    logr function name bugfix
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@174 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 16e446ec84d2db9c34c75706e9f58c46c70c51df
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon May 21 01:45:24 2007 +0000
-
-    minor copyright date and help update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@173 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit da6efd6e5024f79e3473aa46fad628d02984e647
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu May 17 03:22:32 2007 +0000
-
-    started on 1.1 release documentation updates
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@172 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 0e635e9649aee2201341844931d90661d6cb02b4
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 12 04:13:57 2007 +0000
-
-    1.1 additions
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@171 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit a15f828f3231f3f0ef2f2825cc6c6a92ef1add67
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 12 04:13:47 2007 +0000
-
-    1.1 release
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@170 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 48422f51289eb2bbb04a4b74bde844c7b27185fe
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun May 6 23:15:00 2007 +0000
-
-    minor version output update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@169 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 1aa69f33d4061f06f3e01337d85a37d1e5ef630a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun May 6 23:09:19 2007 +0000
-
-    Added the gpgdir.SlackBuild script
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@168 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit fa50f32343306904172ca1e82268408baf87b1de
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun May 6 23:06:44 2007 +0000
-
-        - Added the ability to securely delete the original versions of files with
-          the 'wipe' program (after they have been successfully encrypted).  Also
-          added --wipe-path to specify a path to the wipe binary (the default is
-          /usr/bin/wipe), --wipe-interactive to force the wipe program to prompt
-          the user before a file is deleted, and --wipe-cmdline to allow the user
-          to build a set of command line arguments that are passed to the wipe
-          program.
-        - Added --Force to have gpgdir skip over the error condition where a file
-          cannot be deleted (because of a permissions issue for example).
-        - Added --Trial-run to allow the user to see what actions gpgdir would
-          take to encrypt or decrypt files, but no files are actually modified.
-        - Added --Interactive to have gpgdir prompt the user before every file is
-          encrypted, decrypted.
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@167 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit ca410098a4e7c7f80cf3810e55be716290639264
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun May 6 23:06:10 2007 +0000
-
-    bumped version to 1.1
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@166 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8dae46a7fd775125fcc224d4287b6054bc0d16e9
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Mar 21 01:47:23 2007 +0000
-
-    added the cipherdyne RPM builder
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@165 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 0d7213b4576b5c475efd9ca18491392c647e504e
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Sep 17 17:34:58 2006 +0000
-
-    bumped version to 1.0.3 for proper RPM build
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@161 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 153ae37e95923ebaff34d6d582cc1fefa388b83a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Sep 17 17:24:23 2006 +0000
-
-    minor bugfix to correct version number (1.0.2 now)
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@157 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e7ac6fe651fd6fa939e624cf8d6d37badcfc3d3d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 16 16:54:54 2006 +0000
-
-    finished 1.0.1 stuff
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@153 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit fcda9da49d83cd73b9a2674763207af83ff17919
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 16 16:50:27 2006 +0000
-
-    x86_64 patch (Mate Wierdl), removed iptables requirement
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@152 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e50bbe40e313ca9ac6c8aca377b5cb6cc8d5bae0
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 16 16:50:01 2006 +0000
-
-    added Mate Wierdl
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@151 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b70f90d3a98f15bf3c4856ff70c161a1d211f37d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 16 06:59:33 2006 +0000
-
-    added --quiet option
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@150 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 293a8b368b6563931676a7ffce356a6356591796
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Sep 13 20:17:13 2006 +0000
-
-    minor addition for doc updates
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@146 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 1f4332f434e688338f909adee0fde1b1c95bcaa3
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Sep 13 20:12:02 2006 +0000
-
-    version 0.9.9 -> 1.0
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@145 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 7c8f2612ec4d6cd987acb507515b479608710dbf
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Sep 13 20:11:23 2006 +0000
-
-    added --Default-key option
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@144 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 50b016f4a91a9a878a24486daa16f45949cfd06d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Sep 13 20:10:35 2006 +0000
-
-    added 1.0 stuff
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@143 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 574334d7db8e8f46188864425be0664544f30847
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Sep 13 20:09:27 2006 +0000
-
-    minor newline bugfix
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@142 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 136bba83f55b9a2a196b1929dd71acabf30dc603
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Sep 13 20:08:13 2006 +0000
-
-    -Updated the .gpgdirrc file to include the line "default_key" so that the
-    default GnuPG key will be the preferred key.
-    -Bumped version from 0.9.9 to 1.0
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@141 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 164a9f7bfec879db99b8ba00ce062ae9bf9c162f
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Sep 13 19:15:34 2006 +0000
-
-    -Added the --Default-key option to allow gpgdir to use the default key that is
-    defined by the default-key variable in ~/.gnupg/options.
-    -Updated to print "Password: " after some status information.
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@140 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 53c603989aec3ed61e7b213203aec44c4783574b
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 9 16:56:28 2006 +0000
-
-    started on 1.0 changes
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@139 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit fca9463e5b31389b473399ac644794a56a622545
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 9 16:54:58 2006 +0000
-
-    added --Key-id command line argument so that use_key can be overridden from the command line, made the argument to use_key not have to strictly be a keyID since GnuPG allows a unique string match on keys in the key ring
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@138 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 7b7dc537f63a52aa0dee8623ea74ddd08503f6cd
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 9 16:54:54 2006 +0000
-
-    added --Key-id command line argument so that use_key can be overridden from the command line, made the argument to use_key not have to strictly be a keyID since GnuPG allows a unique string match on keys in the key ring
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@137 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 1dcb699251d9944e164ba2e2900fe34415e89600
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Sep 8 00:37:10 2006 +0000
-
-    minor date update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@135 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit f43f1363ffbd13a188ea7a9e592ffc7c2928883a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Sep 8 00:34:25 2006 +0000
-
-    bugfix for missing .TP tag
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@134 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 6c5751909f486a06a340eaa3b781aebc7cb8cd4e
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Sep 8 00:27:08 2006 +0000
-
-    added date release for 0.9.9
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@133 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e9167166c295aea00dbb4bb7fcc6b61ecaf02099
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Sep 8 00:09:55 2006 +0000
-
-    minor usage() comment update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@132 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit d2064eaa0a752134de1bbed1a26d84349f80c1f5
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 7 23:21:07 2006 +0000
-
-    minor bugfix die with a warning unless ~/.gnupg exists, minor initialization fixes
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@131 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 72f25bf5d6ff81c5cfacb743b95e3332817e9413
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 7 23:17:01 2006 +0000
-
-    bugfixes to replace fwknop with gpgdir, removed sysconfdir reference, updated man page path to .../man1/
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@130 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 34721e77aa340d7691edac576725bce974c53242
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 7 21:30:17 2006 +0000
-
-    more 0.9.9 stuff
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@129 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit d416e1ba07854b75a06ccdedcf66c7d4e569b7ac
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 7 21:28:57 2006 +0000
-
-    added 0.9.9 stuff
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@128 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 65badf75fad560e9fb4bfb658e1e5b8ec1c3a1df
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 7 21:28:03 2006 +0000
-
-    bumped version to 0.9.9
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@127 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit cda7eeb3992eeef044983bbd7b7eb5ad1435dfc8
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 7 04:01:42 2006 +0000
-
-    added packaging directory and gpgdir.spec file for building a gpgdir RPM
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@126 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 6d5d048484846aa25b5b2c480992dc6e5f9ce152
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 7 03:56:50 2006 +0000
-
-    minor bugfix for gpgdir(1) man page section designation
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@125 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 5aae1141a89459c3838cd607c438bfbc899984e1
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 7 03:50:17 2006 +0000
-
-    updated to TermReadKey-2.30 from 2.21
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@124 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e732e6cc777ca1ef2ea08d644b44e6ce884926e8
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 7 03:49:48 2006 +0000
-
-    Added META.yml file
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@123 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit a994d7ac6a45d317d0e166b0b66550239ff41305
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 7 03:48:59 2006 +0000
-
-    added VERSION file
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@122 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 96005ba34ec922b5b0c7c332b2cba9e1e8b1f362
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Sep 7 03:38:34 2006 +0000
-
-    -Added Copyright line
-    -Added --Force-mod-regex command line argument to force the installation of
-    specific perl modules that match a regex.
-    -Added --Skip-mod-install to skip all perl module installation.
-    -Updated to use the module VERSION files to get the perl module version
-    information.
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@121 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c32539406b219d72747e9f5c2e27dd7c37909ba9
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Jul 4 02:29:28 2006 +0000
-
-    bumped version
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@119 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 33c72afeee3daf79ef8782fde1ff879143be3b18
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Jul 4 02:28:39 2006 +0000
-
-    more 0.9.8 stuff
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@118 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e9ec155c14c30660398411497050c48d16785d5a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Jul 4 02:28:04 2006 +0000
-
-    perl module doc update
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@117 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit f1e664881d210a93428b3fce0563288c8a867fe7
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Jul 4 02:10:43 2006 +0000
-
-    merged changes from gpgdir_GPGINTERFACE branch for GunPG::Interface usage
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@116 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 40a103a59be7820ff0f91ee4ee7c2f4153ca056c
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Jan 16 04:38:55 2006 +0000
-
-    format fixes
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@106 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 4d950baf5db0d93efcd06b1b6d353cd2543db777
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Oct 13 03:08:50 2005 +0000
-
-    version 0.9.4
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@104 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 94f9372da126840fa6e5d87fc00375dd8463df10
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Oct 1 13:46:53 2005 +0000
-
-    more 0.9.4 stuff
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@102 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 089a105c8f172a50aca335d2ff81cec87db9659d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Oct 1 13:41:30 2005 +0000
-
-    Added Ian Scott
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@101 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 95eeea71f724f8eb4d4d03629c6569c40a0a9827
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Oct 1 13:39:31 2005 +0000
-
-    bugfix for expected SHM_GET_XXX got GOOD_PASSPHRASE error
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@100 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 7e03b1ee8eaff36d21f58cd374b68ddd03aa3585
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Sep 23 02:15:44 2005 +0000
-
-    cleanup of test_mode()
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@98 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit a2d001918685428843526931fcfe55d23f4826e9
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Feb 20 20:53:32 2005 +0000
-
-    version 0.9.3
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@96 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e5e401c5e2ff365141f00f1e5a876481ee4bdab1
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Feb 20 20:52:38 2005 +0000
-
-    0.9.3 blurbs
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@95 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 31a9e9ed7b31a9f83bb910491e77401ca9b6be39
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Feb 20 20:50:40 2005 +0000
-
-    added --Include and --Include-from options
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@94 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 760720618ae756e8fdd1629dad5eea86354d048b
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Feb 13 20:29:06 2005 +0000
-
-    bugfix to allow gpgdir to decrypt files that contain spaces
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@92 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b8ee3ba9ab83f816e21e88a1d402a7331444723b
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Feb 13 20:28:41 2005 +0000
-
-    added Chris P
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@91 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit ea884cac4a0ef32caaafd5389e31dc71598a57b5
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Jan 6 00:55:16 2005 +0000
-
-    updated README (removed compress stuff)
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@89 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit db33ee0620d70e2e6fca3572a6364130fec84689
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Jan 6 00:41:03 2005 +0000
-
-    directory skip verbose messages, verified --Exclude functionality
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@87 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 414e53ec781c3d5f7c757e2c08e469e338901eeb
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Jan 6 00:38:20 2005 +0000
-
-    updated docs
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@86 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit dcdb8ed75195b33abc0ec23eb9256f6e4a726a7d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Jan 6 00:19:26 2005 +0000
-
-    version 0.9.2
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@84 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit fed02e031296bf8d4f67111d16eac38870d9a898
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Jan 6 00:18:13 2005 +0000
-
-    - Sort encrypt/decrypt file list by mtime.
-    - Abstracted file exclusion logic into a separate function check_file_criteria().
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@83 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b39574411a32e059142b963a9515805f4af0dc1a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Jan 5 03:08:34 2005 +0000
-
-    more 0.9.2 stuff
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@82 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 6b0bb1728b860460217a8b780635f8f892459959
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Jan 5 03:08:06 2005 +0000
-
-    updated to 0.9.2 options
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@81 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 67a543ceb7432b3f4facf247453253600cc1ddca
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Jan 5 02:53:57 2005 +0000
-
+    - Updated to exclude .asc files from the encryption/decryption process.
+
+gpgdir-1.4 (07/20/2007):
+    - (Anthony Chivetta) Submitted patch to implement the
+      --overwrite-encrypted command line argument to allow previously
+      encrypted files to be overwritten. This is useful for updating an
+      encrypted directory with new versions of the previously encrypted files.
+      Also added the --overwrite-decrypted command line argument to perform
+      the same function for previously decrypted files.
+    - (Anthony Chivetta) Submitted patch to fix a bug where a filename of
+      "0.gpg" could not be decrypted because "0" does not evaluate to a true
+      value.
+
+gpgdir-1.3 (06/09/2007):
+    - Added --Obfuscate mode so that the files within a directory can be
+      altered into unrecognizable names (which are stored within the file
+      .gpgdir_map_file within each sub-directory, and this file is itself
+      encrypted).  The obfuscated file names are reversed when a directory
+      is decrypted.
+    - Added the --Agent-info command line argument so that the value of the
+      GPG_AGENT_INFO environment variable can be specified on the gpgdir
+      command line.
+
+gpgdir-1.2 (05/28/2007):
+    - Added support for installing gpgdir on Windows under Cygwin (via the
+      install.pl script). Installing gpgdir on FreeBSD systems also works.
+    - Added support for installing gpgdir within a user home directory without
+      the need for root access (this requires installing gpgdir with the
+      install.pl script).
+    - Added --agent to have gpgdir acquire gpg key password from a running
+      gpg-agent instance.
+    - Added --no-password so gpgdir can use a gpg key with no associated
+      password (this is not common).  The user is not prompted for a password
+      in this case.
+
+gpgdir-1.1 (05/21/2007):
+    - Added the ability to securely delete the original versions of files with
+      the 'wipe' program (after they have been successfully encrypted).  Also
+      added --wipe-path to specify a path to the wipe binary (the default is
+      /usr/bin/wipe), --wipe-interactive to force the wipe program to prompt
+      the user before a file is deleted, and --wipe-cmdline to allow the user
+      to build a set of command line arguments that are passed to the wipe
+      program.
+    - Added --Force to have gpgdir skip over the error condition where a file
+      cannot be deleted (because of a permissions issue for example).
+    - Added --Trial-run to allow the user to see what actions gpgdir would
+      take to encrypt or decrypt files, but no files are actually modified.
+    - Added --Interactive to have gpgdir prompt the user before every file is
+      encrypted, decrypted.
+    - Added the gpgdir.SlackBuild script (contributed by pyllyukko originally
+      for the psad project) for building gpgdir on Slackware systems.
+
+gpgdir-1.0.3 (09/17/2006):
+    - Minor bugfix to correct 1.0.1 version number (which should have been set
+      to 1.0.2) in the gpgdir RPM spec file.
+
+gpgdir-1.0.2 (09/17/2006):
+    - Minor bugfix to correct 1.0 version number (which should have been set
+      to 1.0.1).  The result is the 1.0.2 release.
+
+gpgdir-1.0.1 (09/16/2006):
+    - Added --quiet option to have gpgdir print as little as possible to the
+      screen when encrypting or decrypting a directory.
+    - Added x86_64 RPM (original patch from Mate Wierdl adapted for gpgdir).
+
+gpgdir-1.0 (09/13/2006):
+    - Added --Key-id command line argument so that use_key can be overridden
+      from the command line
+    - Made the argument to use_key not have to strictly be a keyID since GnuPG
+      allows a unique string match on keys in the key ring
+    - Added --Default-key to allow the user to have gpgdir use the default
+      key that is defined by GnuPG within the ~/.gnupg/options file.
+    - Updated the .gpgdirrc file to include the line "default_key" to allow
+      the user to have gpgdir prefer to use the GnuPG default key.
+    - Added the ChangeLog.svn file to show exactly which files have been
+      changed from release to release, and what the corresponding Subversion
+      log messages are.
+    - Minor documentation updates.
+
+gpgdir-0.9.9 (09/07/2006):
+    - Added RPM .spec file to build gpgdir as an RPM.
+    - Added the --Skip-mod-install command line argument to install.pl to
+      allow all perl module installs to be skipped.
+    - Added the --force-mod-regex command line argument to install.pl to allow
+      a regex match on perl module names to force matching modules to be
+      installed.
+    - Updated to TermReadKey-2.30 from 2.21.
+
+gpgdir-0.9.8 (07/03/2006):
+    - Updated to use GnuPG::Interface instead of GnuPG module.  This should
+      fix the incompatibility issues seen between the GnuPG module and some
+      GnuPG installations.
+    - Added perl module installation code from fwknop (see
+      http://www.cipherdyne.org/fwknop/).  This allows gpgdir to
+      preferentially use any perl modules that are already be installed on the
+      system.
+
+gpgdir-0.9.4 (10/12/2005):
+    - Updated test mode to encrypt and decrypt a testing file within the
+      directory to be encrypted or decrypted.  This file is located at
+      <dir>/gpgdir_test, and is removed after the test is completed.
+    - Bugfix for "protocol error: expected SHM_GET_XXX got GOOD_PASSPHRASE"
+      error in GnuPG module.
+
+gpgdir-0.9.3 (02/20/2005):
+    - Added --Include and --Include-from options to allow inclusion
+      regular expressions to be specified.
+    - Bugfix for not decrypting filesnames that contain spaces.
+
+gpgdir-0.9.2 (01/05/2005):
     - Added preservation of file mtime and atime values (may be disabled
       with the --no-preserve-times option).
     - Added testing encryption and decryption of dummy file (may be
@@ -1640,594 +249,37 @@ Date:   Wed Jan 5 02:53:57 2005 +0000
       modes.
     - Added --test-mode to run encrypt -> decrypt test and exit.
     - Removed unnecessary compression options.
+    - Updated get_homedir() to reference HOME environmental variable if
+      the /etc/passwd file does not exist (OS X being a good example).
     - Added --verbose mode.
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@80 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 15e5ad16411cb8243c12ac2717224652734939bb
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed Jan 5 02:53:08 2005 +0000
-
-    0.9.2 stuff
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@79 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8da712df4a50038a3b760552499d9c7f7f6e9212
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Nov 7 22:42:40 2004 +0000
-
-    .
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@77 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 261aea8a0581d3f68653b9cfa10831877d41c39d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Nov 7 22:41:03 2004 +0000
-
-    updated to allow a return code of PLAINTEXT for decryption
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@76 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit e96632facc3f230190f55c968dba29c9b655e57d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 11 21:06:07 2004 +0000
-
-    updated to include -g option
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@75 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit f8111a13ecd372bef8773bed444d1a3457dc9d08
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Sep 3 01:32:06 2004 +0000
-
-    gpgdir-0.9
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@73 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 635a7ca6d0714568bbffd39f6b12fd3104fcd09a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 29 18:17:04 2004 +0000
-
-    added Craig Needs
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@72 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 6c27a32d316aadf59e1663fdd9514f27e9934cde
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 29 18:16:48 2004 +0000
-
-    added 0.9 stuff
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@71 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b5e2f1d48aaefe49ba52bf9bb73777bd7b5cc816
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 29 18:16:21 2004 +0000
-
-    updated to [+] and related prefixes
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@70 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 6740addd44efa80f14d1db63ef44ccc587d10284
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Aug 29 18:15:38 2004 +0000
-
-    added --gnupg-dir option, switched message prefixes to [+] and related
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@69 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 51b8cea479a98712e5658f144bfb14380f52552a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 29 05:22:07 2004 +0000
-
-    bugfix for extraneous debug statement
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@67 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 6d108a05b5d1c53975aeb146cdf02ba8661eda6a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 29 05:06:17 2004 +0000
-
-    incremented version, updated docs, bugfix for --Exclude patterns and directories
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@65 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8c52dcb0ea5c990e9ee745c13cb49783258addbd
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 29 04:08:12 2004 +0000
-
-    added --Exclude and --Exclude-from options
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@64 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 121763a3cb8357e3b779d6ca4ebfe6939f6d53d2
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat May 29 04:07:55 2004 +0000
-
-    -Made error messages contain the filename.
-    -Added --Exclude and --Exclude-from options.
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@63 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit ca44c17091c71e3bb6e7979c455b70bc1bae2610
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed May 26 22:34:24 2004 +0000
-
-    cleaned up print statements, fixed default gzip/gunzip paths
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@62 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit bb20091394037bbb74e8d72e100ac34f9d2d5ff9
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed May 26 02:13:02 2004 +0000
-
-    added CREDITS file
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@61 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b8b493a8acd2b1ac6cd9f1c64b0c4267863daf09
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Wed May 26 02:08:57 2004 +0000
-
-    bugfix for incorrect wording regarding file compression/decompression
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@60 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 35a26041b22cd71036d303ec25c42cf2aa4445f3
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 24 02:30:51 2004 +0000
-
-    added INSTALL file
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@58 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 855a7fbceed7cf9dcccfa32d8b60f3ac4beb2566
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 24 02:30:29 2004 +0000
-
-    version 0.4
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@57 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c86f0147123aefad5bc7015f67e8f3cdb9b31574
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 24 02:30:15 2004 +0000
-
-    added -p option to read passwords out of a file, better directory checks -e and -d
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@56 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 879eec571fba3f3b8a649bce134ba8f42b616989
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 24 02:28:40 2004 +0000
-
-    updated to 0.4 stuff
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@55 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit a6dd12296839b3d8306811d04543271219e30d95
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 24 02:27:30 2004 +0000
-
-    added -p option, various wording updates
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@54 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 0658cab7c0174b442efa7c0f303c48068e1067f3
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Apr 24 02:27:12 2004 +0000
-
-    updated to 0.4
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@53 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 48b7de716196d1fe45311de136dd073846b6564b
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 27 19:57:54 2003 +0000
-
-    Added ChangeLog
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@51 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b4009fc9a0296196b337ccdc99a071314a715a27
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 27 19:52:47 2003 +0000
-
-    version 0.3
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@50 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8936c4861a5304f91a52e51fe24e278e1fdf24df
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 27 19:52:37 2003 +0000
-
-    updated dependencies statement
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@49 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 41abdb25bc1f9a14c4efada9f801b919256c9cab
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 27 19:52:21 2003 +0000
-
-    added /usr/lib/gpgdir use statement, added check_commands
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@48 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 565e8d66deb53153a8c0c18a98e3a7ca95f5b500
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 27 19:51:49 2003 +0000
-
-    updated to install GnuPG and TermReadKey modules in /usr/lib/gpgdir
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@47 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 259303335872132bc78f5105d074c5e8e4b3c01f
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 27 19:48:32 2003 +0000
-
-    bareword bugfix for original module code
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@46 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 254cd6d6843d3d1aa428fc17dfe1be03466d096e
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Sep 27 19:42:46 2003 +0000
-
-    Initial revision
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@42 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b78202882e109019511830b7856ce36a5329ca5a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jul 26 03:06:40 2003 +0000
-
-    version comment updated to 0.2
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@40 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b296d9a22eaa2c84a003290585cf6a86987b3908
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jul 26 01:57:30 2003 +0000
-
-    updated version number
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@38 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c2c9ff5db9b5963c553a6ab87e208344ef059456
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jul 26 01:57:04 2003 +0000
-
-    added VERSION file
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@37 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 4bd0e5af133643d4b6dedc3f7586abfbe87efde8
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jul 26 01:55:47 2003 +0000
-
-    updated to cipherdyne.org
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@36 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit a1e283e55122cf809be0ac0af0e5b34df46674b8
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jul 26 01:55:32 2003 +0000
-
-    updated command line args
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@35 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 0465bea89ec2e40b0ba089fcd1f822ae90e40f87
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sat Jul 26 01:54:37 2003 +0000
-
-    -forced eight char key identifier length.
-    -reworked error output code.
-    -reworked command line options.
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@34 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 7781b2ce1cf453a3c5dd738c5e19665d917995e1
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Feb 27 00:48:58 2003 +0000
-
-    added version option
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@33 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b89d7ae77db2e8e50a0be7942f69d74f2a1d13ed
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Feb 27 00:32:29 2003 +0000
-
-    fixed date
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@32 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit ea3a3f4cc46083318ec04add3e08646b124f58df
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 25 05:05:13 2003 +0000
-
-    minor comment fixes
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@31 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 5553c8a496a618c3af189f990eb2e05944c4a904
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 25 04:48:32 2003 +0000
-
-    minor bugfix
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@30 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c5fbee1e22519b6eccaecaa840737ed1b7ee884c
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 25 04:46:13 2003 +0000
-
-    added checks for uid root and GnuPG
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@29 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 1fcd8fa25484f0326db11692e362294024b8ad44
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 25 04:28:04 2003 +0000
-
-    add gpgdir man page
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@28 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8726bbcf4db7f802f1644e2b52c94e44b4750e5e
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 25 04:24:41 2003 +0000
-
-    removed old _C filename code
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@27 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit dc7eeaedeb949598fae12d7b5906f592f0ab3c1d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Tue Feb 25 04:24:02 2003 +0000
-
-    fixed chmod statements
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@26 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit c16eb5b525a0b125b10f17bc2c3f71c077b4c1af
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 24 19:06:57 2003 +0000
-
-    added README
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@25 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 7f1d57478b31be2c9990f51ff2bea335432ce9c4
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 24 19:04:48 2003 +0000
-
-    added LICENSE file
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@24 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit d5e9f89fff6ae7918c741b0b6f68695ac990cdf3
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 24 05:06:20 2003 +0000
-
-    minor bugfix
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@23 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 2db79700b4e44593c2f5b7b343507db1263c3f97
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 24 04:05:29 2003 +0000
-
-    install.pl
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@22 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 3a61bf00dc0614a894eee5d8b8bcceb51a2a8bbe
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 24 01:06:57 2003 +0000
-
-    added README
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@21 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 0f8dafda4e8142e133c9db8640e653aeca9d0ced
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Feb 24 00:05:29 2003 +0000
-
-    install.pl
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@20 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 419659d64ded1ad2b02f3e2f08b571e1e0a2da31
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Jan 5 21:35:36 2003 +0000
-
-    handle symbolic links
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@19 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 5998a040882654e1477c36725d1a01e35da3673c
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Jan 2 05:06:39 2003 +0000
-
-    bugfix for filenames that might include _C
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@18 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 00c15af71e9f5a818434dc825946040132c7264b
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Jan 2 04:36:25 2003 +0000
-
-    added compression
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@17 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit f76fe58529123abc9cfc721b8b51be3d480d15c4
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Dec 27 03:46:23 2002 +0000
-
-    minor code cleanups
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@16 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 0fc26e2790f4b3bd89f0d9849ab96f737ecca0c0
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Mon Dec 16 00:45:14 2002 +0000
-
-    made gpgdir handle ~/.gpgdirrc files to make it able to handle multiple users
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@15 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 13093545ad5ca95426d6f5ddf5a251faf027c46a
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Nov 1 05:35:59 2002 +0000
-
-    changed to encrypt file over any existing file.gpg encrypted file
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@14 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 61f49ebf6f4f0b11f217a7b278212e8873ad39dc
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Nov 1 04:35:20 2002 +0000
-
-    changed to encrypt file over any existing file.gpg encrypted file
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@13 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 6c6d82e21c7443b5fc8fef44b3cdf3c16cbf0c02
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Fri Nov 1 03:14:49 2002 +0000
-
-    much better reporting info
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@12 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit d1c5c1f496505d52317c1897d19c2d62ac5a1ab5
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Oct 31 19:40:04 2002 +0000
-
-    added put_production.sh
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@11 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 8da62d96a9dd8c94c69e10326c00232097143735
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Oct 31 05:38:17 2002 +0000
-
-    minor bugfix
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@10 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit a2e7df3563ab61efb2e638fcd39709dc6f35bc58
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Oct 31 04:37:03 2002 +0000
-
-    added more verbose error messages
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@9 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit b1190b97626b1fd5c27eef7dae4ff217b11fcfbc
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Oct 31 03:33:01 2002 +0000
-
-    updated to make sure gpgdir does not decrypt a .gpg file over a normal file of the same name
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@8 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 2ac3d0f52be4daaae5cb371288eae58548f4f1fa
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Thu Oct 31 02:39:53 2002 +0000
-
-    added test for file size
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@7 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit ffb53d849268ca04f0108018ec25aa4d904e9a6d
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Oct 20 04:31:23 2002 +0000
-
-    added header
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@6 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit ba5b8a59e985ad0969f488a042370c10cceb6e68
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Oct 20 04:29:42 2002 +0000
-
-    Initial revision
-    
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@3 958e171a-1414-0410-8e2f-9d295d3c0db0
-
-commit 81b84b56adc5a92c922f0b5da6994d06a270f766
-Author: Michael Rash <mbr@cipherdyne.org>
-Date:   Sun Oct 20 04:29:42 2002 +0000
-
-    New repository initialized by cvs2svn.
-    
-    git-svn-id: file:///home/mbr/svn/gpgdir_repos/gpgdir/trunk@2 958e171a-1414-0410-8e2f-9d295d3c0db0
+    - Updated output to generate errors on a per-file basis instead of
+      dumping them at the end of an encrypt/decrypt operation.
+
+gpgdir-0.9.1 (11/11/2004):
+    - Updated GnuPG.pm perl module to handle return code of PLAINTEXT
+      which seems to be returned by GunPG now (as of version 1.2.6)
+      instead of DECRYPTION_OKAY upon a successful decryption.
+
+gpgdir-0.9 (09/12/2004):
+    - Added --gnupg-dir option to allow a user to specify a different
+      user's .gnupg directory for encryption keys.
+    - Switched to "[+]" (and related) message prefixes.
+
+gpgdir-0.8 (05/29/2004):
+    - Added --Exclude and --Exclude-from options to allow files to be
+      excluded based on regex matches.
+    - Reworked error messages so they contain the filename associated
+      with each error.
+
+gpgdir-0.4 (04/23/2004):
+    - Added --pw-file option so that a decryption password can be
+      read out of a file.
+    - Better directory validation (filesystem -e and -d checks).
+    - Added INSTALL file.
+    - Updated man page and README file.
+
+gpgdir-0.3 (09/27/2003):
+    - Bundled perl modules GnuPG and TermReadKey with gpgdir.
+    - Modified install.pl and gpgdir to install and use GnuPG and
+      TermReadKey modules from the /usr/lib/gpgdir directory.
+    - Added check_commands() subroutine from psad.
