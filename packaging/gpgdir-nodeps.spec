@@ -58,7 +58,7 @@ install -m 644 gpgdir.1 $RPM_BUILD_ROOT%{_mandir}/man1/
 %_libdir/%name
 
 %changelog
-* Mon Mar 15 2010 Michael Rash <mbr@cipherdyne.org>
+* Mon Jan 05 2015 Michael Rash <mbr@cipherdyne.org>
 - gpgdir-1.9.6 release
 
 * Sat Sep 05 2009 Michael Rash <mbr@cipherdyne.org>
