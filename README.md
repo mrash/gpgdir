@@ -1,4 +1,4 @@
-# gpgdir - Recurisve Directory Encryption with GnuPG
+# gpgdir - Recursive Directory Encryption with GnuPG
 
 ## Summary
 gpgdir is a perl script that uses the CPAN GnuPG::Interface perl module to recursively encrypt and

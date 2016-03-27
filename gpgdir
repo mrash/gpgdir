@@ -1763,7 +1763,7 @@ Options:
                                   usually necessary).
     --no-locale                 - Don't set the locale to anything (the
                                   default is the "C" locale).
-    --verbose               - Run in verbose mode.
+    --verbose                   - Run in verbose mode.
     -V, --Version               - print version.
     -h, --help                  - print help.
 _HELP_
