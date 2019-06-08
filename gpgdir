@@ -1276,7 +1276,8 @@ sub get_homedir() {
                 last;
             }
         }
-    } else {
+    }
+    if (!$homedir) {
         $homedir = $ENV{'HOME'} if defined $ENV{'HOME'};
     }
     &cleanup("[*] Could not determine home directory. Use the -u <homedir> option.")
